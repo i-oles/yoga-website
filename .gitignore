@@ -29,8 +29,8 @@ go.work.sum
 .env
 
 # Editor/IDE
- .idea/*
- *.iml
+.idea/*
+*.iml
 modules.xml
 vcs.xml
 workspace.xml
