@@ -1,0 +1,7 @@
+{
+  "ListenAddress": ":8080",
+  "ReadTimeout": 5,
+  "WriteTimeout": 10,
+  "ContextTimeout": 5,
+  "LogErrors": true
+}

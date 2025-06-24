@@ -1,0 +1,136 @@
+version: 1
+
+linters:
+  enable:
+    - asasalint
+    - asciicheck
+    - bidichk
+    - bodyclose
+    - canonicalheader
+    - containedctx
+    - contextcheck
+    - copyloopvar
+    - cyclop
+    - decorder
+    - dogsled
+    - dupl
+    - dupword
+    - durationcheck
+    - errcheck
+    - errname
+    - errorlint
+    - exhaustive
+    - fatcontext
+    - forbidigo
+    - forcetypeassert
+    - funlen
+    - ginkgolinter
+    - gocheckcompilerdirectives
+    - gochecknoglobals
+    - gochecknoinits
+    - gochecksumtype
+    - gocognit
+    - goconst
+    - gocritic
+    - gocyclo
+    - godot
+    - godox
+    - goheader
+    - gomoddirectives
+    - gomodguard
+    - goprintffuncname
+    - gosec
+    - gosmopolitan
+    - govet
+    - grouper
+    - importas
+    - inamedparam
+    - ineffassign
+    - interfacebloat
+    - intrange
+    - ireturn
+    - lll
+    - loggercheck
+    - maintidx
+    - makezero
+    - mirror
+    - misspell
+    - mnd
+    - nakedret
+    - nestif
+    - nilerr
+    - nilnil
+    - nlreturn
+    - noctx
+    - nolintlint
+    - nonamedreturns
+    - nosprintfhostport
+    - perfsprint
+    - prealloc
+    - predeclared
+    - promlinter
+    - protogetter
+    - reassign
+    - revive
+    - rowserrcheck
+    - sloglint
+    - spancheck
+    - sqlclosecheck
+    - staticcheck
+    - tagalign
+    - testableexamples
+    - testifylint
+    - thelper
+    - tparallel
+    - unconvert
+    - unparam
+    - unused
+    - usestdlibvars
+    - wastedassign
+    - whitespace
+    - wrapcheck
+    - wsl
+    - zerologlint
+
+linters-settings:
+  funlen:
+    # Checks the number of lines in a function.
+    lines: 80
+    # Default: 40
+    statements: 50
+    ignore-comments: true
+
+  mnd:
+    ignored-numbers:
+      - '1'
+      - '2'
+      - '3'
+
+  lll:
+    line-length: 100
+
+formatters:
+  enable:
+    - gci
+    - gofmt
+    - gofumpt
+    - goimports
+    - golines
+
+issues:
+  exclude-rules:
+    - path: "_test\\.go"
+      linters:
+        - dupl
+        - funlen
+        - nestif
+        - lll
+
+    - path: 'example.*\.go'
+      linters:
+        - forbidigo
+        - lll
+
+run:
+  timeout: 5m
+
