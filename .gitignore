@@ -33,3 +33,4 @@ go.work.sum
  *.iml
 modules.xml
 vcs.xml
+workspace.xml
