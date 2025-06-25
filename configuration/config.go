@@ -18,6 +18,7 @@ type Configuration struct {
 	ReadTimeout    time.Duration
 	WriteTimeout   time.Duration
 	ContextTimeout time.Duration
+	PostgresDBName string
 	LogErrors      bool
 }
 

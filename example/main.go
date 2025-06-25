@@ -1,20 +1,15 @@
 package main
 
 import (
-	"context"
 	"database/sql"
 	"errors"
 	"fmt"
 	"log"
 	"log/slog"
 	"main/configuration"
-	"net/http"
+	"main/internal/repository/postgres"
 	"os"
-	"os/signal"
-	"syscall"
-	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
@@ -45,17 +40,13 @@ func main() {
 
 	slog.Info("Successfully connected to database")
 
-	router := setupRouter()
-
-	srv := &http.Server{
-		Addr:              cfg.ListenAddress,
-		Handler:           router,
-		ReadHeaderTimeout: cfg.ReadTimeout * time.Second,
-		ReadTimeout:       cfg.ReadTimeout * time.Second,
-		WriteTimeout:      cfg.WriteTimeout * time.Second,
+	repo := postgres.NewClasses(db)
+	resp, err := repo.GetCurrentMonthClasses()
+	if err != nil {
+		log.Fatal(err.Error())
 	}
 
-	runServer(srv, cfg)
+	fmt.Println(resp)
 }
 
 func loadConfig() (configuration.Configuration, error) {
@@ -84,39 +75,4 @@ func loadConfig() (configuration.Configuration, error) {
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
 
 	return cfg, nil
-}
-
-func setupRouter() *gin.Engine {
-	router := gin.Default()
-
-	_ = router.Group("/")
-
-	return router
-}
-
-func runServer(srv *http.Server, cfg configuration.Configuration) {
-	go func() {
-		slog.Info("Starting server...", slog.String("address", cfg.ListenAddress))
-
-		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			slog.Error("server error: %s\n", slog.String("err", err.Error()))
-			os.Exit(1)
-		}
-	}()
-
-	quit := make(chan os.Signal, 1)
-
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-
-	<-quit
-	slog.Info("Shutting down server...")
-
-	ctx, cancel := context.WithTimeout(context.Background(), cfg.ContextTimeout*time.Second)
-	defer cancel()
-
-	if err := srv.Shutdown(ctx); err != nil {
-		slog.Error("Server forced to shutdown", slog.String("err", err.Error()))
-	}
-
-	slog.Info("Server stopped")
 }

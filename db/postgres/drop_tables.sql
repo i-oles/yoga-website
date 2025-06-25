@@ -1,0 +1,3 @@
+DROP TABLE IF EXISTS practitioners;
+
+DROP TABLE IF EXISTS classes;

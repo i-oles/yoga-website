@@ -3,5 +3,6 @@
   "ReadTimeout": 5,
   "WriteTimeout": 10,
   "ContextTimeout": 5,
+  "PostgresDBName": "root",
   "LogErrors": true
 }
