@@ -3,30 +3,21 @@ package postgres
 import (
 	"database/sql"
 	"fmt"
-	"time"
+	"main/internal/repository"
 )
 
-type Class struct {
-	ID        int       `db:"id"`
-	Date      string    `db:"datetime"`
-	Day       time.Time `db:"day"`
-	Level     string    `db:"level"`
-	SpotsLeft int       `db:"spotsLeft"`
-	Place     string    `db:"place"`
-}
-
-type Classes struct {
+type ClassesRepo struct {
 	db       *sql.DB
 	collName string
 }
 
-func NewClasses(db *sql.DB) *Classes {
-	return &Classes{
+func NewClassesRepo(db *sql.DB) *ClassesRepo {
+	return &ClassesRepo{
 		db:       db,
 		collName: "classes"}
 }
 
-func (c Classes) GetCurrentMonthClasses() ([]Class, error) {
+func (c ClassesRepo) GetCurrentMonthClasses() ([]repository.Class, error) {
 	query := fmt.Sprintf("SELECT * FROM %s WHERE EXTRACT(YEAR FROM datetime) = EXTRACT(YEAR FROM current_date) AND EXTRACT(MONTH FROM datetime) = EXTRACT(MONTH FROM current_date);", c.collName)
 
 	rows, err := c.db.Query(query)
@@ -36,11 +27,11 @@ func (c Classes) GetCurrentMonthClasses() ([]Class, error) {
 
 	defer rows.Close()
 
-	classes := make([]Class, 0)
+	classes := make([]repository.Class, 0)
 
 	for rows.Next() {
-		class := Class{}
-		err = rows.Scan(&class.ID, &class.Date, &class.Day, &class.Level, &class.SpotsLeft, &class.Place)
+		class := repository.Class{}
+		err = rows.Scan(&class.ID, &class.Day, &class.Datetime, &class.Level, &class.Type, &class.SpotsLeft, &class.Place)
 		if err != nil {
 			return nil, err
 		}

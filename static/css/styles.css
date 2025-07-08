@@ -1,0 +1,37 @@
+button {
+    padding: 10px 20px;
+    font-size: 16px;
+    color: white;
+    background-color: #707070;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+button.pressed {
+    background-color: #cb9e73;
+}
+
+button:hover {
+    background-color: #333333;
+}
+
+button:disabled {
+    opacity: 0.3;
+    background-color: #6c757d;
+    cursor: not-allowed;
+}
+
+.class-container {
+    margin: 1rem 0;
+    padding: 1rem;
+    border: 1px solid #eee;
+    border-radius: 8px;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}

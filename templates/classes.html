@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>classes</title>
+    <script src="https://unpkg.com/htmx.org/dist/htmx.min.js"></script>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+<h1>classes</h1>
+<div>
+    {{ range .Classes }}
+    <div class="class-container">
+        <form id="form-{{ .ID }}">
+            {{ .Type }}
+            {{ .Level }}
+            {{ .Day }}
+            {{ .Datetime }}
+            {{ .Place }}
+            {{ .SpotsLeft }}
+
+            <div id="book-button-{{ .ID }}">
+                <button hx-post="/book-class"
+                        hx-swap="outerHTML"
+                        hx-target="#book-button-{{ .ID }}"
+                        hx-vals='{"id": "{{ .ID }}"}'
+                        hx-trigger="click">
+                    book
+                </button>
+            </div>
+            {{ end }}
+        </form>
+    </div>
+    {{ end }}
+</div>
+</body>
+</html>

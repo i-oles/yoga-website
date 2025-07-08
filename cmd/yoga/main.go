@@ -8,6 +8,8 @@ import (
 	"log"
 	"log/slog"
 	"main/configuration"
+	"main/internal/handler/classes"
+	"main/internal/repository/postgres"
 	"net/http"
 	"os"
 	"os/signal"
@@ -45,7 +47,7 @@ func main() {
 
 	slog.Info("Successfully connected to database")
 
-	router := setupRouter()
+	router := setupRouter(db)
 
 	srv := &http.Server{
 		Addr:              cfg.ListenAddress,
@@ -86,10 +88,14 @@ func loadConfig() (configuration.Configuration, error) {
 	return cfg, nil
 }
 
-func setupRouter() *gin.Engine {
+func setupRouter(db *sql.DB) *gin.Engine {
 	router := gin.Default()
 
-	_ = router.Group("/")
+	classesRepo := postgres.NewClassesRepo(db)
+	classesHandler := classes.NewHandler(classesRepo)
+
+	api := router.Group("/")
+	api.GET("/classes", classesHandler.Handle)
 
 	return router
 }
