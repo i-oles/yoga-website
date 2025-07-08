@@ -1,6 +1,7 @@
 package classes
 
 import (
+	"html/template"
 	"main/internal/repository"
 	"net/http"
 
@@ -18,8 +19,26 @@ func NewHandler(classesRepo repository.Classes) *ClassHandler {
 func (h *ClassHandler) Handle(c *gin.Context) {
 	classes, err := h.classesRepo.GetCurrentMonthClasses()
 	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 
+		return
 	}
 
-	c.HTML(http.StatusOK, "classes.html", classes)
+	classesMapping := map[string][]repository.Class{
+		"Classes": classes,
+	}
+
+	tmpl, err := template.ParseFiles("templates/classes.html")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+
+		return
+	}
+
+	err = tmpl.Execute(c.Writer, classesMapping)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+
+		return
+	}
 }

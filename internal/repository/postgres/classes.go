@@ -18,7 +18,7 @@ func NewClassesRepo(db *sql.DB) *ClassesRepo {
 }
 
 func (c ClassesRepo) GetCurrentMonthClasses() ([]repository.Class, error) {
-	query := fmt.Sprintf("SELECT * FROM %s WHERE EXTRACT(YEAR FROM datetime) = EXTRACT(YEAR FROM current_date) AND EXTRACT(MONTH FROM datetime) = EXTRACT(MONTH FROM current_date);", c.collName)
+	query := fmt.Sprintf("SELECT * FROM %s;", c.collName)
 
 	rows, err := c.db.Query(query)
 	if err != nil {
