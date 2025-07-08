@@ -94,8 +94,13 @@ func setupRouter(db *sql.DB) *gin.Engine {
 	classesRepo := postgres.NewClassesRepo(db)
 	classesHandler := classes.NewHandler(classesRepo)
 
+	router.Static("/static", "./static")
+	router.LoadHTMLGlob("templates/*")
 	api := router.Group("/")
-	api.GET("/classes", classesHandler.Handle)
+
+	{
+		api.GET("/classes", classesHandler.Handle)
+	}
 
 	return router
 }

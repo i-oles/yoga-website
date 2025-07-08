@@ -13,12 +13,12 @@
     {{ range .Classes }}
     <div class="class-container">
         <form id="form-{{ .ID }}">
-            {{ .Type }}
-            {{ .Level }}
-            {{ .Day }}
-            {{ .Datetime }}
-            {{ .Place }}
-            {{ .SpotsLeft }}
+            type: {{ .Type }}<br>
+            level: {{ .Level }}<br>
+            day: {{ .Day }}<br>
+            date: {{ .Datetime }}<br>
+            where: {{ .Place }}<br>
+            spots left: {{ .SpotsLeft }}<br>
 
             <div id="book-button-{{ .ID }}">
                 <button hx-post="/book-class"
