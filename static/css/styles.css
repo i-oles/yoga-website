@@ -1,6 +1,6 @@
 /* Reset i podstawowe style */
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Lato', sans-serif;
     line-height: 1.6;
     color: #333;
     max-width: 1200px;
@@ -21,7 +21,7 @@ div {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 20px;
-    padding: 20px;
+    padding: 10px;
 }
 
 /* Karty zajęć */
@@ -31,6 +31,7 @@ div {
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     padding: 20px;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
+    margin-left: 10px;
 }
 
 .class-container:hover {
@@ -43,21 +44,31 @@ div {
     font-size: 1.2rem;
     color: #3498db;
     display: block;
-    margin-bottom: 10px;
+    margin-bottom: 20px;
 }
 
 /* Przycisk rezerwacji */
 button {
-    background-color: #3498db;
-    color: white;
     border: none;
-    padding: 10px 20px;
+    padding: 10px 10px 10px 20px;
     border-radius: 5px;
+    text-align: left;
     cursor: pointer;
     font-size: 1rem;
-    margin-top: 15px;
-    width: 100%;
+    width: 50%;
     transition: background-color 0.3s ease;
+}
+
+.btn-cancel {
+    background-color: #dc425d;
+    color: white;
+    margin-top: -10px;
+}
+
+.btn-book {
+    margin-top: 10px;
+    background-color: #3498db;
+    color: white;
 }
 
 button:hover {
@@ -93,4 +104,30 @@ button:hover {
 
 .htmx-request.htmx-indicator {
     opacity: 1;
+}
+
+.form-input {
+    background-color: #fff;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    margin-top: 5px;
+    margin-bottom: 10px;
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+    box-sizing: border-box;
+}
+
+.form-input:focus {
+    border-color: #3498db;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+/* Responsywność */
+@media (max-width: 600px) {
+    .form-input {
+        padding: 8px;
+    }
 }

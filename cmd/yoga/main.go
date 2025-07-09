@@ -8,6 +8,7 @@ import (
 	"log"
 	"log/slog"
 	"main/configuration"
+	"main/internal/handler/book"
 	"main/internal/handler/classes"
 	"main/internal/repository/postgres"
 	"net/http"
@@ -94,12 +95,18 @@ func setupRouter(db *sql.DB) *gin.Engine {
 	classesRepo := postgres.NewClassesRepo(db)
 	classesHandler := classes.NewHandler(classesRepo)
 
+	bookHandler := book.NewHandler()
+
 	router.Static("/static", "./static")
 	router.LoadHTMLGlob("templates/*")
 	api := router.Group("/")
 
 	{
 		api.GET("/classes", classesHandler.Handle)
+	}
+
+	{
+		api.POST("/book", bookHandler.Handle)
 	}
 
 	return router

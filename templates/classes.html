@@ -13,22 +13,36 @@
     {{ range .Classes }}
     <div class="class-container">
         <form id="form-{{ .ID }}">
-            type: {{ .Type }}<br>
-            level: {{ .Level }}<br>
-            day: {{ .Day }}<br>
-            date: {{ .Datetime }}<br>
-            where: {{ .Place }}<br>
-            spots left: {{ .SpotsLeft }}<br>
-
+            <div id="class-info">
+                type: {{ .Type }}<br>
+                level: {{ .Level }}<br>
+                day: {{ .Day }}<br>
+                date: {{ .Datetime }}<br>
+                where: {{ .Place }}<br>
+                spots left: {{ .SpotsLeft }}<br>
+            </div>
             <div id="book-button-{{ .ID }}">
-                <button hx-post="/book-class"
+                <button class="btn-book"
+                        hx-post="/book"
                         hx-swap="outerHTML"
-                        hx-target="#book-button-{{ .ID }}"
+                        hx-target="#book-now"
                         hx-vals='{"id": "{{ .ID }}"}'
                         hx-trigger="click">
-                    book
+                    book now
                 </button>
             </div>
+            <div id="book-now"></div>
+            <div id="cancel-button-{{ .ID }}">
+                <button class="btn-cancel"
+                        hx-post="/cancel-class"
+                        hx-swap="outerHTML"
+                        hx-target="#cancel-booking"
+                        hx-vals='{"id": "{{ .ID }}"}'
+                        hx-trigger="click">
+                    cancel booking
+                </button>
+            </div>
+            <div id="cancel-booking"></div>
         </form>
     </div>
     {{ end }}

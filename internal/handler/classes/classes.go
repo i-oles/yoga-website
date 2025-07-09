@@ -1,22 +1,21 @@
 package classes
 
 import (
-	"html/template"
 	"main/internal/repository"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
-type ClassHandler struct {
+type Handler struct {
 	classesRepo repository.Classes
 }
 
-func NewHandler(classesRepo repository.Classes) *ClassHandler {
-	return &ClassHandler{classesRepo: classesRepo}
+func NewHandler(classesRepo repository.Classes) *Handler {
+	return &Handler{classesRepo: classesRepo}
 }
 
-func (h *ClassHandler) Handle(c *gin.Context) {
+func (h *Handler) Handle(c *gin.Context) {
 	classes, err := h.classesRepo.GetCurrentMonthClasses()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -28,17 +27,5 @@ func (h *ClassHandler) Handle(c *gin.Context) {
 		"Classes": classes,
 	}
 
-	tmpl, err := template.ParseFiles("templates/classes.html")
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-
-		return
-	}
-
-	err = tmpl.Execute(c.Writer, classesMapping)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-
-		return
-	}
+	c.HTML(http.StatusOK, "classes.html", classesMapping)
 }
