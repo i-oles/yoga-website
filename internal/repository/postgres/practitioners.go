@@ -3,11 +3,8 @@ package postgres
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 )
-
-var ErrPractitionerInsertFailed = errors.New("already exists")
 
 type PractitionersRepo struct {
 	db       *sql.DB
@@ -34,7 +31,7 @@ func (r *PractitionersRepo) Insert(
 	}
 
 	if exists {
-		return fmt.Errorf("practitioner with name '%s %s' %w in class %d", name, lastName, ErrPractitionerInsertFailed, classID)
+		return fmt.Errorf("'%s %s' already booked in this class", name, lastName)
 	}
 
 	query := fmt.Sprintf("INSERT INTO %s (class_id, name, last_name, email) VALUES ($1, $2, $3, $4);", r.collName)

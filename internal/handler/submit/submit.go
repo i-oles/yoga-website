@@ -1,11 +1,10 @@
 package submit
 
 import (
-	"errors"
 	"main/internal/repository"
-	"main/internal/repository/postgres"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -43,8 +42,13 @@ func (h *Handler) Handle(c *gin.Context) {
 		ctx, classID, name, lastName, email)
 
 	if err != nil {
-		if errors.As(err, &postgres.ErrPractitionerInsertFailed) {
-			c.HTML(http.StatusOK, "error.tmpl", gin.H{"ID": classID, "Error": err.Error()})
+		if strings.Contains(err.Error(), "already booked") {
+			c.HTML(http.StatusConflict, "book.tmpl", gin.H{
+				"ID":    classID,
+				"Error": err.Error(),
+			})
+
+			return
 		}
 
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

@@ -31,7 +31,6 @@
                     book now
                 </button>
             </div>
-            <div id="error-message-{{ .ID }}"></div>
             <div id="cancel-button-{{ .ID }}">
                 <button class="btn-cancel"
                         hx-post="/cancel-class"
@@ -47,5 +46,14 @@
     </div>
     {{ end }}
 </div>
+<script>
+    document.addEventListener('htmx:beforeSwap', function(event) {
+        // handle status 409 (Conflict) and 400 (Bad Request)
+        if ([409, 400].includes(event.detail.xhr.status)) {
+            event.detail.shouldSwap = true;  // force swap
+            event.detail.isError = false;    // treat as proper resp
+        }
+    });
+</script>
 </body>
 </html>
