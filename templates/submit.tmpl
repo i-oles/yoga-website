@@ -1,0 +1,10 @@
+<div id="book-button-{{ .ID }}">
+    <button class="btn-book"
+            hx-post="/book"
+            hx-swap="outerHTML"
+            hx-target="#book-button-{{ .ID }}"
+            hx-vals='{"id": "{{ .ID }}"}'
+            hx-trigger="click">
+        book now
+    </button>
+</div>

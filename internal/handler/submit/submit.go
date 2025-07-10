@@ -1,0 +1,56 @@
+package submit
+
+import (
+	"errors"
+	"main/internal/repository"
+	"main/internal/repository/postgres"
+	"net/http"
+	"strconv"
+
+	"github.com/gin-gonic/gin"
+)
+
+type Handler struct {
+	ClassesRepo       repository.Classes
+	PractitionersRepo repository.Practitioners
+}
+
+func NewHandler(
+	classesRepo repository.Classes,
+	practitionersRepo repository.Practitioners) *Handler {
+	return &Handler{
+		ClassesRepo:       classesRepo,
+		PractitionersRepo: practitionersRepo,
+	}
+}
+
+func (h *Handler) Handle(c *gin.Context) {
+	ctx := c.Request.Context()
+	classIDStr := c.PostForm("classID")
+
+	classID, err := strconv.Atoi(classIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+
+		return
+	}
+
+	name := c.PostForm("name")
+	lastName := c.PostForm("last_name")
+	email := c.PostForm("email")
+
+	err = h.PractitionersRepo.Insert(
+		ctx, classID, name, lastName, email)
+
+	if err != nil {
+		if errors.As(err, &postgres.ErrPractitionerInsertFailed) {
+			c.HTML(http.StatusOK, "error.tmpl", gin.H{"ID": classID, "Error": err.Error()})
+		}
+
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+
+		return
+	}
+
+	c.HTML(http.StatusOK, "submit.tmpl", gin.H{"ID": classID})
+}

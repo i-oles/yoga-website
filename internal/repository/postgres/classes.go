@@ -17,7 +17,7 @@ func NewClassesRepo(db *sql.DB) *ClassesRepo {
 		collName: "classes"}
 }
 
-func (c ClassesRepo) GetCurrentMonthClasses() ([]repository.Class, error) {
+func (c ClassesRepo) GetAll() ([]repository.Class, error) {
 	query := fmt.Sprintf("SELECT * FROM %s;", c.collName)
 
 	rows, err := c.db.Query(query)
@@ -40,4 +40,8 @@ func (c ClassesRepo) GetCurrentMonthClasses() ([]repository.Class, error) {
 	}
 
 	return classes, nil
+}
+
+func (c ClassesRepo) Update(update repository.UpdateClass) error {
+	return nil
 }

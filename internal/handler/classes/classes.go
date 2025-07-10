@@ -16,7 +16,7 @@ func NewHandler(classesRepo repository.Classes) *Handler {
 }
 
 func (h *Handler) Handle(c *gin.Context) {
-	classes, err := h.classesRepo.GetCurrentMonthClasses()
+	classes, err := h.classesRepo.GetAll()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 

@@ -1,17 +1,23 @@
-<div id="book-now">
-    <form id="booking-form" hx-post="/submit-booking" hx-target="#book-now" hx-swap="outerHTML">
-        <label for="name">First Name:</label>
-        <input type="text" id="name" name="name" required class="form-input">
+<div id="book-now-{{ .ID }}">
+    <form id="booking-form-{{ .ID }}"
+          hx-post="/submit"
+          hx-target="#book-now-{{ .ID }}"
+          hx-swap="outerHTML">
+        <input type="hidden" name="classID" value="{{ .ID }}">
 
-        <label for="lastname">Last Name:</label>
-        <input type="text" id="lastname" name="lastname" required class="form-input">
+        <label for="name-{{ .ID }}">First Name:</label>
+        <input type="text" id="name-{{ .ID }}" name="name" required class="form-input">
 
-        <label for="email">Email:</label>
-        <input type="email" id="email" name="email" required class="form-input">
+        <label for="lastname-{{ .ID }}">Last Name:</label>
+        <input type="text" id="lastname-{{ .ID }}" name="last_name" required class="form-input">
 
-        <label for="number">Phone Number:</label>
-        <input type="tel" id="number" name="number" required class="form-input">
+        <label for="email-{{ .ID }}">Email:</label>
+        <input type="email" id="email-{{ .ID }}" name="email" required class="form-input" pattern="[^@\s]+@[^@\s]+\.[^@\s]+"
+            title="Please enter a valid email address">
 
-        <button type="submit" class="btn-book">Submit Booking</button>
+        <button type="submit" class="btn-book">
+            <span class="submit-text">Submit Booking</span>
+            <span class="htmx-indicator">Processing...</span>
+        </button>
     </form>
 </div>

@@ -10,6 +10,7 @@ import (
 	"main/configuration"
 	"main/internal/handler/book"
 	"main/internal/handler/classes"
+	"main/internal/handler/submit"
 	"main/internal/repository/postgres"
 	"net/http"
 	"os"
@@ -93,9 +94,11 @@ func setupRouter(db *sql.DB) *gin.Engine {
 	router := gin.Default()
 
 	classesRepo := postgres.NewClassesRepo(db)
-	classesHandler := classes.NewHandler(classesRepo)
+	practitionersRepo := postgres.NewPractitionersRepo(db)
 
+	classesHandler := classes.NewHandler(classesRepo)
 	bookHandler := book.NewHandler()
+	submitHandler := submit.NewHandler(classesRepo, practitionersRepo)
 
 	router.Static("/static", "./static")
 	router.LoadHTMLGlob("templates/*")
@@ -107,6 +110,7 @@ func setupRouter(db *sql.DB) *gin.Engine {
 
 	{
 		api.POST("/book", bookHandler.Handle)
+		api.POST("/submit", submitHandler.Handle)
 	}
 
 	return router

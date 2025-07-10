@@ -14,5 +14,7 @@ func NewHandler() *Handler {
 }
 
 func (h *Handler) Handle(c *gin.Context) {
-	c.HTML(http.StatusOK, "book.tmpl", nil)
+	id := c.PostForm("id")
+
+	c.HTML(http.StatusOK, "book.tmpl", gin.H{"ID": id})
 }

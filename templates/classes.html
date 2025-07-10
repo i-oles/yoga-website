@@ -25,24 +25,24 @@
                 <button class="btn-book"
                         hx-post="/book"
                         hx-swap="outerHTML"
-                        hx-target="#book-now"
+                        hx-target="#book-button-{{ .ID }}"
                         hx-vals='{"id": "{{ .ID }}"}'
                         hx-trigger="click">
                     book now
                 </button>
             </div>
-            <div id="book-now"></div>
+            <div id="error-message-{{ .ID }}"></div>
             <div id="cancel-button-{{ .ID }}">
                 <button class="btn-cancel"
                         hx-post="/cancel-class"
                         hx-swap="outerHTML"
-                        hx-target="#cancel-booking"
+                        hx-target="#cancel-booking-{{ .ID }}"
                         hx-vals='{"id": "{{ .ID }}"}'
                         hx-trigger="click">
                     cancel booking
                 </button>
             </div>
-            <div id="cancel-booking"></div>
+            <div id="cancel-booking-{{ .ID }}"></div>
         </form>
     </div>
     {{ end }}
