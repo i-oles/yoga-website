@@ -78,6 +78,12 @@ button {
     margin-left: -10px;
 }
 
+.booking-success {
+    font-size: 12px;
+    color: green;
+    height: 20px;
+}
+
 button:hover {
     background-color: #2980b9;
 }

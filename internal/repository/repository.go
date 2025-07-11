@@ -27,6 +27,7 @@ type UpdateClass struct {
 
 type Classes interface {
 	GetAll() ([]Class, error)
+	Get(id int) (Class, error)
 }
 
 type Practitioners interface {

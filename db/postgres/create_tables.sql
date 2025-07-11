@@ -15,7 +15,6 @@ CREATE TABLE practitioners
 (
     id         bigserial PRIMARY KEY,
     class_id   bigint      NOT NULL,
-    nick       varchar,
     name       varchar     NOT NULL,
     last_name  varchar     NOT NULL,
     email      varchar     NOT NULL,

@@ -22,16 +22,17 @@ func (r *PractitionersRepo) Insert(
 	classID int,
 	name, lastName, email string,
 ) error {
+	//TODO two separate funcs
 	var exists bool
-	checkQuery := fmt.Sprintf(`SELECT EXISTS(SELECT 1 FROM %s WHERE class_id = $1 AND name = $2 AND last_name = $3 AND email = $4)`, r.collName)
+	checkQuery := fmt.Sprintf(`SELECT EXISTS(SELECT 1 FROM %s WHERE class_id = $1 AND email = $2)`, r.collName)
 
-	err := r.db.QueryRowContext(ctx, checkQuery, classID, name, lastName, email).Scan(&exists)
+	err := r.db.QueryRowContext(ctx, checkQuery, classID, email).Scan(&exists)
 	if err != nil {
 		return fmt.Errorf("failed to check existing practitioner: %w", err)
 	}
 
 	if exists {
-		return fmt.Errorf("'%s %s' already booked in this class", name, lastName)
+		return fmt.Errorf("'%s' already booked in this class", email)
 	}
 
 	query := fmt.Sprintf("INSERT INTO %s (class_id, name, last_name, email) VALUES ($1, $2, $3, $4);", r.collName)
