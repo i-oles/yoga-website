@@ -2,30 +2,38 @@ package submit
 
 import (
 	"errors"
+	"fmt"
 	"main/internal/generator"
 	"main/internal/repository"
+	"main/internal/sender"
 	"net/http"
 	"strconv"
-	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
 type Handler struct {
-	ClassesRepo       repository.Classes
-	PractitionersRepo repository.Practitioners
-	TokenGenerator    generator.Token
+	ClassesRepo          repository.Classes
+	ConfirmedBookingRepo repository.ConfirmedBookings
+	PendingBookingRepo   repository.PendingBookings
+	TokenGenerator       generator.Token
+	MessageSender        sender.Message
 }
 
 func NewHandler(
 	classesRepo repository.Classes,
-	practitionersRepo repository.Practitioners,
+	confirmedBookingsRepo repository.ConfirmedBookings,
+	pendingBookingRepo repository.PendingBookings,
 	tokenGenerator generator.Token,
+	messageSender sender.Message,
 ) *Handler {
 	return &Handler{
-		ClassesRepo:       classesRepo,
-		PractitionersRepo: practitionersRepo,
-		TokenGenerator:    tokenGenerator,
+		ClassesRepo:          classesRepo,
+		ConfirmedBookingRepo: confirmedBookingsRepo,
+		PendingBookingRepo:   pendingBookingRepo,
+		TokenGenerator:       tokenGenerator,
+		MessageSender:        messageSender,
 	}
 }
 
@@ -55,28 +63,44 @@ func (h *Handler) Handle(c *gin.Context) {
 	lastName := c.PostForm("last_name")
 	email := c.PostForm("email")
 
-	err = h.PractitionersRepo.Insert(ctx, classID, name, lastName, email)
+	token, err := h.TokenGenerator.Generate(32)
 	if err != nil {
-		if strings.Contains(err.Error(), "already booked") {
-			c.HTML(http.StatusConflict, "book.tmpl", gin.H{
-				"ID":    classID,
-				"Error": err.Error(),
-			})
-
-			return
-		}
-
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 
 		return
 	}
 
-	//err = h.ClassesRepo.Update(classID)
-	//if err != nil {
-	//	c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-	//
-	//	return
-	//}
+	expiry := time.Now().Add(24 * time.Hour)
+
+	pendingBooking := repository.PendingBooking{
+		ClassID:   classID,
+		Name:      name,
+		LastName:  lastName,
+		Email:     email,
+		Token:     token,
+		ExpiresAt: expiry,
+	}
+
+	err = h.PendingBookingRepo.Insert(ctx, pendingBooking)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+
+		return
+	}
+
+	bookingConfirmationData := sender.BookingConfirmationData{
+		RecipientEmail: email,
+		RecipientName:  name,
+		//TODO: move address to config
+		ConfirmationLink: fmt.Sprintf("localhost:8080/confirmation/%d?token=%s", classID, token),
+	}
+
+	err = h.MessageSender.SendConfirmationLink(bookingConfirmationData)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+
+		return
+	}
 
 	c.HTML(http.StatusOK, "submit.tmpl", gin.H{"ID": classID})
 }

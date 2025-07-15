@@ -1,8 +1,21 @@
 {
-  "ListenAddress": ":8080",
-  "ReadTimeout": 5,
-  "WriteTimeout": 10,
-  "ContextTimeout": 5,
-  "PostgresDBName": "root",
-  "LogErrors": true
+  "listenAddress": ":8080",
+  "readTimeout": 5,
+  "writeTimeout": 10,
+  "contextTimeout": 5,
+  "postgresDBName": "root",
+  "logErrors": true,
+  "emailSender": {
+    "host": "smtp.gmail.com",
+    "port": 587,
+    "user": "",
+    "password": "",
+    "fromName": "Igor"
+  },
+  "postgres": {
+    "dbName": "root",
+    "user": "",
+    "password": ""
+  }
 }
+

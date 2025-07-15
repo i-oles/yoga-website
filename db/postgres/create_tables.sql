@@ -11,19 +11,35 @@ CREATE TABLE classes
     place      varchar     NOT NULL
 );
 
-CREATE TABLE practitioners
+CREATE TABLE pending_bookings
+(
+    id         bigserial PRIMARY KEY,
+    class_id   bigint             NOT NULL,
+    email      varchar(60)        NOT NULL,
+    name       varchar(30)        NOT NULL,
+    last_name  varchar(40)        NOT NULL,
+    token      varchar(64) UNIQUE NOT NULL,
+    expires_at timestamp          NOT NULL,
+    created_at timestamp DEFAULT NOW()
+);
+
+CREATE TABLE confirmed_bookings
 (
     id         bigserial PRIMARY KEY,
     class_id   bigint      NOT NULL,
-    name       varchar     NOT NULL,
-    last_name  varchar     NOT NULL,
-    email      varchar     NOT NULL,
-    created_at timestamptz NOT NULL DEFAULT (now()),
-    updated_at timestamptz NOT NULL DEFAULT (now())
+    name       varchar(60)     NOT NULL,
+    last_name  varchar(30)     NOT NULL,
+    email      varchar(40)     NOT NULL,
+    created_at timestamp DEFAULT (now())
 );
 
 COMMENT ON COLUMN classes.spots_left IS 'must be positive';
 
-ALTER TABLE practitioners
+ALTER TABLE confirmed_bookings
     ADD FOREIGN KEY (class_id) REFERENCES classes (id);
 
+ALTER TABLE pending_bookings
+    ADD FOREIGN KEY (class_id) REFERENCES classes (id);
+
+CREATE UNIQUE INDEX idx_confirmed_bookings_unique
+    ON confirmed_bookings (class_id, email);

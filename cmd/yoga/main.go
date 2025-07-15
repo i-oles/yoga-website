@@ -8,10 +8,13 @@ import (
 	"log"
 	"log/slog"
 	"main/configuration"
+	"main/internal/generator/token"
 	"main/internal/handler/book"
 	"main/internal/handler/classes"
+	"main/internal/handler/confirmation"
 	"main/internal/handler/submit"
 	"main/internal/repository/postgres"
+	"main/internal/sender/email"
 	"net/http"
 	"os"
 	"os/signal"
@@ -19,7 +22,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
 
@@ -31,15 +33,16 @@ func main() {
 	}
 
 	connStr := fmt.Sprintf("dbname=%s user=%s password=%s host=localhost sslmode=disable",
-		cfg.PostgresDBName,
-		os.Getenv("POSTGRES_USER"),
-		os.Getenv("POSTGRES_PASSWORD"),
+		cfg.Postgres.DBName,
+		cfg.Postgres.User,
+		cfg.Postgres.Password,
 	)
 
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	defer db.Close()
 
 	err = db.Ping()
@@ -49,7 +52,7 @@ func main() {
 
 	slog.Info("Successfully connected to database")
 
-	router := setupRouter(db)
+	router := setupRouter(db, cfg)
 
 	srv := &http.Server{
 		Addr:              cfg.ListenAddress,
@@ -62,25 +65,10 @@ func main() {
 	runServer(srv, cfg)
 }
 
-func loadConfig() (configuration.Configuration, error) {
-	err := godotenv.Load()
+func loadConfig() (*configuration.Configuration, error) {
+	cfg, err := configuration.GetConfig("./config")
 	if err != nil {
-		slog.Info("No .env file found, using environment variables...")
-	}
-
-	postgresUser := os.Getenv("POSTGRES_USER")
-	postgresPassword := os.Getenv("POSTGRES_PASSWORD")
-	if postgresUser == "" || postgresPassword == "" {
-		return configuration.Configuration{},
-			errors.New("provide envs for postgres access")
-	}
-
-	var cfg configuration.Configuration
-
-	err = configuration.GetConfig("./config", &cfg)
-	if err != nil {
-		return configuration.Configuration{},
-			fmt.Errorf("error loading configuration: %w", err)
+		return nil, fmt.Errorf("error loading configuration: %w", err)
 	}
 
 	slog.Info(cfg.Pretty())
@@ -90,15 +78,31 @@ func loadConfig() (configuration.Configuration, error) {
 	return cfg, nil
 }
 
-func setupRouter(db *sql.DB) *gin.Engine {
+func setupRouter(db *sql.DB, cfg *configuration.Configuration) *gin.Engine {
 	router := gin.Default()
 
 	classesRepo := postgres.NewClassesRepo(db)
-	practitionersRepo := postgres.NewPractitionersRepo(db)
+	confirmedBookingsRepo := postgres.NewConfirmedBookingsRepo(db)
+	pendingBookingsRepo := postgres.NewPendingBookingsRepo(db)
+	tokenGenerator := token.NewGenerator()
+	emailSender := email.NewSender(
+		cfg.EmailSender.Host,
+		cfg.EmailSender.Port,
+		cfg.EmailSender.User,
+		cfg.EmailSender.Password,
+		cfg.EmailSender.FromName,
+	)
 
 	classesHandler := classes.NewHandler(classesRepo)
 	bookHandler := book.NewHandler()
-	submitHandler := submit.NewHandler(classesRepo, practitionersRepo)
+	submitHandler := submit.NewHandler(
+		classesRepo,
+		confirmedBookingsRepo,
+		pendingBookingsRepo,
+		tokenGenerator,
+		emailSender,
+	)
+	confirmationHandler := confirmation.NewHandler(confirmedBookingsRepo, pendingBookingsRepo)
 
 	router.Static("/static", "./static")
 	router.LoadHTMLGlob("templates/*")
@@ -107,16 +111,16 @@ func setupRouter(db *sql.DB) *gin.Engine {
 	{
 		api.GET("/classes", classesHandler.Handle)
 	}
-
 	{
 		api.POST("/book", bookHandler.Handle)
 		api.POST("/submit", submitHandler.Handle)
+		api.POST("/confirmation", confirmationHandler.Handle)
 	}
 
 	return router
 }
 
-func runServer(srv *http.Server, cfg configuration.Configuration) {
+func runServer(srv *http.Server, cfg *configuration.Configuration) {
 	go func() {
 		slog.Info("Starting server...", slog.String("address", cfg.ListenAddress))
 
