@@ -37,6 +37,9 @@ type ConfirmedBookings interface {
 
 type PendingBooking struct {
 	ClassID   int       `db:"class_id"`
+	ClassType string    `db:"class_type"`
+	Place     string    `db:"place"`
+	Date      time.Time `db:"date"`
 	Name      string    `db:"name"`
 	LastName  string    `db:"last_name"`
 	Email     string    `db:"email"`
@@ -47,6 +50,7 @@ type PendingBooking struct {
 type PendingBookings interface {
 	Insert(ctx context.Context, booking PendingBooking) error
 	Get(ctx context.Context, token string) (optional.Optional[PendingBooking], error)
+	Delete(ctx context.Context, token string) error
 }
 
 type Booking struct {

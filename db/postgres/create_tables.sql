@@ -15,6 +15,9 @@ CREATE TABLE pending_bookings
 (
     id         bigserial PRIMARY KEY,
     class_id   bigint             NOT NULL,
+    class_type varchar(60)        NOT NULL,
+    place      varchar(60)        NOT NULL,
+    date       timestamp          NOT NULL,
     email      varchar(60)        NOT NULL,
     name       varchar(30)        NOT NULL,
     last_name  varchar(40)        NOT NULL,
@@ -27,9 +30,9 @@ CREATE TABLE confirmed_bookings
 (
     id         bigserial PRIMARY KEY,
     class_id   bigint      NOT NULL,
-    name       varchar(60)     NOT NULL,
-    last_name  varchar(30)     NOT NULL,
-    email      varchar(40)     NOT NULL,
+    name       varchar(60) NOT NULL,
+    last_name  varchar(30) NOT NULL,
+    email      varchar(40) NOT NULL,
     created_at timestamp DEFAULT (now())
 );
 

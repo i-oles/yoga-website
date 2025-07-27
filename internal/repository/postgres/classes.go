@@ -55,7 +55,3 @@ func (c ClassesRepo) Get(id int) (repository.Class, error) {
 
 	return class, nil
 }
-
-func (c ClassesRepo) Update(update repository.UpdateClass) error {
-	return nil
-}

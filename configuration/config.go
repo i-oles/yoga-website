@@ -39,6 +39,7 @@ type Configuration struct {
 	Postgres       PostgresSettings
 	LogErrors      bool
 	EmailSender    EmailSenderSettings
+	DomainAddr     string
 }
 
 func (c *Configuration) Pretty() string {

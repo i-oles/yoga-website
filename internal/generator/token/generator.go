@@ -3,6 +3,7 @@ package token
 import (
 	"crypto/rand"
 	"encoding/base64"
+	"fmt"
 )
 
 type Generator struct{}
@@ -14,7 +15,7 @@ func NewGenerator() Generator {
 func (g Generator) Generate(length int) (string, error) {
 	b := make([]byte, length)
 	if _, err := rand.Read(b); err != nil {
-		return "", err
+		return "", fmt.Errorf("error generating token: %w", err)
 	}
 
 	return base64.URLEncoding.EncodeToString(b), nil

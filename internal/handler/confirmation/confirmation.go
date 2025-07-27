@@ -1,8 +1,10 @@
 package confirmation
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"main/internal/errs"
 	"main/internal/repository"
 	"net/http"
 
@@ -14,36 +16,58 @@ const (
 	recordExistsCode = "23505"
 )
 
+type confirmation struct {
+	classType string
+	date      string
+	hour      string
+	place     string
+}
+
 type Handler struct {
 	confirmedBookingsRepo repository.ConfirmedBookings
 	pendingBookingsRepo   repository.PendingBookings
+	errorHandler          errs.ErrorHandler
 }
 
 func NewHandler(
 	confirmedBookingsRepo repository.ConfirmedBookings,
 	pendingBookingsRepo repository.PendingBookings,
+	errorHandler errs.ErrorHandler,
 ) *Handler {
 	return &Handler{
 		confirmedBookingsRepo: confirmedBookingsRepo,
 		pendingBookingsRepo:   pendingBookingsRepo,
+		errorHandler:          errorHandler,
 	}
 }
 
 func (h *Handler) Handle(c *gin.Context) {
 	ctx := c.Request.Context()
-	token := c.PostForm("token")
+	token := c.Query("token")
 
-	bookingOpt, err := h.pendingBookingsRepo.Get(ctx, token)
+	confirmationData, err := h.confirmBooking(ctx, token)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		h.errorHandler.Handle(c, "err.tmpl", err)
 
 		return
 	}
 
-	if !bookingOpt.Exists() {
-		c.JSON(http.StatusNotFound, gin.H{"error": "invalid or expired confirmation link"})
+	c.HTML(http.StatusOK, "confirmation.tmpl", gin.H{
+		"classType": confirmationData.classType,
+		"place":     confirmationData.place,
+		"date":      confirmationData.date,
+		"hour":      confirmationData.hour,
+	})
+}
 
-		return
+func (h *Handler) confirmBooking(ctx context.Context, token string) (confirmation, error) {
+	bookingOpt, err := h.pendingBookingsRepo.Get(ctx, token)
+	if err != nil {
+		return confirmation{}, fmt.Errorf("error while getting pending booking: %w", err)
+	}
+
+	if !bookingOpt.Exists() {
+		return confirmation{}, errors.New("invalid or expired confirmation link")
 	}
 
 	booking := bookingOpt.Get()
@@ -57,20 +81,22 @@ func (h *Handler) Handle(c *gin.Context) {
 	)
 	if err != nil {
 		var pgErr *pq.Error
-		if errors.As(err, &pgErr) {
-			if pgErr.Code == recordExistsCode {
-				c.HTML(http.StatusConflict, "book.tmpl", gin.H{
-					"ID":    booking.ClassID,
-					"Error": fmt.Errorf("'%s' already booked in this class", booking.Email),
-				})
-
-				return
-			}
+		if errors.As(err, &pgErr) && pgErr.Code == recordExistsCode {
+			return confirmation{}, errs.ErrAlreadyBooked(booking.Email)
 		}
 
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-
-		return
+		return confirmation{}, fmt.Errorf("error while inserting booking: %w", err)
 	}
 
+	err = h.pendingBookingsRepo.Delete(ctx, token)
+	if err != nil {
+		return confirmation{}, fmt.Errorf("error while deleting pending booking: %w", err)
+	}
+
+	return confirmation{
+		classType: booking.ClassType,
+		date:      fmt.Sprintf("%d %s %d", booking.Date.Day(), booking.Date.Month(), booking.Date.Year()),
+		hour:      fmt.Sprintf("%d:%02d", booking.Date.Hour(), booking.Date.Minute()),
+		place:     booking.Place,
+	}, nil
 }

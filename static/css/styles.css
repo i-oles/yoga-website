@@ -81,7 +81,11 @@ button {
 .booking-success {
     font-size: 12px;
     color: green;
-    height: 20px;
+    height: 100px;
+}
+
+.text-gray {
+    color: gray;
 }
 
 button:hover {

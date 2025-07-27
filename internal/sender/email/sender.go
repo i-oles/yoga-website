@@ -26,7 +26,13 @@ type Sender struct {
 	FromName string
 }
 
-func NewSender(Host string, Port int, Username string, Password string, FromName string) *Sender {
+func NewSender(
+	Host string,
+	Port int,
+	Username string,
+	Password string,
+	FromName string,
+) *Sender {
 	return &Sender{
 		Host:     Host,
 		Port:     Port,
@@ -69,5 +75,6 @@ func (s Sender) SendConfirmationLink(data sender.BookingConfirmationData) error 
 	if err = d.DialAndSend(m); err != nil {
 		return fmt.Errorf("failed to send email: %w", err)
 	}
+
 	return nil
 }

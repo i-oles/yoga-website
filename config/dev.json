@@ -16,6 +16,6 @@
     "dbName": "root",
     "user": "",
     "password": ""
-  }
+  },
+  "domainAddr": "localhost:8080"
 }
-

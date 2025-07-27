@@ -8,6 +8,9 @@ import (
 	"log"
 	"log/slog"
 	"main/configuration"
+	"main/internal/errs"
+	"main/internal/errs/app"
+	log2 "main/internal/errs/log"
 	"main/internal/generator/token"
 	"main/internal/handler/book"
 	"main/internal/handler/classes"
@@ -93,6 +96,13 @@ func setupRouter(db *sql.DB, cfg *configuration.Configuration) *gin.Engine {
 		cfg.EmailSender.FromName,
 	)
 
+	var errorHandler errs.ErrorHandler
+
+	errorHandler = app.NewErrorHandler()
+	if cfg.LogErrors {
+		errorHandler = log2.NewErrorHandler(errorHandler)
+	}
+
 	classesHandler := classes.NewHandler(classesRepo)
 	bookHandler := book.NewHandler()
 	submitHandler := submit.NewHandler(
@@ -101,8 +111,11 @@ func setupRouter(db *sql.DB, cfg *configuration.Configuration) *gin.Engine {
 		pendingBookingsRepo,
 		tokenGenerator,
 		emailSender,
+		errorHandler,
+		cfg.DomainAddr,
 	)
-	confirmationHandler := confirmation.NewHandler(confirmedBookingsRepo, pendingBookingsRepo)
+
+	confirmationHandler := confirmation.NewHandler(confirmedBookingsRepo, pendingBookingsRepo, errorHandler)
 
 	router.Static("/static", "./static")
 	router.LoadHTMLGlob("templates/*")
@@ -110,11 +123,13 @@ func setupRouter(db *sql.DB, cfg *configuration.Configuration) *gin.Engine {
 
 	{
 		api.GET("/classes", classesHandler.Handle)
+		api.GET("/confirmation", confirmationHandler.Handle)
 	}
 	{
 		api.POST("/book", bookHandler.Handle)
 		api.POST("/submit", submitHandler.Handle)
 		api.POST("/confirmation", confirmationHandler.Handle)
+
 	}
 
 	return router

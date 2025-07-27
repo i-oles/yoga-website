@@ -1,8 +1,9 @@
 package submit
 
 import (
-	"errors"
+	"context"
 	"fmt"
+	"main/internal/errs"
 	"main/internal/generator"
 	"main/internal/repository"
 	"main/internal/sender"
@@ -19,6 +20,8 @@ type Handler struct {
 	PendingBookingRepo   repository.PendingBookings
 	TokenGenerator       generator.Token
 	MessageSender        sender.Message
+	ErrorHandler         errs.ErrorHandler
+	DomainAddr           string
 }
 
 func NewHandler(
@@ -27,6 +30,8 @@ func NewHandler(
 	pendingBookingRepo repository.PendingBookings,
 	tokenGenerator generator.Token,
 	messageSender sender.Message,
+	ErrorHandler errs.ErrorHandler,
+	domainAddr string,
 ) *Handler {
 	return &Handler{
 		ClassesRepo:          classesRepo,
@@ -34,6 +39,8 @@ func NewHandler(
 		PendingBookingRepo:   pendingBookingRepo,
 		TokenGenerator:       tokenGenerator,
 		MessageSender:        messageSender,
+		ErrorHandler:         ErrorHandler,
+		DomainAddr:           domainAddr,
 	}
 }
 
@@ -48,15 +55,27 @@ func (h *Handler) Handle(c *gin.Context) {
 		return
 	}
 
+	// TODO: this should take ctx
 	class, err := h.ClassesRepo.Get(classID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		h.ErrorHandler.Handle(c, "err.tmpl", err)
 
 		return
 	}
 
+	err = h.submitPendingBooking(ctx, c, class)
+	if err != nil {
+		h.ErrorHandler.Handle(c, "err.tmpl", err)
+
+		return
+	}
+
+	c.HTML(http.StatusOK, "submit.tmpl", gin.H{"ID": classID})
+}
+
+func (h *Handler) submitPendingBooking(ctx context.Context, c *gin.Context, class repository.Class) error {
 	if class.SpotsLeft == 0 {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": errors.New("this class is fully booked")})
+		return errs.ErrClassFullyBooked(fmt.Errorf("no spots left in class with id: %d", class.ID))
 	}
 
 	name := c.PostForm("name")
@@ -65,15 +84,16 @@ func (h *Handler) Handle(c *gin.Context) {
 
 	token, err := h.TokenGenerator.Generate(32)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-
-		return
+		return &errs.BookingError{Code: http.StatusInternalServerError, Message: err.Error()}
 	}
 
 	expiry := time.Now().Add(24 * time.Hour)
 
 	pendingBooking := repository.PendingBooking{
-		ClassID:   classID,
+		ClassID:   class.ID,
+		ClassType: class.Type,
+		Date:      class.Datetime,
+		Place:     class.Place,
 		Name:      name,
 		LastName:  lastName,
 		Email:     email,
@@ -83,24 +103,19 @@ func (h *Handler) Handle(c *gin.Context) {
 
 	err = h.PendingBookingRepo.Insert(ctx, pendingBooking)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-
-		return
+		return &errs.BookingError{Code: http.StatusInternalServerError, Message: err.Error()}
 	}
 
 	bookingConfirmationData := sender.BookingConfirmationData{
-		RecipientEmail: email,
-		RecipientName:  name,
-		//TODO: move address to config
-		ConfirmationLink: fmt.Sprintf("localhost:8080/confirmation/%d?token=%s", classID, token),
+		RecipientEmail:   email,
+		RecipientName:    name,
+		ConfirmationLink: fmt.Sprintf("%s/confirmation?token=%s", h.DomainAddr, token),
 	}
 
 	err = h.MessageSender.SendConfirmationLink(bookingConfirmationData)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-
-		return
+		return &errs.BookingError{Code: http.StatusInternalServerError, Message: err.Error()}
 	}
 
-	c.HTML(http.StatusOK, "submit.tmpl", gin.H{"ID": classID})
+	return nil
 }
