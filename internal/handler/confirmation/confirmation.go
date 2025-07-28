@@ -26,17 +26,20 @@ type confirmation struct {
 type Handler struct {
 	confirmedBookingsRepo repository.ConfirmedBookings
 	pendingBookingsRepo   repository.PendingBookings
+	classRepo             repository.Classes
 	errorHandler          errs.ErrorHandler
 }
 
 func NewHandler(
 	confirmedBookingsRepo repository.ConfirmedBookings,
 	pendingBookingsRepo repository.PendingBookings,
+	classRepo repository.Classes,
 	errorHandler errs.ErrorHandler,
 ) *Handler {
 	return &Handler{
 		confirmedBookingsRepo: confirmedBookingsRepo,
 		pendingBookingsRepo:   pendingBookingsRepo,
+		classRepo:             classRepo,
 		errorHandler:          errorHandler,
 	}
 }
@@ -91,6 +94,11 @@ func (h *Handler) confirmBooking(ctx context.Context, token string) (confirmatio
 	err = h.pendingBookingsRepo.Delete(ctx, token)
 	if err != nil {
 		return confirmation{}, fmt.Errorf("error while deleting pending booking: %w", err)
+	}
+
+	err = h.classRepo.DecrementSpotsLeft(booking.ClassID)
+	if err != nil {
+		return confirmation{}, fmt.Errorf("error while decrementing spots left: %w", err)
 	}
 
 	return confirmation{

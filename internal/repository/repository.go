@@ -16,19 +16,22 @@ type Class struct {
 	Place     string    `db:"place"`
 }
 
-type UpdateClass struct {
-	ID        int       `db:"id"`
-	Datetime  time.Time `db:"datetime"`
-	Day       string    `db:"day"`
-	Level     string    `db:"level"`
-	Type      string    `db:"type"`
-	SpotsLeft int       `db:"spotsLeft"`
-	Place     string    `db:"place"`
-}
+//TODO implement update class, and add swagger to easy update
+//type UpdateClass struct {
+//	ID        int                          `db:"id"`
+//	Datetime  optional.Optional[time.Time] `db:"datetime"`
+//	Day       optional.Optional[string]    `db:"day"`
+//	Level     optional.Optional[string]    `db:"level"`
+//	Type      optional.Optional[string]    `db:"type"`
+//	SpotsLeft optional.Optional[int]       `db:"spotsLeft"`
+//	Place     optional.Optional[string]    `db:"place"`
+//}
 
+// TODO: here should be ctx added
 type Classes interface {
 	GetAll() ([]Class, error)
 	Get(id int) (Class, error)
+	DecrementSpotsLeft(id int) error
 }
 
 type ConfirmedBookings interface {

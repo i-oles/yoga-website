@@ -115,7 +115,12 @@ func setupRouter(db *sql.DB, cfg *configuration.Configuration) *gin.Engine {
 		cfg.DomainAddr,
 	)
 
-	confirmationHandler := confirmation.NewHandler(confirmedBookingsRepo, pendingBookingsRepo, errorHandler)
+	confirmationHandler := confirmation.NewHandler(
+		confirmedBookingsRepo,
+		pendingBookingsRepo,
+		classesRepo,
+		errorHandler,
+	)
 
 	router.Static("/static", "./static")
 	router.LoadHTMLGlob("templates/*")

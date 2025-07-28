@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"main/internal/repository"
 )
@@ -54,4 +55,26 @@ func (c ClassesRepo) Get(id int) (repository.Class, error) {
 	}
 
 	return class, nil
+}
+
+func (c ClassesRepo) DecrementSpotsLeft(id int) error {
+	query := fmt.Sprintf(
+		"UPDATE %s SET spots_left = spots_left - 1 WHERE id = $1 AND spots_left > 0",
+		c.collName)
+
+	result, err := c.db.Exec(query, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return errors.New("no rows affected")
+	}
+
+	return nil
 }
