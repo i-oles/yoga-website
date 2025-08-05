@@ -46,3 +46,5 @@ ALTER TABLE pending_bookings
 
 CREATE UNIQUE INDEX idx_confirmed_bookings_unique
     ON confirmed_bookings (class_id, email);
+
+

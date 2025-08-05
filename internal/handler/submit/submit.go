@@ -7,6 +7,7 @@ import (
 	"main/internal/generator"
 	"main/internal/repository"
 	"main/internal/sender"
+	"math/rand"
 	"net/http"
 	"strconv"
 	"time"
@@ -86,6 +87,9 @@ func (h *Handler) submitPendingBooking(ctx context.Context, c *gin.Context, clas
 	if err != nil {
 		return &errs.BookingError{Code: http.StatusInternalServerError, Message: err.Error()}
 	}
+
+	token = fmt.Sprintf("olaf%d", rand.Int())
+	fmt.Printf("token: %s\n", token)
 
 	expiry := time.Now().Add(24 * time.Hour)
 

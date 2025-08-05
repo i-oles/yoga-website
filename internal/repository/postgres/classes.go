@@ -19,7 +19,7 @@ func NewClassesRepo(db *sql.DB) *ClassesRepo {
 }
 
 func (c ClassesRepo) GetAll() ([]repository.Class, error) {
-	query := fmt.Sprintf("SELECT * FROM %s;", c.collName)
+	query := fmt.Sprintf("SELECT * FROM %s ORDER BY id ASC;", c.collName)
 
 	rows, err := c.db.Query(query)
 	if err != nil {
@@ -61,6 +61,8 @@ func (c ClassesRepo) DecrementSpotsLeft(id int) error {
 	query := fmt.Sprintf(
 		"UPDATE %s SET spots_left = spots_left - 1 WHERE id = $1 AND spots_left > 0",
 		c.collName)
+
+	fmt.Println("debug - decrementing spot left for ", id)
 
 	result, err := c.db.Exec(query, id)
 	if err != nil {

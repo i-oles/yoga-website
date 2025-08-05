@@ -21,6 +21,11 @@
                 where: {{ .Place }}<br>
                 spots left: {{ .SpotsLeft }}<br>
             </div>
+            {{ if eq .SpotsLeft 0 }}
+            <div id="book-button-{{ .ID }}">
+                <button disabled>book now</button>
+            </div>
+            {{ else }}
             <div id="book-button-{{ .ID }}">
                 <button class="btn-book"
                         hx-post="/book"
@@ -31,6 +36,7 @@
                     book now
                 </button>
             </div>
+            {{ end }}
             <div id="cancel-button-{{ .ID }}">
                 <button class="btn-cancel"
                         hx-post="/cancel-class"

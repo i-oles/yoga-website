@@ -9,7 +9,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/lib/pq"
 )
 
 const (
@@ -75,26 +74,26 @@ func (h *Handler) confirmBooking(ctx context.Context, token string) (confirmatio
 
 	booking := bookingOpt.Get()
 
-	err = h.confirmedBookingsRepo.Insert(
-		ctx,
-		booking.ClassID,
-		booking.Name,
-		booking.LastName,
-		booking.Email,
-	)
-	if err != nil {
-		var pgErr *pq.Error
-		if errors.As(err, &pgErr) && pgErr.Code == recordExistsCode {
-			return confirmation{}, errs.ErrAlreadyBooked(booking.Email)
-		}
+	//err = h.confirmedBookingsRepo.Insert(
+	//	ctx,
+	//	booking.ClassID,
+	//	booking.Name,
+	//	booking.LastName,
+	//	booking.Email,
+	//)
+	//if err != nil {
+	//	var pgErr *pq.Error
+	//	if errors.As(err, &pgErr) && pgErr.Code == recordExistsCode {
+	//		return confirmation{}, errs.ErrAlreadyBooked(booking.Email)
+	//	}
+	//
+	//	return confirmation{}, fmt.Errorf("error while inserting booking: %w", err)
+	//}
 
-		return confirmation{}, fmt.Errorf("error while inserting booking: %w", err)
-	}
-
-	err = h.pendingBookingsRepo.Delete(ctx, token)
-	if err != nil {
-		return confirmation{}, fmt.Errorf("error while deleting pending booking: %w", err)
-	}
+	//err = h.pendingBookingsRepo.Delete(ctx, token)
+	//if err != nil {
+	//	return confirmation{}, fmt.Errorf("error while deleting pending booking: %w", err)
+	//}
 
 	err = h.classRepo.DecrementSpotsLeft(booking.ClassID)
 	if err != nil {
