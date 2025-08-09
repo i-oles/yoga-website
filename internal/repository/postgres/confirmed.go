@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"main/internal/repository"
+	"time"
 )
 
 type ConfirmedBookingsRepo struct {
@@ -13,20 +15,29 @@ type ConfirmedBookingsRepo struct {
 
 func NewConfirmedBookingsRepo(db *sql.DB) ConfirmedBookingsRepo {
 	return ConfirmedBookingsRepo{
-		db:       db,
+		db: db,
+		//TODO: move to config
 		collName: "confirmed_bookings"}
 }
 
 func (r ConfirmedBookingsRepo) Insert(
 	ctx context.Context,
-	classID int,
-	name, lastName, email string,
+	confirmedBooking repository.ConfirmedBooking,
 ) error {
-	query := fmt.Sprintf("INSERT INTO %s (class_id, name, last_name, email) VALUES ($1, $2, $3, $4);", r.collName)
+	query := fmt.Sprintf("INSERT INTO %s (id, class_id, first_name, last_name, email, created_at) VALUES ($1, $2, $3, $4, $5, $6);", r.collName)
 
-	_, err := r.db.ExecContext(ctx, query, classID, name, lastName, email)
+	_, err := r.db.ExecContext(
+		ctx,
+		query,
+		confirmedBooking.ID,
+		confirmedBooking.ClassID,
+		confirmedBooking.FirstName,
+		confirmedBooking.LastName,
+		confirmedBooking.Email,
+		time.Now(),
+	)
 	if err != nil {
-		return fmt.Errorf("insert booking: %w", err)
+		return fmt.Errorf("could not insert confirmed booking: %w", err)
 	}
 
 	return nil

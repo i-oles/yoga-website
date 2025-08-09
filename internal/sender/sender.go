@@ -1,10 +1,10 @@
 package sender
 
 type Message interface {
-	SendConfirmationLink(data BookingConfirmationData) error
+	SendConfirmationLink(data ConfirmationData) error
 }
 
-type BookingConfirmationData struct {
+type ConfirmationData struct {
 	RecipientEmail   string
 	RecipientName    string
 	ConfirmationLink string

@@ -1,4 +1,4 @@
-package submit
+package cancel
 
 import (
 	"context"
@@ -42,7 +42,7 @@ func NewHandler(
 		MessageSender:        messageSender,
 		ErrorHandler:         ErrorHandler,
 		DomainAddr:           domainAddr,
-		Operation:            repository.CreateBooking,
+		Operation:            repository.CancelBooking,
 	}
 }
 
@@ -65,7 +65,7 @@ func (h *Handler) Handle(c *gin.Context) {
 		return
 	}
 
-	err = h.submitPendingBooking(ctx, c, class)
+	err = h.submitCancelBookingOperation(ctx, c, class)
 	if err != nil {
 		h.ErrorHandler.Handle(c, "err.tmpl", err)
 
@@ -75,49 +75,43 @@ func (h *Handler) Handle(c *gin.Context) {
 	c.HTML(http.StatusOK, "submit.tmpl", gin.H{"ID": classID})
 }
 
-func (h *Handler) submitPendingBooking(ctx context.Context, c *gin.Context, class repository.Class) error {
-	if class.MaxCapacity == 0 {
-		return errs.ErrClassFullyBooked(fmt.Errorf("no spots left in class with id: %d", class.ID))
-	}
-
+func (h *Handler) submitCancelBookingOperation(ctx context.Context, c *gin.Context, class repository.Class) error {
 	firstName := c.PostForm("first_name")
-	lastName := c.PostForm("last_name")
 	email := c.PostForm("email")
 
-	authToken, err := h.TokenGenerator.Generate(32)
+	token, err := h.TokenGenerator.Generate(32)
 	if err != nil {
 		return &errs.BookingError{Code: http.StatusInternalServerError, Message: err.Error()}
 	}
 
-	//authToken = fmt.Sprintf("olaf%d", rand.Int())
-	//fmt.Printf("token: %s\n", authToken)
-	//
+	////TODO: remove - only for tests
+	//token = fmt.Sprintf("test%d", rand.Int())
+	//fmt.Printf("token: %s\n", token)
+
 	expiry := time.Now().Add(24 * time.Hour)
 
-	pendingBooking := repository.PendingOperation{
+	cancelPendingOperation := repository.PendingOperation{
 		ID:             uuid.New(),
 		ClassID:        class.ID,
-		Operation:      repository.CreateBooking,
+		Operation:      repository.CancelBooking,
 		Email:          email,
 		FirstName:      firstName,
-		LastName:       &lastName,
-		AuthToken:      authToken,
+		AuthToken:      token,
 		TokenExpiresAt: expiry,
-		CreatedAt:      time.Now(),
 	}
 
-	err = h.PendingBookingRepo.Insert(ctx, pendingBooking)
+	err = h.PendingBookingRepo.Insert(ctx, cancelPendingOperation)
 	if err != nil {
 		return &errs.BookingError{Code: http.StatusInternalServerError, Message: err.Error()}
 	}
 
-	bookingConfirmationData := sender.ConfirmationData{
+	cancelBookingConfirmationData := sender.ConfirmationData{
 		RecipientEmail:   email,
 		RecipientName:    firstName,
-		ConfirmationLink: fmt.Sprintf("%s/confirmation?auth_token=%s", h.DomainAddr, authToken),
+		ConfirmationLink: fmt.Sprintf("%s/confirmation?token=%s", h.DomainAddr, token),
 	}
 
-	err = h.MessageSender.SendConfirmationLink(bookingConfirmationData)
+	err = h.MessageSender.SendConfirmationLink(cancelBookingConfirmationData)
 	if err != nil {
 		return &errs.BookingError{Code: http.StatusInternalServerError, Message: err.Error()}
 	}

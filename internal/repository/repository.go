@@ -4,63 +4,69 @@ import (
 	"context"
 	"main/pkg/optional"
 	"time"
+
+	"github.com/google/uuid"
+)
+
+type ClassLevel string
+
+const (
+	beginner     ClassLevel = "beginner"
+	intermediate ClassLevel = "intermediate"
+	advanced     ClassLevel = "advanced"
 )
 
 type Class struct {
-	ID        int       `db:"id"`
-	Datetime  time.Time `db:"datetime"`
-	Day       string    `db:"day"`
-	Level     string    `db:"level"`
-	Type      string    `db:"type"`
-	SpotsLeft int       `db:"spotsLeft"`
-	Place     string    `db:"place"`
+	ID            uuid.UUID  `db:"id"`
+	DayOfWeek     string     `db:"day_of_week"`
+	StartTime     time.Time  `db:"start_time"`
+	ClassLevel    ClassLevel `db:"class_level"`
+	ClassCategory string     `db:"class_category"`
+	MaxCapacity   int        `db:"max_capacity"`
+	Location      string     `db:"location"`
 }
-
-//TODO implement update class, and add swagger to easy update
-//type UpdateClass struct {
-//	ID        int                          `db:"id"`
-//	Datetime  optional.Optional[time.Time] `db:"datetime"`
-//	Day       optional.Optional[string]    `db:"day"`
-//	Level     optional.Optional[string]    `db:"level"`
-//	Type      optional.Optional[string]    `db:"type"`
-//	SpotsLeft optional.Optional[int]       `db:"spotsLeft"`
-//	Place     optional.Optional[string]    `db:"place"`
-//}
 
 // TODO: here should be ctx added
 type Classes interface {
 	GetAll() ([]Class, error)
-	Get(id int) (Class, error)
-	DecrementSpotsLeft(id int) error
+	Get(id uuid.UUID) (Class, error)
+	DecrementMaxCapacity(id uuid.UUID) error
 }
 
-type ConfirmedBookings interface {
-	Insert(ctx context.Context, classID int, name, lastName, email string) error
-}
-
-type PendingBooking struct {
-	ClassID   int       `db:"class_id"`
-	ClassType string    `db:"class_type"`
-	Place     string    `db:"place"`
-	Date      time.Time `db:"date"`
-	Name      string    `db:"name"`
-	LastName  string    `db:"last_name"`
-	Email     string    `db:"email"`
-	Token     string    `db:"token"`
-	ExpiresAt time.Time `db:"expires_at"`
-}
-
-type PendingBookings interface {
-	Insert(ctx context.Context, booking PendingBooking) error
-	Get(ctx context.Context, token string) (optional.Optional[PendingBooking], error)
-	Delete(ctx context.Context, token string) error
-}
-
-type Booking struct {
-	ID        int       `db:"id"`
-	ClassID   int       `db:"class_id"`
-	Name      string    `db:"name"`
+type ConfirmedBooking struct {
+	ID        uuid.UUID `db:"id"`
+	ClassID   uuid.UUID `db:"class_id"`
+	FirstName string    `db:"first_name"`
 	LastName  string    `db:"last_name"`
 	Email     string    `db:"email"`
 	CreatedAt time.Time `db:"created_at"`
+}
+
+type ConfirmedBookings interface {
+	Insert(ctx context.Context, confirmedBooking ConfirmedBooking) error
+}
+
+type Operation string
+
+const (
+	CreateBooking Operation = "create_booking"
+	CancelBooking Operation = "cancel_booking"
+)
+
+type PendingOperation struct {
+	ID             uuid.UUID `db:"id"`
+	ClassID        uuid.UUID `db:"class_id"`
+	Operation      Operation `db:"operation"`
+	Email          string    `db:"email"`
+	FirstName      string    `db:"first_name"`
+	LastName       *string   `db:"last_name"`
+	AuthToken      string    `db:"auth_token"`
+	TokenExpiresAt time.Time `db:"token_expires_at"`
+	CreatedAt      time.Time `db:"created_at"`
+}
+
+type PendingBookings interface {
+	Insert(ctx context.Context, booking PendingOperation) error
+	Get(ctx context.Context, token string) (optional.Optional[PendingOperation], error)
+	Delete(ctx context.Context, token string) error
 }

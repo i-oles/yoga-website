@@ -14,14 +14,14 @@
     <div class="class-container">
         <form id="form-{{ .ID }}">
             <div id="class-info">
-                type: {{ .Type }}<br>
-                level: {{ .Level }}<br>
-                day: {{ .Day }}<br>
-                date: {{ .Datetime }}<br>
-                where: {{ .Place }}<br>
-                spots left: {{ .SpotsLeft }}<br>
+                category: {{ .ClassCategory }}<br>
+                class level: {{ .ClassLevel }}<br>
+                day: {{ .DayOfWeek }}<br>
+                date: {{ .StartTime }}<br>
+                where: {{ .Location }}<br>
+                spots left: {{ .MaxCapacity }}<br>
             </div>
-            {{ if eq .SpotsLeft 0 }}
+            {{ if eq .MaxCapacity 0 }}
             <div id="book-button-{{ .ID }}">
                 <button disabled>book now</button>
             </div>

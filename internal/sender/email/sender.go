@@ -42,7 +42,7 @@ func NewSender(
 	}
 }
 
-func (s Sender) SendConfirmationLink(data sender.BookingConfirmationData) error {
+func (s Sender) SendConfirmationLink(data sender.ConfirmationData) error {
 	d := gomail.NewDialer(s.Host, s.Port, s.Username, s.Password)
 	d.TLSConfig = &tls.Config{InsecureSkipVerify: true} // TODO: change to false in production
 

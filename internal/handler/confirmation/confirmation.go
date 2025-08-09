@@ -7,8 +7,11 @@ import (
 	"main/internal/errs"
 	"main/internal/repository"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"github.com/lib/pq"
 )
 
 const (
@@ -16,6 +19,7 @@ const (
 )
 
 type confirmation struct {
+	//TODO: change names
 	classType string
 	date      string
 	hour      string
@@ -45,9 +49,9 @@ func NewHandler(
 
 func (h *Handler) Handle(c *gin.Context) {
 	ctx := c.Request.Context()
-	token := c.Query("token")
+	authToken := c.Query("auth_token")
 
-	confirmationData, err := h.confirmBooking(ctx, token)
+	confirmationData, err := h.confirmBooking(ctx, authToken)
 	if err != nil {
 		h.errorHandler.Handle(c, "err.tmpl", err)
 
@@ -62,8 +66,8 @@ func (h *Handler) Handle(c *gin.Context) {
 	})
 }
 
-func (h *Handler) confirmBooking(ctx context.Context, token string) (confirmation, error) {
-	bookingOpt, err := h.pendingBookingsRepo.Get(ctx, token)
+func (h *Handler) confirmBooking(ctx context.Context, authToken string) (confirmation, error) {
+	bookingOpt, err := h.pendingBookingsRepo.Get(ctx, authToken)
 	if err != nil {
 		return confirmation{}, fmt.Errorf("error while getting pending booking: %w", err)
 	}
@@ -74,36 +78,46 @@ func (h *Handler) confirmBooking(ctx context.Context, token string) (confirmatio
 
 	booking := bookingOpt.Get()
 
-	//err = h.confirmedBookingsRepo.Insert(
-	//	ctx,
-	//	booking.ClassID,
-	//	booking.Name,
-	//	booking.LastName,
-	//	booking.Email,
-	//)
-	//if err != nil {
-	//	var pgErr *pq.Error
-	//	if errors.As(err, &pgErr) && pgErr.Code == recordExistsCode {
-	//		return confirmation{}, errs.ErrAlreadyBooked(booking.Email)
-	//	}
-	//
-	//	return confirmation{}, fmt.Errorf("error while inserting booking: %w", err)
-	//}
+	fmt.Println(booking.ClassID.String())
 
-	//err = h.pendingBookingsRepo.Delete(ctx, token)
-	//if err != nil {
-	//	return confirmation{}, fmt.Errorf("error while deleting pending booking: %w", err)
-	//}
+	confirmedBooking := repository.ConfirmedBooking{
+		ID:        uuid.New(),
+		ClassID:   booking.ClassID,
+		FirstName: booking.FirstName,
+		LastName:  *booking.LastName,
+		Email:     booking.Email,
+		CreatedAt: time.Now(),
+	}
 
-	err = h.classRepo.DecrementSpotsLeft(booking.ClassID)
+	err = h.confirmedBookingsRepo.Insert(ctx, confirmedBooking)
 	if err != nil {
-		return confirmation{}, fmt.Errorf("error while decrementing spots left: %w", err)
+		var pgErr *pq.Error
+		if errors.As(err, &pgErr) && pgErr.Code == recordExistsCode {
+			return confirmation{}, errs.ErrAlreadyBooked(booking.Email)
+		}
+
+		return confirmation{}, fmt.Errorf("error while inserting booking: %w", err)
+	}
+
+	err = h.pendingBookingsRepo.Delete(ctx, authToken)
+	if err != nil {
+		return confirmation{}, fmt.Errorf("error while deleting pending booking: %w", err)
+	}
+
+	err = h.classRepo.DecrementMaxCapacity(booking.ClassID)
+	if err != nil {
+		return confirmation{}, fmt.Errorf("error while decrementing class max capacity: %w", err)
+	}
+
+	class, err := h.classRepo.Get(booking.ClassID)
+	if err != nil {
+		return confirmation{}, fmt.Errorf("error while getting class: %w", err)
 	}
 
 	return confirmation{
-		classType: booking.ClassType,
-		date:      fmt.Sprintf("%d %s %d", booking.Date.Day(), booking.Date.Month(), booking.Date.Year()),
-		hour:      fmt.Sprintf("%d:%02d", booking.Date.Hour(), booking.Date.Minute()),
-		place:     booking.Place,
+		classType: class.ClassCategory,
+		date:      fmt.Sprintf("%d %s %d", class.StartTime.Day(), class.StartTime.Month(), class.StartTime.Year()),
+		hour:      fmt.Sprintf("%d:%02d", class.StartTime.Hour(), class.StartTime.Minute()),
+		place:     class.Location,
 	}, nil
 }

@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"main/internal/repository"
+
+	"github.com/google/uuid"
 )
 
 type ClassesRepo struct {
@@ -14,7 +16,8 @@ type ClassesRepo struct {
 
 func NewClassesRepo(db *sql.DB) *ClassesRepo {
 	return &ClassesRepo{
-		db:       db,
+		db: db,
+		//TODO: move to config
 		collName: "classes"}
 }
 
@@ -32,7 +35,15 @@ func (c ClassesRepo) GetAll() ([]repository.Class, error) {
 
 	for rows.Next() {
 		class := repository.Class{}
-		err = rows.Scan(&class.ID, &class.Day, &class.Datetime, &class.Level, &class.Type, &class.SpotsLeft, &class.Place)
+		err = rows.Scan(
+			&class.ID,
+			&class.DayOfWeek,
+			&class.StartTime,
+			&class.ClassLevel,
+			&class.ClassCategory,
+			&class.MaxCapacity,
+			&class.Location,
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -43,12 +54,18 @@ func (c ClassesRepo) GetAll() ([]repository.Class, error) {
 	return classes, nil
 }
 
-func (c ClassesRepo) Get(id int) (repository.Class, error) {
+func (c ClassesRepo) Get(id uuid.UUID) (repository.Class, error) {
 	query := fmt.Sprintf("SELECT * FROM %s WHERE id = $1;", c.collName)
 
 	var class repository.Class
 	err := c.db.QueryRow(query, id).Scan(
-		&class.ID, &class.Day, &class.Datetime, &class.Level, &class.Type, &class.SpotsLeft, &class.Place,
+		&class.ID,
+		&class.DayOfWeek,
+		&class.StartTime,
+		&class.ClassLevel,
+		&class.ClassCategory,
+		&class.MaxCapacity,
+		&class.Location,
 	)
 	if err != nil {
 		return repository.Class{}, err
@@ -57,12 +74,10 @@ func (c ClassesRepo) Get(id int) (repository.Class, error) {
 	return class, nil
 }
 
-func (c ClassesRepo) DecrementSpotsLeft(id int) error {
+func (c ClassesRepo) DecrementMaxCapacity(id uuid.UUID) error {
 	query := fmt.Sprintf(
-		"UPDATE %s SET spots_left = spots_left - 1 WHERE id = $1 AND spots_left > 0",
+		"UPDATE %s SET max_capacity = max_capacity - 1 WHERE id = $1 AND max_capacity > 0",
 		c.collName)
-
-	fmt.Println("debug - decrementing spot left for ", id)
 
 	result, err := c.db.Exec(query, id)
 	if err != nil {

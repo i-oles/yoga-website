@@ -9,36 +9,37 @@ import (
 	"main/pkg/optional"
 )
 
-type PendingBookingsRepo struct {
+type PendingOperationsRepo struct {
 	db       *sql.DB
 	collName string
 }
 
-func NewPendingBookingsRepo(db *sql.DB) *PendingBookingsRepo {
-	return &PendingBookingsRepo{
+func NewPendingOperationsRepo(db *sql.DB) *PendingOperationsRepo {
+	return &PendingOperationsRepo{
 		db:       db,
-		collName: "pending_bookings",
+		collName: "pending_operations",
 	}
 }
 
-func (r PendingBookingsRepo) Insert(
+func (r PendingOperationsRepo) Insert(
 	ctx context.Context,
-	pendingBooking repository.PendingBooking,
+	pendingOperation repository.PendingOperation,
 ) error {
-	query := fmt.Sprintf("INSERT INTO %s (class_id, class_type, place, date, token, name, last_name, email, expires_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);", r.collName)
+	query := fmt.Sprintf(
+		"INSERT INTO %s (id, class_id, operation, email, first_name, last_name, auth_token, token_expires_at, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);", r.collName)
 
 	_, err := r.db.ExecContext(
 		ctx,
 		query,
-		pendingBooking.ClassID,
-		pendingBooking.ClassType,
-		pendingBooking.Place,
-		pendingBooking.Date,
-		pendingBooking.Token,
-		pendingBooking.Name,
-		pendingBooking.LastName,
-		pendingBooking.Email,
-		pendingBooking.ExpiresAt,
+		pendingOperation.ID,
+		pendingOperation.ClassID,
+		pendingOperation.Operation,
+		pendingOperation.Email,
+		pendingOperation.FirstName,
+		pendingOperation.LastName,
+		pendingOperation.AuthToken,
+		pendingOperation.TokenExpiresAt,
+		pendingOperation.CreatedAt,
 	)
 	if err != nil {
 		return fmt.Errorf("insert pending booking: %w", err)
@@ -47,35 +48,38 @@ func (r PendingBookingsRepo) Insert(
 	return nil
 }
 
-func (r PendingBookingsRepo) Get(ctx context.Context, token string) (optional.Optional[repository.PendingBooking], error) {
-	var booking repository.PendingBooking
+func (r PendingOperationsRepo) Get(ctx context.Context, token string) (optional.Optional[repository.PendingOperation], error) {
+	var operation repository.PendingOperation
 
-	query := fmt.Sprintf("SELECT class_id, class_type, date, place, email, name, last_name FROM %s WHERE token = $1;", r.collName)
+	query := fmt.Sprintf("SELECT id, class_id, operation, email, first_name, last_name, auth_token, token_expires_at, created_at FROM %s WHERE auth_token = $1;", r.collName)
 
 	err := r.db.QueryRowContext(ctx, query, token).Scan(
-		&booking.ClassID,
-		&booking.ClassType,
-		&booking.Date,
-		&booking.Place,
-		&booking.Email,
-		&booking.Name,
-		&booking.LastName,
+		&operation.ID,
+		&operation.ClassID,
+		&operation.Operation,
+		&operation.Email,
+		&operation.FirstName,
+		&operation.LastName,
+		&operation.AuthToken,
+		&operation.TokenExpiresAt,
+		&operation.CreatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return optional.Empty[repository.PendingBooking](), fmt.Errorf("pending booking does not exists in database: %w", err)
+			return optional.Empty[repository.PendingOperation](), fmt.Errorf("pending operation does not exists in database: %w", err)
 		}
 
-		return optional.Empty[repository.PendingBooking](), fmt.Errorf("failed while getting pending booking: %w", err)
+		return optional.Empty[repository.PendingOperation](), fmt.Errorf("failed while getting pending operation: %w", err)
 	}
 
-	return optional.Of(booking), nil
+	return optional.Of(operation), nil
 }
 
-func (r PendingBookingsRepo) Delete(ctx context.Context, token string) error {
-	query := fmt.Sprintf("DELETE FROM %s WHERE token = $1;", r.collName)
+// TODO: here should delete(ctx, id) not token ??
+func (r PendingOperationsRepo) Delete(ctx context.Context, authToken string) error {
+	query := fmt.Sprintf("DELETE FROM %s WHERE auth_token = $1;", r.collName)
 
-	_, err := r.db.ExecContext(ctx, query, token)
+	_, err := r.db.ExecContext(ctx, query, authToken)
 	if err != nil {
 		return fmt.Errorf("delete pending booking: %w", err)
 	}

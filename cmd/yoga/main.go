@@ -86,7 +86,7 @@ func setupRouter(db *sql.DB, cfg *configuration.Configuration) *gin.Engine {
 
 	classesRepo := postgres.NewClassesRepo(db)
 	confirmedBookingsRepo := postgres.NewConfirmedBookingsRepo(db)
-	pendingBookingsRepo := postgres.NewPendingBookingsRepo(db)
+	pendingBookingsRepo := postgres.NewPendingOperationsRepo(db)
 	tokenGenerator := token.NewGenerator()
 	emailSender := email.NewSender(
 		cfg.EmailSender.Host,
