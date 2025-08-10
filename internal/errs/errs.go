@@ -24,7 +24,7 @@ type BookingError struct {
 }
 
 func ErrAlreadyBooked(email string) *BookingError {
-	return &BookingError{Code: http.StatusConflict, Message: "booking for email: " + email + " already exists in this class"}
+	return &BookingError{Code: http.StatusConflict, Message: "confirmation for email: " + email + " already exists in this class"}
 }
 
 func ErrClassFullyBooked(err error) *BookingError {

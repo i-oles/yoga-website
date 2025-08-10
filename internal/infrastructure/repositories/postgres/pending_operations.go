@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"main/internal/repository"
+	"main/internal/domain/models"
 	"main/pkg/optional"
 )
 
@@ -23,7 +23,7 @@ func NewPendingOperationsRepo(db *sql.DB) *PendingOperationsRepo {
 
 func (r PendingOperationsRepo) Insert(
 	ctx context.Context,
-	pendingOperation repository.PendingOperation,
+	pendingOperation models.PendingOperation,
 ) error {
 	query := fmt.Sprintf(
 		"INSERT INTO %s (id, class_id, operation, email, first_name, last_name, auth_token, token_expires_at, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);", r.collName)
@@ -42,14 +42,14 @@ func (r PendingOperationsRepo) Insert(
 		pendingOperation.CreatedAt,
 	)
 	if err != nil {
-		return fmt.Errorf("insert pending booking: %w", err)
+		return fmt.Errorf("insert pending confirmation: %w", err)
 	}
 
 	return nil
 }
 
-func (r PendingOperationsRepo) Get(ctx context.Context, token string) (optional.Optional[repository.PendingOperation], error) {
-	var operation repository.PendingOperation
+func (r PendingOperationsRepo) Get(ctx context.Context, token string) (optional.Optional[models.PendingOperation], error) {
+	var operation models.PendingOperation
 
 	query := fmt.Sprintf("SELECT id, class_id, operation, email, first_name, last_name, auth_token, token_expires_at, created_at FROM %s WHERE auth_token = $1;", r.collName)
 
@@ -66,10 +66,10 @@ func (r PendingOperationsRepo) Get(ctx context.Context, token string) (optional.
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return optional.Empty[repository.PendingOperation](), fmt.Errorf("pending operation does not exists in database: %w", err)
+			return optional.Empty[models.PendingOperation](), fmt.Errorf("pending operation does not exists in database: %w", err)
 		}
 
-		return optional.Empty[repository.PendingOperation](), fmt.Errorf("failed while getting pending operation: %w", err)
+		return optional.Empty[models.PendingOperation](), fmt.Errorf("failed while getting pending operation: %w", err)
 	}
 
 	return optional.Of(operation), nil
@@ -81,7 +81,7 @@ func (r PendingOperationsRepo) Delete(ctx context.Context, authToken string) err
 
 	_, err := r.db.ExecContext(ctx, query, authToken)
 	if err != nil {
-		return fmt.Errorf("delete pending booking: %w", err)
+		return fmt.Errorf("delete pending confirmation: %w", err)
 	}
 
 	return nil

@@ -8,15 +8,20 @@ import (
 	"log"
 	"log/slog"
 	"main/configuration"
+	"main/internal/api/handlers/book"
+	"main/internal/api/handlers/classes"
+	confirmationCancel "main/internal/api/handlers/confirmation/cancel"
+	confirmationCreate "main/internal/api/handlers/confirmation/create"
+	pendingCancel "main/internal/api/handlers/pending/cancel"
+	pendingCreate "main/internal/api/handlers/pending/create"
+	classesService "main/internal/domain/services/classes"
+	"main/internal/domain/services/confirmation"
+	"main/internal/domain/services/pending"
 	"main/internal/errs"
 	"main/internal/errs/app"
 	log2 "main/internal/errs/log"
 	"main/internal/generator/token"
-	"main/internal/handler/book"
-	"main/internal/handler/classes"
-	"main/internal/handler/confirmation"
-	"main/internal/handler/submit"
-	"main/internal/repository/postgres"
+	"main/internal/infrastructure/repositories/postgres"
 	"main/internal/sender/email"
 	"net/http"
 	"os"
@@ -86,7 +91,8 @@ func setupRouter(db *sql.DB, cfg *configuration.Configuration) *gin.Engine {
 
 	classesRepo := postgres.NewClassesRepo(db)
 	confirmedBookingsRepo := postgres.NewConfirmedBookingsRepo(db)
-	pendingBookingsRepo := postgres.NewPendingOperationsRepo(db)
+	pendingOperationsRepo := postgres.NewPendingOperationsRepo(db)
+
 	tokenGenerator := token.NewGenerator()
 	emailSender := email.NewSender(
 		cfg.EmailSender.Host,
@@ -96,6 +102,16 @@ func setupRouter(db *sql.DB, cfg *configuration.Configuration) *gin.Engine {
 		cfg.EmailSender.FromName,
 	)
 
+	classesService := classesService.New(classesRepo)
+	confirmationService := confirmation.New(classesRepo, confirmedBookingsRepo, pendingOperationsRepo)
+	pendingOperationsService := pending.New(
+		classesRepo,
+		pendingOperationsRepo,
+		tokenGenerator,
+		emailSender,
+		cfg.DomainAddr,
+	)
+
 	var errorHandler errs.ErrorHandler
 
 	errorHandler = app.NewErrorHandler()
@@ -103,22 +119,24 @@ func setupRouter(db *sql.DB, cfg *configuration.Configuration) *gin.Engine {
 		errorHandler = log2.NewErrorHandler(errorHandler)
 	}
 
-	classesHandler := classes.NewHandler(classesRepo)
+	classesHandler := classes.NewHandler(classesService)
 	bookHandler := book.NewHandler()
-	submitHandler := submit.NewHandler(
-		classesRepo,
-		confirmedBookingsRepo,
-		pendingBookingsRepo,
-		tokenGenerator,
-		emailSender,
+	pendingCreateHandler := pendingCreate.NewHandler(
+		pendingOperationsService,
 		errorHandler,
-		cfg.DomainAddr,
+	)
+	pendingCancelHandler := pendingCancel.NewHandler(
+		pendingOperationsService,
+		errorHandler,
 	)
 
-	confirmationHandler := confirmation.NewHandler(
-		confirmedBookingsRepo,
-		pendingBookingsRepo,
-		classesRepo,
+	confirmationCreateHandler := confirmationCreate.NewHandler(
+		confirmationService,
+		errorHandler,
+	)
+
+	confirmationCancelHandler := confirmationCancel.NewHandler(
+		confirmationService,
 		errorHandler,
 	)
 
@@ -128,12 +146,13 @@ func setupRouter(db *sql.DB, cfg *configuration.Configuration) *gin.Engine {
 
 	{
 		api.GET("/classes", classesHandler.Handle)
-		api.GET("/confirmation", confirmationHandler.Handle)
+		api.GET("/confirmation/create_booking", confirmationCreateHandler.Handle)
+		api.GET("/confirmation/cancel_booking", confirmationCancelHandler.Handle)
 	}
 	{
 		api.POST("/book", bookHandler.Handle)
-		api.POST("/submit", submitHandler.Handle)
-		api.POST("/confirmation", confirmationHandler.Handle)
+		api.POST("/pending_operation/:class_id/create_booking", pendingCreateHandler.Handle)
+		api.POST("/pending_operation/:class_id/cancel_booking", pendingCancelHandler.Handle)
 
 	}
 

@@ -1,10 +1,11 @@
 package postgres
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
-	"main/internal/repository"
+	"main/internal/domain/models"
 
 	"github.com/google/uuid"
 )
@@ -21,20 +22,20 @@ func NewClassesRepo(db *sql.DB) *ClassesRepo {
 		collName: "classes"}
 }
 
-func (c ClassesRepo) GetAll() ([]repository.Class, error) {
+func (c ClassesRepo) GetAllClasses(ctx context.Context) ([]models.Class, error) {
 	query := fmt.Sprintf("SELECT * FROM %s ORDER BY id ASC;", c.collName)
 
-	rows, err := c.db.Query(query)
+	rows, err := c.db.QueryContext(ctx, query)
 	if err != nil {
 		return nil, err
 	}
 
 	defer rows.Close()
 
-	classes := make([]repository.Class, 0)
+	classes := make([]models.Class, 0)
 
 	for rows.Next() {
-		class := repository.Class{}
+		class := models.Class{}
 		err = rows.Scan(
 			&class.ID,
 			&class.DayOfWeek,
@@ -54,11 +55,11 @@ func (c ClassesRepo) GetAll() ([]repository.Class, error) {
 	return classes, nil
 }
 
-func (c ClassesRepo) Get(id uuid.UUID) (repository.Class, error) {
+func (c ClassesRepo) Get(ctx context.Context, id uuid.UUID) (models.Class, error) {
 	query := fmt.Sprintf("SELECT * FROM %s WHERE id = $1;", c.collName)
 
-	var class repository.Class
-	err := c.db.QueryRow(query, id).Scan(
+	var class models.Class
+	err := c.db.QueryRowContext(ctx, query, id).Scan(
 		&class.ID,
 		&class.DayOfWeek,
 		&class.StartTime,
@@ -68,18 +69,41 @@ func (c ClassesRepo) Get(id uuid.UUID) (repository.Class, error) {
 		&class.Location,
 	)
 	if err != nil {
-		return repository.Class{}, err
+		return models.Class{}, err
 	}
 
 	return class, nil
 }
 
-func (c ClassesRepo) DecrementMaxCapacity(id uuid.UUID) error {
+func (c ClassesRepo) DecrementMaxCapacity(ctx context.Context, id uuid.UUID) error {
 	query := fmt.Sprintf(
 		"UPDATE %s SET max_capacity = max_capacity - 1 WHERE id = $1 AND max_capacity > 0",
 		c.collName)
 
-	result, err := c.db.Exec(query, id)
+	result, err := c.db.ExecContext(ctx, query, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return errors.New("no rows affected")
+	}
+
+	return nil
+}
+
+func (c ClassesRepo) IncrementMaxCapacity(ctx context.Context, id uuid.UUID) error {
+	query := fmt.Sprintf(
+		//TODO: check this query
+		"UPDATE %s SET max_capacity = max_capacity + 1 WHERE id = $1 AND max_capacity < max_capacity",
+		c.collName)
+
+	result, err := c.db.ExecContext(ctx, query, id)
 	if err != nil {
 		return err
 	}
