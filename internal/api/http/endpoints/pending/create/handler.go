@@ -11,12 +11,12 @@ import (
 )
 
 type Handler struct {
-	ServicePendingOperations services.IServicePendingOperations
+	ServicePendingOperations services.IPendingOperationsService
 	ErrorHandler             handler.IErrorHandler
 }
 
 func NewHandler(
-	servicePendingOperations services.IServicePendingOperations,
+	servicePendingOperations services.IPendingOperationsService,
 	ErrorHandler handler.IErrorHandler,
 ) *Handler {
 	return &Handler{

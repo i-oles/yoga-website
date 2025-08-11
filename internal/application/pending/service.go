@@ -18,16 +18,16 @@ import (
 type Service struct {
 	ClassesRepo           repositories.Classes
 	PendingOperationsRepo repositories.PendingOperations
-	TokenGenerator        services.Token
-	MessageSender         services.Message
+	TokenGenerator        services.ITokenGenerator
+	MessageSender         services.ISender
 	DomainAddr            string
 }
 
 func New(
 	classesRepo repositories.Classes,
 	pendingOperationsRepo repositories.PendingOperations,
-	tokenGenerator services.Token,
-	messageSender services.Message,
+	tokenGenerator services.ITokenGenerator,
+	messageSender services.ISender,
 	domainAddr string,
 ) *Service {
 	return &Service{

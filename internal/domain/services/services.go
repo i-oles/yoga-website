@@ -7,24 +7,24 @@ import (
 	"github.com/google/uuid"
 )
 
-type IServiceClasses interface {
+type IClassesService interface {
 	GetAllClasses(ctx context.Context) ([]models.Class, error)
 }
 
-type IServicePendingOperations interface {
+type IPendingOperationsService interface {
 	CreateBooking(ctx context.Context, createParams models.CreateParams) (uuid.UUID, error)
 	CancelBooking(ctx context.Context, cancelParams models.CancelParams) (uuid.UUID, error)
 }
 
-type IServiceConfirmation interface {
+type IConfirmationService interface {
 	CreateBooking(ctx context.Context, token string) (models.Class, error)
 	CancelBooking(ctx context.Context, token string) (models.Class, error)
 }
 
-type Token interface {
+type ITokenGenerator interface {
 	Generate(length int) (string, error)
 }
 
-type Message interface {
+type ISender interface {
 	SendConfirmationLink(params models.ConfirmationMsgParams) error
 }
