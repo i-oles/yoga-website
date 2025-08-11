@@ -1,18 +1,18 @@
-package log
+package wrapper
 
 import (
 	"log/slog"
-	"main/internal/api/http/err"
+	"main/internal/api/http/err/handler"
 
 	"github.com/gin-gonic/gin"
 )
 
 type ErrorHandler struct {
-	errorHandler err.ErrorHandler
+	errorHandler handler.IErrorHandler
 }
 
 func NewErrorHandler(
-	errorHandler err.ErrorHandler,
+	errorHandler handler.IErrorHandler,
 ) ErrorHandler {
 	return ErrorHandler{
 		errorHandler: errorHandler,

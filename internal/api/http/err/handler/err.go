@@ -1,4 +1,4 @@
-package err
+package handler
 
 import (
 	"errors"
@@ -7,6 +7,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 )
+
+type IErrorHandler interface {
+	Handle(ctx *gin.Context, tmplName string, err error)
+}
 
 type ErrorHandler struct{}
 

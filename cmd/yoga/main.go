@@ -11,14 +11,13 @@ import (
 	"main/internal/api/http/classes"
 	confirmationCancel "main/internal/api/http/confirmation/cancel"
 	confirmationCreate "main/internal/api/http/confirmation/create"
-	"main/internal/api/http/err"
-	log2 "main/internal/api/http/log"
+	"main/internal/api/http/err/handler"
+	logWrapper "main/internal/api/http/err/wrapper"
 	pendingCancel "main/internal/api/http/pending/cancel"
 	pendingCreate "main/internal/api/http/pending/create"
 	classesService "main/internal/application/classes"
 	"main/internal/application/confirmation"
 	"main/internal/application/pendingoperations"
-	"main/internal/errs"
 	"main/internal/infrastructure/configuration"
 	"main/internal/infrastructure/generator/token"
 	"main/internal/infrastructure/repository/postgres"
@@ -112,11 +111,11 @@ func setupRouter(db *sql.DB, cfg *configuration.Configuration) *gin.Engine {
 		cfg.DomainAddr,
 	)
 
-	var errorHandler errs.ErrorHandler
+	var errorHandler handler.IErrorHandler
 
-	errorHandler = err.NewErrorHandler()
+	errorHandler = handler.NewErrorHandler()
 	if cfg.LogErrors {
-		errorHandler = log2.NewErrorHandler(errorHandler)
+		errorHandler = logWrapper.NewErrorHandler(errorHandler)
 	}
 
 	classesHandler := classes.NewHandler(classesService)
@@ -140,8 +139,8 @@ func setupRouter(db *sql.DB, cfg *configuration.Configuration) *gin.Engine {
 		errorHandler,
 	)
 
-	router.Static("/static", "./static")
-	router.LoadHTMLGlob("templates/*")
+	router.Static("web/static", "./web/static")
+	router.LoadHTMLGlob("web/templates/*")
 	api := router.Group("/")
 
 	{

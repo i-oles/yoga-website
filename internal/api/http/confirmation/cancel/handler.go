@@ -2,7 +2,7 @@ package cancel
 
 import (
 	"fmt"
-	errs2 "main/internal/domain/errs"
+	"main/internal/api/http/err/handler"
 	"main/internal/domain/services"
 	"net/http"
 
@@ -20,12 +20,12 @@ type confirmation struct {
 
 type Handler struct {
 	serviceConfirmation services.IServiceConfirmation
-	errorHandler        errs2.ErrorHandler
+	errorHandler        handler.IErrorHandler
 }
 
 func NewHandler(
 	serviceConfirmation services.IServiceConfirmation,
-	errorHandler errs2.ErrorHandler,
+	errorHandler handler.IErrorHandler,
 ) *Handler {
 	return &Handler{
 		serviceConfirmation: serviceConfirmation,

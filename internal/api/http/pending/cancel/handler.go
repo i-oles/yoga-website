@@ -1,9 +1,9 @@
 package cancel
 
 import (
+	"main/internal/api/http/err/handler"
 	"main/internal/domain/models"
 	"main/internal/domain/services"
-	"main/internal/errs"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -12,12 +12,12 @@ import (
 
 type Handler struct {
 	ServicePendingOperations services.IServicePendingOperations
-	ErrorHandler             errs.ErrorHandler
+	ErrorHandler             handler.IErrorHandler
 }
 
 func NewHandler(
 	servicePendingOperations services.IServicePendingOperations,
-	errorHandler errs.ErrorHandler,
+	errorHandler handler.IErrorHandler,
 ) *Handler {
 	return &Handler{
 		ServicePendingOperations: servicePendingOperations,
