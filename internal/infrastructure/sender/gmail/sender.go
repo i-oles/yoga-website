@@ -19,11 +19,12 @@ type templateData struct {
 }
 
 type Sender struct {
-	Host     string
-	Port     int
-	Username string
-	Password string
-	FromName string
+	Host          string
+	Port          int
+	Username      string
+	Password      string
+	FromName      string
+	TemplatesPath string
 }
 
 func NewSender(
@@ -32,13 +33,15 @@ func NewSender(
 	Username string,
 	Password string,
 	FromName string,
+	TemplatesPath string,
 ) *Sender {
 	return &Sender{
-		Host:     Host,
-		Port:     Port,
-		Username: Username,
-		Password: Password,
-		FromName: FromName,
+		Host:          Host,
+		Port:          Port,
+		Username:      Username,
+		Password:      Password,
+		FromName:      FromName,
+		TemplatesPath: TemplatesPath,
 	}
 }
 
@@ -55,7 +58,7 @@ func (s Sender) SendConfirmationLink(data models.ConfirmationMsgParams) error {
 	}
 
 	//TODO: move path to config
-	tmpl, err := template.ParseFiles("internal/sender/templates/confirmation_email.tmpl")
+	tmpl, err := template.ParseFiles(s.TemplatesPath)
 	if err != nil {
 		return fmt.Errorf("could not parse template: %w", err)
 	}

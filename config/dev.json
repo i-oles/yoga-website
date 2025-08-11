@@ -17,5 +17,6 @@
     "user": "",
     "password": ""
   },
-  "domainAddr": "localhost:8080"
+  "domainAddr": "localhost:8080",
+  "senderTemplatePath": "internal/infrastructure/sender/templates/confirmation_email.tmpl"
 }

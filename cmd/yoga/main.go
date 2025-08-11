@@ -17,7 +17,7 @@ import (
 	pendingCreate "main/internal/api/http/pending/create"
 	classesService "main/internal/application/classes"
 	"main/internal/application/confirmation"
-	"main/internal/application/pendingoperations"
+	"main/internal/application/pending"
 	"main/internal/infrastructure/configuration"
 	"main/internal/infrastructure/generator/token"
 	"main/internal/infrastructure/repository/postgres"
@@ -99,11 +99,12 @@ func setupRouter(db *sql.DB, cfg *configuration.Configuration) *gin.Engine {
 		cfg.EmailSender.User,
 		cfg.EmailSender.Password,
 		cfg.EmailSender.FromName,
+		cfg.SenderTemplatePath,
 	)
 
 	classesService := classesService.New(classesRepo)
 	confirmationService := confirmation.New(classesRepo, confirmedBookingsRepo, pendingOperationsRepo)
-	pendingOperationsService := pendingoperations.New(
+	pendingOperationsService := pending.New(
 		classesRepo,
 		pendingOperationsRepo,
 		tokenGenerator,

@@ -1,4 +1,4 @@
-package pendingoperations
+package pending
 
 import (
 	"context"
