@@ -1,32 +1,33 @@
-package pending
+package pendingoperations
 
 import (
 	"context"
 	"fmt"
+	errs2 "main/internal/domain/errs"
 	"main/internal/domain/models"
 	"main/internal/domain/repositories"
-	"main/internal/errs"
-	"main/internal/generator"
-	"main/internal/sender"
+	"main/internal/domain/services"
 	"net/http"
 	"time"
 
 	"github.com/google/uuid"
 )
 
+//TODO: refactor this methods - duplicated code
+
 type Service struct {
 	ClassesRepo           repositories.Classes
 	PendingOperationsRepo repositories.PendingOperations
-	TokenGenerator        generator.Token
-	MessageSender         sender.Message
+	TokenGenerator        services.Token
+	MessageSender         services.Message
 	DomainAddr            string
 }
 
 func New(
 	classesRepo repositories.Classes,
 	pendingOperationsRepo repositories.PendingOperations,
-	tokenGenerator generator.Token,
-	messageSender sender.Message,
+	tokenGenerator services.Token,
+	messageSender services.Message,
 	domainAddr string,
 ) *Service {
 	return &Service{
@@ -49,17 +50,13 @@ func (s *Service) CreateBooking(
 
 	if class.MaxCapacity == 0 {
 		//TODO: verify this message error on front
-		return uuid.UUID{}, errs.ErrClassFullyBooked(fmt.Errorf("no spots left in class with id: %d", class.ID))
+		return uuid.UUID{}, errs2.ErrClassFullyBooked(fmt.Errorf("no spots left in class with id: %d", class.ID))
 	}
 
 	confirmationToken, err := s.TokenGenerator.Generate(32)
 	if err != nil {
-		return uuid.UUID{}, &errs.BookingError{Code: http.StatusInternalServerError, Message: err.Error()}
+		return uuid.UUID{}, &errs2.BookingError{Code: http.StatusInternalServerError, Message: err.Error()}
 	}
-
-	//authToken = fmt.Sprintf("%d", rand.Int())
-	//fmt.Printf("token: %s\n", authToken)
-	//
 
 	expiry := time.Now().Add(24 * time.Hour)
 
@@ -77,24 +74,27 @@ func (s *Service) CreateBooking(
 
 	err = s.PendingOperationsRepo.Insert(ctx, pendingBooking)
 	if err != nil {
-		return uuid.UUID{}, &errs.BookingError{Code: http.StatusInternalServerError, Message: err.Error()}
+		return uuid.UUID{}, &errs2.BookingError{Code: http.StatusInternalServerError, Message: err.Error()}
 	}
 
-	bookingConfirmationData := sender.ConfirmationData{
+	msgParams := models.ConfirmationMsgParams{
 		RecipientEmail:   createParams.Email,
 		RecipientName:    createParams.FirstName,
 		ConfirmationLink: fmt.Sprintf("%s/confirmation/create_booking?token=%s", s.DomainAddr, confirmationToken),
 	}
 
-	err = s.MessageSender.SendConfirmationLink(bookingConfirmationData)
+	err = s.MessageSender.SendConfirmationLink(msgParams)
 	if err != nil {
-		return uuid.UUID{}, &errs.BookingError{Code: http.StatusInternalServerError, Message: err.Error()}
+		return uuid.UUID{}, &errs2.BookingError{Code: http.StatusInternalServerError, Message: err.Error()}
 	}
 
 	return class.ID, nil
 }
 
-func (s *Service) CancelBooking(ctx context.Context, cancelParams models.CancelParams) (uuid.UUID, error) {
+func (s *Service) CancelBooking(
+	ctx context.Context,
+	cancelParams models.CancelParams,
+) (uuid.UUID, error) {
 	class, err := s.ClassesRepo.Get(ctx, cancelParams.ClassID)
 	if err != nil {
 		return uuid.UUID{}, fmt.Errorf("could not get class: %w", err)
@@ -102,11 +102,8 @@ func (s *Service) CancelBooking(ctx context.Context, cancelParams models.CancelP
 
 	confirmationToken, err := s.TokenGenerator.Generate(32)
 	if err != nil {
-		return uuid.UUID{}, &errs.BookingError{Code: http.StatusInternalServerError, Message: err.Error()}
+		return uuid.UUID{}, &errs2.BookingError{Code: http.StatusInternalServerError, Message: err.Error()}
 	}
-
-	//token = fmt.Sprintf("test%d", rand.Int())
-	//fmt.Printf("token: %s\n", token)
 
 	expiry := time.Now().Add(24 * time.Hour)
 
@@ -118,22 +115,23 @@ func (s *Service) CancelBooking(ctx context.Context, cancelParams models.CancelP
 		FirstName:      cancelParams.FirstName,
 		AuthToken:      confirmationToken,
 		TokenExpiresAt: expiry,
+		CreatedAt:      time.Now(),
 	}
 
 	err = s.PendingOperationsRepo.Insert(ctx, cancelPendingOperation)
 	if err != nil {
-		return uuid.UUID{}, &errs.BookingError{Code: http.StatusInternalServerError, Message: err.Error()}
+		return uuid.UUID{}, &errs2.BookingError{Code: http.StatusInternalServerError, Message: err.Error()}
 	}
 
-	cancelBookingConfirmationData := sender.ConfirmationData{
+	msgParams := models.ConfirmationMsgParams{
 		RecipientEmail:   cancelParams.Email,
 		RecipientName:    cancelParams.FirstName,
 		ConfirmationLink: fmt.Sprintf("%s/confirmation/cancel_booking?token=%s", s.DomainAddr, confirmationToken),
 	}
 
-	err = s.MessageSender.SendConfirmationLink(cancelBookingConfirmationData)
+	err = s.MessageSender.SendConfirmationLink(msgParams)
 	if err != nil {
-		return uuid.UUID{}, &errs.BookingError{Code: http.StatusInternalServerError, Message: err.Error()}
+		return uuid.UUID{}, &errs2.BookingError{Code: http.StatusInternalServerError, Message: err.Error()}
 	}
 
 	return class.ID, nil

@@ -1,10 +1,10 @@
-package email
+package gmail
 
 import (
 	"crypto/tls"
 	"fmt"
 	"html/template"
-	"main/internal/sender"
+	"main/internal/domain/models"
 	"strings"
 
 	"gopkg.in/gomail.v2"
@@ -42,7 +42,7 @@ func NewSender(
 	}
 }
 
-func (s Sender) SendConfirmationLink(data sender.ConfirmationData) error {
+func (s Sender) SendConfirmationLink(data models.ConfirmationMsgParams) error {
 	d := gomail.NewDialer(s.Host, s.Port, s.Username, s.Password)
 	d.TLSConfig = &tls.Config{InsecureSkipVerify: true} // TODO: change to false in production
 

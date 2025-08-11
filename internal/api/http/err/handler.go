@@ -1,8 +1,8 @@
-package app
+package err
 
 import (
 	"errors"
-	"main/internal/errs"
+	domainErrs "main/internal/domain/errs"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -15,7 +15,7 @@ func NewErrorHandler() ErrorHandler {
 }
 
 func (e ErrorHandler) Handle(c *gin.Context, tmplName string, err error) {
-	var bookingError *errs.BookingError
+	var bookingError *domainErrs.BookingError
 	switch {
 	case errors.As(err, &bookingError):
 		c.HTML(bookingError.Code, tmplName, gin.H{"error": bookingError.Message})

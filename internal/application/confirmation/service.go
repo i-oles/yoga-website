@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	errs2 "main/internal/domain/errs"
 	"main/internal/domain/models"
 	"main/internal/domain/repositories"
-	"main/internal/errs"
 	"time"
 
 	"github.com/google/uuid"
@@ -66,7 +66,7 @@ func (s *Service) CreateBooking(
 	if err != nil {
 		var pgErr *pq.Error
 		if errors.As(err, &pgErr) && pgErr.Code == recordExistsCode {
-			return models.Class{}, errs.ErrAlreadyBooked(pendingOperation.Email)
+			return models.Class{}, errs2.ErrAlreadyBooked(pendingOperation.Email)
 		}
 
 		return models.Class{}, fmt.Errorf("error while inserting pendingOperation: %w", err)

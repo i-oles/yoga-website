@@ -20,3 +20,11 @@ type IServiceConfirmation interface {
 	CreateBooking(ctx context.Context, token string) (models.Class, error)
 	CancelBooking(ctx context.Context, token string) (models.Class, error)
 }
+
+type Token interface {
+	Generate(length int) (string, error)
+}
+
+type Message interface {
+	SendConfirmationLink(params models.ConfirmationMsgParams) error
+}

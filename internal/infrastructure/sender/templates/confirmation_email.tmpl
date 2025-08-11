@@ -1,0 +1,16 @@
+<html>
+<body>
+    <h2>Dziękuję za rezerwację, {{.RecipientName}}!</h2>
+    <p>Aby potwierdzić swoją rezerwację, kliknij w poniższy link.</p>
+    <p>Jeśli to nie Ty dokonałeś/aś tej rezerwacji, zignoruj tę wiadomość.</p>
+
+    <h2>Thank you for your booking, {{.RecipientName}}!</h2>
+    <p>To confirm your reservation, please click the link below.</p>
+    <p>If you didn't make this booking, please ignore this message.</p>
+
+    <p><a href="{{.ConfirmationLink}}">{{.ConfirmationLink}}</a></p>
+
+    <br>
+    <p>{{.FromName}}</p>
+</body>
+</html>

@@ -2,8 +2,8 @@ package cancel
 
 import (
 	"fmt"
+	errs2 "main/internal/domain/errs"
 	"main/internal/domain/services"
-	"main/internal/errs"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -20,12 +20,12 @@ type confirmation struct {
 
 type Handler struct {
 	serviceConfirmation services.IServiceConfirmation
-	errorHandler        errs.ErrorHandler
+	errorHandler        errs2.ErrorHandler
 }
 
 func NewHandler(
 	serviceConfirmation services.IServiceConfirmation,
-	errorHandler errs.ErrorHandler,
+	errorHandler errs2.ErrorHandler,
 ) *Handler {
 	return &Handler{
 		serviceConfirmation: serviceConfirmation,

@@ -37,3 +37,9 @@ type CancelParams struct {
 	FirstName string    `json:"first_name"`
 	Email     string    `json:"email"`
 }
+
+type ConfirmationMsgParams struct {
+	RecipientEmail   string
+	RecipientName    string
+	ConfirmationLink string
+}

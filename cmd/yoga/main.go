@@ -7,22 +7,22 @@ import (
 	"fmt"
 	"log"
 	"log/slog"
-	"main/configuration"
-	"main/internal/api/handlers/book"
-	"main/internal/api/handlers/classes"
-	confirmationCancel "main/internal/api/handlers/confirmation/cancel"
-	confirmationCreate "main/internal/api/handlers/confirmation/create"
-	pendingCancel "main/internal/api/handlers/pending/cancel"
-	pendingCreate "main/internal/api/handlers/pending/create"
-	classesService "main/internal/domain/services/classes"
-	"main/internal/domain/services/confirmation"
-	"main/internal/domain/services/pending"
+	"main/internal/api/http/book"
+	"main/internal/api/http/classes"
+	confirmationCancel "main/internal/api/http/confirmation/cancel"
+	confirmationCreate "main/internal/api/http/confirmation/create"
+	"main/internal/api/http/err"
+	log2 "main/internal/api/http/log"
+	pendingCancel "main/internal/api/http/pending/cancel"
+	pendingCreate "main/internal/api/http/pending/create"
+	classesService "main/internal/application/classes"
+	"main/internal/application/confirmation"
+	"main/internal/application/pendingoperations"
 	"main/internal/errs"
-	"main/internal/errs/app"
-	log2 "main/internal/errs/log"
-	"main/internal/generator/token"
-	"main/internal/infrastructure/repositories/postgres"
-	"main/internal/sender/email"
+	"main/internal/infrastructure/configuration"
+	"main/internal/infrastructure/generator/token"
+	"main/internal/infrastructure/repository/postgres"
+	"main/internal/infrastructure/sender/gmail"
 	"net/http"
 	"os"
 	"os/signal"
@@ -94,7 +94,7 @@ func setupRouter(db *sql.DB, cfg *configuration.Configuration) *gin.Engine {
 	pendingOperationsRepo := postgres.NewPendingOperationsRepo(db)
 
 	tokenGenerator := token.NewGenerator()
-	emailSender := email.NewSender(
+	emailSender := gmail.NewSender(
 		cfg.EmailSender.Host,
 		cfg.EmailSender.Port,
 		cfg.EmailSender.User,
@@ -104,7 +104,7 @@ func setupRouter(db *sql.DB, cfg *configuration.Configuration) *gin.Engine {
 
 	classesService := classesService.New(classesRepo)
 	confirmationService := confirmation.New(classesRepo, confirmedBookingsRepo, pendingOperationsRepo)
-	pendingOperationsService := pending.New(
+	pendingOperationsService := pendingoperations.New(
 		classesRepo,
 		pendingOperationsRepo,
 		tokenGenerator,
@@ -114,7 +114,7 @@ func setupRouter(db *sql.DB, cfg *configuration.Configuration) *gin.Engine {
 
 	var errorHandler errs.ErrorHandler
 
-	errorHandler = app.NewErrorHandler()
+	errorHandler = err.NewErrorHandler()
 	if cfg.LogErrors {
 		errorHandler = log2.NewErrorHandler(errorHandler)
 	}
