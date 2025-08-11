@@ -3,7 +3,7 @@
           hx-post="/pending_operation/{{ .ID }}/create_booking"
           hx-target="#book-now-{{ .ID }}"
           hx-swap="outerHTML">
-        <input type="hidden" name="classID" value="{{ .ID }}">
+        <input type="hidden" name="class_id" value="{{ .ID }}">
 
         <label for="firstname-{{ .ID }}">First Name:</label>
         <input type="text" id="firstname-{{ .ID }}" name="first_name" required class="form-input">

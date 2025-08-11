@@ -1,6 +1,7 @@
 package create
 
 import (
+	"main/internal/api/http/dto"
 	"main/internal/api/http/err/handler"
 	"main/internal/domain/models"
 	"main/internal/domain/services"
@@ -26,33 +27,39 @@ func NewHandler(
 }
 
 func (h *Handler) Handle(c *gin.Context) {
-	ctx := c.Request.Context()
-	classIDStr := c.PostForm("classID")
-
-	classID, err := uuid.Parse(classIDStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	var req dto.PendingOperationCreateRequest
+	if err := c.ShouldBind(&req); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 
 		return
 	}
 
-	firstName := c.PostForm("first_name")
-	lastName := c.PostForm("last_name")
-	email := c.PostForm("email")
+	parsedUUID, err := uuid.Parse(req.ClassID)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 
-	submitBooking := models.CreateParams{
-		ClassID:   classID,
-		FirstName: firstName,
-		LastName:  lastName,
-		Email:     email,
+		return
 	}
 
-	classID, err = h.ServicePendingOperations.CreateBooking(ctx, submitBooking)
+	createBookingParams := models.CreateParams{
+		ClassID:   parsedUUID,
+		FirstName: req.FirstName,
+		LastName:  req.LastName,
+		Email:     req.Email,
+	}
+
+	ctx := c.Request.Context()
+
+	classID, err := h.ServicePendingOperations.CreateBooking(ctx, createBookingParams)
 	if err != nil {
 		h.ErrorHandler.Handle(c, "err.tmpl", err)
 
 		return
 	}
 
-	c.HTML(http.StatusOK, "submit.tmpl", gin.H{"ID": classID})
+	resp := dto.PendingOperationCreateResponse{
+		ClassID: classID,
+	}
+
+	c.HTML(http.StatusOK, "submit.tmpl", resp)
 }

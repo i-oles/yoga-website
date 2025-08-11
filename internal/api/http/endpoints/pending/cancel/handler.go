@@ -1,6 +1,7 @@
 package cancel
 
 import (
+	"main/internal/api/http/dto"
 	"main/internal/api/http/err/handler"
 	"main/internal/domain/models"
 	"main/internal/domain/services"
@@ -26,29 +27,39 @@ func NewHandler(
 }
 
 func (h *Handler) Handle(c *gin.Context) {
-	ctx := c.Request.Context()
-	classIDStr := c.PostForm("classID")
+	var req dto.PendingOperationCancelRequest
+	if err := c.ShouldBind(&req); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 
-	classID, err := uuid.Parse(classIDStr)
+		return
+	}
+
+	parsedUUID, err := uuid.Parse(req.ClassID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 
 		return
 	}
 
 	cancelParams := models.CancelParams{
-		ClassID:   classID,
-		FirstName: c.PostForm("firstName"),
-		Email:     c.PostForm("email"),
+		ClassID:   parsedUUID,
+		FirstName: req.FirstName,
+		Email:     req.Email,
 	}
 
-	classID, err = h.ServicePendingOperations.CancelBooking(ctx, cancelParams)
+	ctx := c.Request.Context()
+
+	classID, err := h.ServicePendingOperations.CancelBooking(ctx, cancelParams)
 	if err != nil {
 		h.ErrorHandler.Handle(c, "err.tmpl", err)
 
 		return
 	}
 
+	resp := dto.PendingOperationCancelResponse{
+		ClassID: classID,
+	}
+
 	//TODO: different template?
-	c.HTML(http.StatusOK, "submit.tmpl", gin.H{"ID": classID})
+	c.HTML(http.StatusOK, "submit.tmpl", resp)
 }
