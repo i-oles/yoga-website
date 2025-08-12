@@ -1,7 +1,7 @@
-<div id="cancel-now-{{ .ID }}">
+<div id="cancel-block-{{ .ID }}">
     <form id="cancel-form-{{ .ID }}"
           hx-post="/pending_operation/{{ .ID }}/cancel_booking"
-          hx-target="#cancel-now-{{ .ID }}"
+          hx-target="#cancel-block-{{ .ID }}"
           hx-swap="outerHTML">
         <input type="hidden" name="class_id" value="{{ .ID }}">
 
