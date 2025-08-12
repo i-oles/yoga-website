@@ -1,19 +1,39 @@
-<div id="book-now-{{ .ID }}">
+<div id="book-block-{{ .ID }}">
     <form id="booking-form-{{ .ID }}"
           hx-post="/pending_operation/{{ .ID }}/create_booking"
-          hx-target="#book-now-{{ .ID }}"
+          hx-target="#book-block-{{ .ID }}"
           hx-swap="outerHTML">
+
         <input type="hidden" name="class_id" value="{{ .ID }}">
 
         <label for="firstname-{{ .ID }}">First Name:</label>
-        <input type="text" id="firstname-{{ .ID }}" name="first_name" required class="form-input">
+        <input type="text"
+               id="firstname-{{ .ID }}"
+               name="first_name"
+               required
+               minlength="3"
+               maxlength="30"
+               pattern="^[A-Za-zÀ-ž]+$"
+               class="form-input">
 
         <label for="lastname-{{ .ID }}">Last Name:</label>
-        <input type="text" id="lastname-{{ .ID }}" name="last_name" required class="form-input">
+        <input type="text"
+               id="lastname-{{ .ID }}"
+               name="last_name"
+               required
+               minlength="3"
+               maxlength="30"
+               pattern="^[A-Za-zÀ-ž]+$"
+               class="form-input">
 
         <label for="email-{{ .ID }}">Email:</label>
-        <input type="email" id="email-{{ .ID }}" name="email" required class="form-input" pattern="[^@\s]+@[^@\s]+\.[^@\s]+"
-            title="Please enter a valid email address">
+        <input type="email"
+               id="email-{{ .ID }}"
+               name="email"
+               required
+               class="form-input"
+               pattern="[^@\s]+@[^@\s]+\.[^@\s]+"
+               title="Please enter a valid email address">
 
         <div class="err-msg">
             {{ .Error }}

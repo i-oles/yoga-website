@@ -13,6 +13,10 @@ func ErrClassFullyBooked(err error) *BookingError {
 	return &BookingError{Code: http.StatusConflict, Message: "this class is fully booked, please choose different term", Err: err}
 }
 
+func ErrClassEmpty(err error) *BookingError {
+	return &BookingError{Code: http.StatusConflict, Message: "this class is empty, booking cancellation is impossible", Err: err}
+}
+
 type BookingError struct {
 	Code    int
 	Message string

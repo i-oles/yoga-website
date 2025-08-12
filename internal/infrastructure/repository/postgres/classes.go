@@ -42,6 +42,7 @@ func (c ClassesRepo) GetAllClasses(ctx context.Context) ([]models.Class, error) 
 			&class.StartTime,
 			&class.ClassLevel,
 			&class.ClassCategory,
+			&class.CurrentCapacity,
 			&class.MaxCapacity,
 			&class.Location,
 		)
@@ -65,6 +66,7 @@ func (c ClassesRepo) Get(ctx context.Context, id uuid.UUID) (models.Class, error
 		&class.StartTime,
 		&class.ClassLevel,
 		&class.ClassCategory,
+		&class.CurrentCapacity,
 		&class.MaxCapacity,
 		&class.Location,
 	)
@@ -75,9 +77,9 @@ func (c ClassesRepo) Get(ctx context.Context, id uuid.UUID) (models.Class, error
 	return class, nil
 }
 
-func (c ClassesRepo) DecrementMaxCapacity(ctx context.Context, id uuid.UUID) error {
+func (c ClassesRepo) DecrementCurrentCapacity(ctx context.Context, id uuid.UUID) error {
 	query := fmt.Sprintf(
-		"UPDATE %s SET max_capacity = max_capacity - 1 WHERE id = $1 AND max_capacity > 0",
+		"UPDATE %s SET current_capacity = current_capacity - 1 WHERE id = $1 AND max_capacity > 0",
 		c.collName)
 
 	result, err := c.db.ExecContext(ctx, query, id)
@@ -97,10 +99,9 @@ func (c ClassesRepo) DecrementMaxCapacity(ctx context.Context, id uuid.UUID) err
 	return nil
 }
 
-func (c ClassesRepo) IncrementMaxCapacity(ctx context.Context, id uuid.UUID) error {
+func (c ClassesRepo) IncrementCurrentCapacity(ctx context.Context, id uuid.UUID) error {
 	query := fmt.Sprintf(
-		//TODO: check this query
-		"UPDATE %s SET max_capacity = max_capacity + 1 WHERE id = $1 AND max_capacity < max_capacity",
+		"UPDATE %s SET current_capacity = current_capacity + 1 WHERE id = $1 AND current_capacity < max_capacity",
 		c.collName)
 
 	result, err := c.db.ExecContext(ctx, query, id)

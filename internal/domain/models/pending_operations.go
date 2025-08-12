@@ -14,15 +14,16 @@ const (
 )
 
 type PendingOperation struct {
-	ID             uuid.UUID `db:"id"`
-	ClassID        uuid.UUID `db:"class_id"`
-	Operation      Operation `db:"operation"`
-	Email          string    `db:"email"`
-	FirstName      string    `db:"first_name"`
-	LastName       *string   `db:"last_name"`
-	AuthToken      string    `db:"auth_token"`
-	TokenExpiresAt time.Time `db:"token_expires_at"`
-	CreatedAt      time.Time `db:"created_at"`
+	ID               uuid.UUID `db:"id"`
+	ClassID          uuid.UUID `db:"class_id"`
+	Operation        Operation `db:"operation"`
+	Email            string    `db:"email"`
+	FirstName        string    `db:"first_name"`
+	LastName         *string   `db:"last_name"`
+	AuthToken        string    `db:"auth_token"`
+	ClassMaxCapacity int       `db:"class_max_capacity"`
+	TokenExpiresAt   time.Time `db:"token_expires_at"`
+	CreatedAt        time.Time `db:"created_at"`
 }
 
 type CreateParams struct {

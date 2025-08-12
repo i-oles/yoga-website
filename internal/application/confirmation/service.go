@@ -77,7 +77,7 @@ func (s *Service) CreateBooking(
 		return models.Class{}, fmt.Errorf("error while deleting pending pendingOperation: %w", err)
 	}
 
-	err = s.ClassesRepo.DecrementMaxCapacity(ctx, pendingOperation.ClassID)
+	err = s.ClassesRepo.DecrementCurrentCapacity(ctx, pendingOperation.ClassID)
 	if err != nil {
 		return models.Class{}, fmt.Errorf("error while decrementing class max capacity: %w", err)
 	}
@@ -116,9 +116,9 @@ func (s *Service) CancelBooking(ctx context.Context, token string) (models.Class
 		return models.Class{}, fmt.Errorf("error while deleting pending pendingOperation: %w", err)
 	}
 
-	err = s.ClassesRepo.IncrementMaxCapacity(ctx, pendingOperation.ClassID)
+	err = s.ClassesRepo.IncrementCurrentCapacity(ctx, pendingOperation.ClassID)
 	if err != nil {
-		return models.Class{}, fmt.Errorf("error while decrementing class max capacity: %w", err)
+		return models.Class{}, fmt.Errorf("error while incrementing class max capacity: %w", err)
 	}
 
 	class, err := s.ClassesRepo.Get(ctx, pendingOperation.ClassID)

@@ -48,7 +48,7 @@ func (s *Service) CreateBooking(
 		return uuid.UUID{}, fmt.Errorf("could not get class: %w", err)
 	}
 
-	if class.MaxCapacity == 0 {
+	if class.CurrentCapacity == 0 {
 		//TODO: verify this message error on front
 		return uuid.UUID{}, errs2.ErrClassFullyBooked(fmt.Errorf("no spots left in class with id: %d", class.ID))
 	}
@@ -98,6 +98,10 @@ func (s *Service) CancelBooking(
 	class, err := s.ClassesRepo.Get(ctx, cancelParams.ClassID)
 	if err != nil {
 		return uuid.UUID{}, fmt.Errorf("could not get class: %w", err)
+	}
+
+	if class.CurrentCapacity == class.MaxCapacity {
+		return uuid.UUID{}, errs2.ErrClassEmpty(fmt.Errorf("max capacity exceeded"))
 	}
 
 	confirmationToken, err := s.TokenGenerator.Generate(32)

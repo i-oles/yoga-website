@@ -4,13 +4,14 @@ ALTER DATABASE root SET timezone TO 'Europe/Warsaw';
 
 CREATE TABLE classes
 (
-    id             uuid PRIMARY KEY,
-    day_of_week    varchar(20) NOT NULL,
-    start_time     timestamp   NOT NULL,
-    class_level    class_level NOT NULL,
-    class_category varchar(30) NOT NULL,
-    max_capacity   integer     NOT NULL DEFAULT 6,
-    location       varchar(40) NOT NULL
+    id               uuid PRIMARY KEY,
+    day_of_week      varchar(20) NOT NULL,
+    start_time       timestamp   NOT NULL,
+    class_level      class_level NOT NULL,
+    class_category   varchar(30) NOT NULL,
+    current_capacity integer     NOT NULL,
+    max_capacity     integer     NOT NULL,
+    location         varchar(40) NOT NULL
 );
 
 -- CREATE TYPE booking_operation AS ENUM ('create_booking', 'cancel_booking');

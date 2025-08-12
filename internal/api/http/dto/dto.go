@@ -17,24 +17,26 @@ const (
 )
 
 type ClassResponse struct {
-	ID            uuid.UUID  `json:"id"`
-	DayOfWeek     string     `json:"day_of_week"`
-	StartTime     time.Time  `json:"start_time"`
-	ClassLevel    ClassLevel `json:"class_level"`
-	ClassCategory string     `json:"class_category"`
-	MaxCapacity   int        `json:"max_capacity"`
-	Location      string     `json:"location"`
+	ID              uuid.UUID  `json:"id"`
+	DayOfWeek       string     `json:"day_of_week"`
+	StartTime       time.Time  `json:"start_time"`
+	ClassLevel      ClassLevel `json:"class_level"`
+	ClassCategory   string     `json:"class_category"`
+	CurrentCapacity int        `json:"current_capacity"`
+	MaxCapacity     int        `json:"max_capacity"`
+	Location        string     `json:"location"`
 }
 
 func ToClassResponse(class models.Class) ClassResponse {
 	return ClassResponse{
-		ID:            class.ID,
-		DayOfWeek:     class.DayOfWeek,
-		StartTime:     class.StartTime,
-		ClassLevel:    ClassLevel(class.ClassLevel),
-		ClassCategory: class.ClassCategory,
-		MaxCapacity:   class.MaxCapacity,
-		Location:      class.Location,
+		ID:              class.ID,
+		DayOfWeek:       class.DayOfWeek,
+		StartTime:       class.StartTime,
+		ClassLevel:      ClassLevel(class.ClassLevel),
+		ClassCategory:   class.ClassCategory,
+		CurrentCapacity: class.CurrentCapacity,
+		MaxCapacity:     class.MaxCapacity,
+		Location:        class.Location,
 	}
 }
 

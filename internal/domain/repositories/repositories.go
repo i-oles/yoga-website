@@ -12,8 +12,8 @@ import (
 type Classes interface {
 	GetAllClasses(ctx context.Context) ([]models.Class, error)
 	Get(ctx context.Context, id uuid.UUID) (models.Class, error)
-	DecrementMaxCapacity(ctx context.Context, id uuid.UUID) error
-	IncrementMaxCapacity(ctx context.Context, id uuid.UUID) error
+	DecrementCurrentCapacity(ctx context.Context, id uuid.UUID) error
+	IncrementCurrentCapacity(ctx context.Context, id uuid.UUID) error
 }
 
 type ConfirmedBookings interface {

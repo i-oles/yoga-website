@@ -19,9 +19,9 @@
                 day: {{ .DayOfWeek }}<br>
                 date: {{ .StartTime }}<br>
                 where: {{ .Location }}<br>
-                spots left: {{ .MaxCapacity }}<br>
+                spots left: {{ .CurrentCapacity }} / {{ .MaxCapacity }}<br>
             </div>
-            {{ if eq .MaxCapacity 0 }}
+            {{ if eq .CurrentCapacity 0 }}
             <div id="book-button-{{ .ID }}">
                 <button disabled>book now</button>
             </div>
@@ -37,6 +37,11 @@
                 </button>
             </div>
             {{ end }}
+            {{ if eq .CurrentCapacity .MaxCapacity }}
+            <div id="cancel-button-{{ .ID }}">
+                <button disabled>cancel booking</button>
+            </div>
+            {{ else }}
             <div id="cancel-button-{{ .ID }}">
                 <button class="btn-cancel"
                         hx-post="/cancel"
@@ -47,7 +52,7 @@
                     cancel booking
                 </button>
             </div>
-            <div id="cancel-booking-{{ .ID }}"></div>
+            {{ end }}
         </form>
     </div>
     {{ end }}

@@ -1,12 +1,11 @@
-<div class="booking-success">
-    Kliknij na link wysłany na Twoją pocztę,<br>aby potwierdzić rezerwacje.
-    <span class="text-gray">Click on link sent to your email box <br> in order to confirm your booking.</span>
-</div>
-<div id="book-button-{{ .ClassID }}">
+<div id="booking-block-{{ .ClassID }}">
+    <p class="booking-success">
+        Kliknij na link wysłany na Twoją pocztę,<br>aby potwierdzić rezerwacje.
+    </p>
     <button class="btn-book"
             hx-post="/book"
             hx-swap="outerHTML"
-            hx-target="#book-button-{{ .ClassID }}"
+            hx-target="#booking-block-{{ .ClassID }}"
             hx-vals='{"id": "{{ .ClassID }}"}'
             hx-trigger="click">
         book now
