@@ -24,3 +24,11 @@ type Class struct {
 	MaxCapacity     int        `db:"max_capacity"`
 	Location        string     `db:"location"`
 }
+
+func (c Class) StartDate() string {
+	return c.StartTime.Format("2006-01-02")
+}
+
+func (c Class) StartHour() string {
+	return c.StartTime.Format("15:04")
+}

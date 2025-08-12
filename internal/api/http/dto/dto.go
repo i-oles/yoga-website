@@ -3,7 +3,6 @@ package dto
 import (
 	"fmt"
 	"main/internal/domain/models"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -19,7 +18,8 @@ const (
 type ClassResponse struct {
 	ID              uuid.UUID  `json:"id"`
 	DayOfWeek       string     `json:"day_of_week"`
-	StartTime       time.Time  `json:"start_time"`
+	StartDate       string     `json:"start_date"`
+	StartHour       string     `json:"start_hour"`
 	ClassLevel      ClassLevel `json:"class_level"`
 	ClassCategory   string     `json:"class_category"`
 	CurrentCapacity int        `json:"current_capacity"`
@@ -31,7 +31,8 @@ func ToClassResponse(class models.Class) ClassResponse {
 	return ClassResponse{
 		ID:              class.ID,
 		DayOfWeek:       class.DayOfWeek,
-		StartTime:       class.StartTime,
+		StartDate:       class.StartDate(),
+		StartHour:       class.StartHour(),
 		ClassLevel:      ClassLevel(class.ClassLevel),
 		ClassCategory:   class.ClassCategory,
 		CurrentCapacity: class.CurrentCapacity,
