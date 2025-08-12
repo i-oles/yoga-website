@@ -26,5 +26,6 @@ type ITokenGenerator interface {
 }
 
 type ISender interface {
-	SendConfirmationLink(params models.ConfirmationMsgParams) error
+	SendConfirmationCreateLink(params models.ConfirmationCreateParams) error
+	SendConfirmationCancelLink(params models.ConfirmationCancelParams) error
 }

@@ -41,5 +41,5 @@ func (h *Handler) Handle(c *gin.Context) {
 		return
 	}
 
-	c.HTML(http.StatusOK, "cancellation.tmpl", dto.ToConfirmationCancelResponse(class))
+	c.HTML(http.StatusOK, "confirmation_cancel.tmpl", dto.ToConfirmationCancelResponse(class))
 }

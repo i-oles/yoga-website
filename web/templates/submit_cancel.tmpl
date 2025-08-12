@@ -1,0 +1,14 @@
+<div class="pending-operation-cancel">
+    Kliknij na link wysłany na Twoją pocztę,<br> aby wycofać rezerwację.
+    <span class="text-gray">Click on link sent to your email box <br> in order to cancel your booking.</span>
+</div>
+<div id="cancel-button-{{ .ClassID }}">
+    <button class="btn-book"
+            hx-post="/book"
+            hx-swap="outerHTML"
+            hx-target="#book-button-{{ .ClassID }}"
+            hx-vals='{"id": "{{ .ClassID }}"}'
+            hx-trigger="click">
+        book now
+    </button>
+</div>

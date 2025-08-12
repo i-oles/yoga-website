@@ -61,5 +61,5 @@ func (h *Handler) Handle(c *gin.Context) {
 		ClassID: classID,
 	}
 
-	c.HTML(http.StatusOK, "submit.tmpl", resp)
+	c.HTML(http.StatusOK, "submit_create.tmpl", resp)
 }

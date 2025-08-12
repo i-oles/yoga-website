@@ -39,9 +39,9 @@
             {{ end }}
             <div id="cancel-button-{{ .ID }}">
                 <button class="btn-cancel"
-                        hx-post="/cancel-class"
+                        hx-post="/cancel"
                         hx-swap="outerHTML"
-                        hx-target="#cancel-booking-{{ .ID }}"
+                        hx-target="#cancel-button-{{ .ID }}"
                         hx-vals='{"id": "{{ .ID }}"}'
                         hx-trigger="click">
                     cancel booking

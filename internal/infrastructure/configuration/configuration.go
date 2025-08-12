@@ -32,15 +32,16 @@ type PostgresSettings struct {
 }
 
 type Configuration struct {
-	ListenAddress      string
-	ReadTimeout        time.Duration
-	WriteTimeout       time.Duration
-	ContextTimeout     time.Duration
-	Postgres           PostgresSettings
-	LogErrors          bool
-	EmailSender        EmailSenderSettings
-	DomainAddr         string
-	SenderTemplatePath string
+	ListenAddress                   string
+	ReadTimeout                     time.Duration
+	WriteTimeout                    time.Duration
+	ContextTimeout                  time.Duration
+	Postgres                        PostgresSettings
+	LogErrors                       bool
+	EmailSender                     EmailSenderSettings
+	DomainAddr                      string
+	ConfirmationCreateEmailTmplPath string
+	ConfirmationCancelEmailTmplPath string
 }
 
 func (c *Configuration) Pretty() string {

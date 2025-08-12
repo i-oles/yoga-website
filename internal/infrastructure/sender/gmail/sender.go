@@ -11,54 +11,50 @@ import (
 )
 
 type templateData struct {
-	FromName         string
-	FromEmail        string
+	SenderName       string
 	RecipientName    string
-	RecipientEmail   string
 	ConfirmationLink string
 }
 
 type Sender struct {
-	Host          string
-	Port          int
-	Username      string
-	Password      string
-	FromName      string
-	TemplatesPath string
+	SenderName         string
+	SenderEmail        string
+	TemplateCreatePath string
+	TemplateCancelPath string
+	Dialer             *gomail.Dialer
 }
 
 func NewSender(
-	Host string,
-	Port int,
-	Username string,
-	Password string,
-	FromName string,
-	TemplatesPath string,
+	host string,
+	port int,
+	senderEmail string,
+	password string,
+	senderName string,
+	templateCreatePath string,
+	templateCancelPath string,
 ) *Sender {
+	d := gomail.NewDialer(host, port, senderEmail, password)
+	d.TLSConfig = &tls.Config{InsecureSkipVerify: true} // TODO: change to false in production
+
 	return &Sender{
-		Host:          Host,
-		Port:          Port,
-		Username:      Username,
-		Password:      Password,
-		FromName:      FromName,
-		TemplatesPath: TemplatesPath,
+		SenderName:         senderName,
+		SenderEmail:        senderEmail,
+		TemplateCreatePath: templateCreatePath,
+		TemplateCancelPath: templateCancelPath,
+		Dialer:             d,
 	}
 }
 
-func (s Sender) SendConfirmationLink(data models.ConfirmationMsgParams) error {
-	d := gomail.NewDialer(s.Host, s.Port, s.Username, s.Password)
-	d.TLSConfig = &tls.Config{InsecureSkipVerify: true} // TODO: change to false in production
+//TODO: refactor - wydziel jedna wspolna funkcje.
 
+func (s Sender) SendConfirmationCreateLink(data models.ConfirmationCreateParams) error {
 	tmplData := templateData{
-		FromName:         s.FromName,
-		FromEmail:        s.Username,
+		SenderName:       s.SenderName,
 		RecipientName:    data.RecipientName,
-		RecipientEmail:   data.RecipientEmail,
-		ConfirmationLink: data.ConfirmationLink,
+		ConfirmationLink: data.ConfirmationCreateLink,
 	}
 
-	//TODO: move path to config
-	tmpl, err := template.ParseFiles(s.TemplatesPath)
+	tmpl, err := template.ParseFiles(s.TemplateCreatePath)
 	if err != nil {
 		return fmt.Errorf("could not parse template: %w", err)
 	}
@@ -70,12 +66,43 @@ func (s Sender) SendConfirmationLink(data models.ConfirmationMsgParams) error {
 	}
 
 	m := gomail.NewMessage()
-	m.SetHeader("From", s.Username)
+	m.SetHeader("From", s.SenderEmail)
 	m.SetHeader("To", data.RecipientEmail)
 	m.SetHeader("Subject", "Yoga - Potwierdzenie rezerwacji")
 	m.SetBody("text/html", msg.String())
 
-	if err = d.DialAndSend(m); err != nil {
+	if err = s.Dialer.DialAndSend(m); err != nil {
+		return fmt.Errorf("failed to send email: %w", err)
+	}
+
+	return nil
+}
+
+func (s Sender) SendConfirmationCancelLink(data models.ConfirmationCancelParams) error {
+	tmplData := templateData{
+		SenderName:       s.SenderName,
+		RecipientName:    data.RecipientName,
+		ConfirmationLink: data.ConfirmationCancelLink,
+	}
+
+	tmpl, err := template.ParseFiles(s.TemplateCancelPath)
+	if err != nil {
+		return fmt.Errorf("could not parse template: %w", err)
+	}
+
+	var msg strings.Builder
+	err = tmpl.Execute(&msg, tmplData)
+	if err != nil {
+		return fmt.Errorf("could not execute template: %w", err)
+	}
+
+	m := gomail.NewMessage()
+	m.SetHeader("From", s.SenderEmail)
+	m.SetHeader("To", data.RecipientEmail)
+	m.SetHeader("Subject", "Yoga - Odwołanie rezerwacji")
+	m.SetBody("text/html", msg.String())
+
+	if err = s.Dialer.DialAndSend(m); err != nil {
 		return fmt.Errorf("failed to send email: %w", err)
 	}
 

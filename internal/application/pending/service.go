@@ -77,13 +77,13 @@ func (s *Service) CreateBooking(
 		return uuid.UUID{}, &errs2.BookingError{Code: http.StatusInternalServerError, Message: err.Error()}
 	}
 
-	msgParams := models.ConfirmationMsgParams{
-		RecipientEmail:   createParams.Email,
-		RecipientName:    createParams.FirstName,
-		ConfirmationLink: fmt.Sprintf("%s/confirmation/create_booking?token=%s", s.DomainAddr, confirmationToken),
+	msgParams := models.ConfirmationCreateParams{
+		RecipientEmail:         createParams.Email,
+		RecipientName:          createParams.FirstName,
+		ConfirmationCreateLink: fmt.Sprintf("%s/confirmation/create_booking?token=%s", s.DomainAddr, confirmationToken),
 	}
 
-	err = s.MessageSender.SendConfirmationLink(msgParams)
+	err = s.MessageSender.SendConfirmationCreateLink(msgParams)
 	if err != nil {
 		return uuid.UUID{}, &errs2.BookingError{Code: http.StatusInternalServerError, Message: err.Error()}
 	}
@@ -123,13 +123,13 @@ func (s *Service) CancelBooking(
 		return uuid.UUID{}, &errs2.BookingError{Code: http.StatusInternalServerError, Message: err.Error()}
 	}
 
-	msgParams := models.ConfirmationMsgParams{
-		RecipientEmail:   cancelParams.Email,
-		RecipientName:    cancelParams.FirstName,
-		ConfirmationLink: fmt.Sprintf("%s/confirmation/cancel_booking?token=%s", s.DomainAddr, confirmationToken),
+	msgParams := models.ConfirmationCancelParams{
+		RecipientEmail:         cancelParams.Email,
+		RecipientName:          cancelParams.FirstName,
+		ConfirmationCancelLink: fmt.Sprintf("%s/confirmation/cancel_booking?token=%s", s.DomainAddr, confirmationToken),
 	}
 
-	err = s.MessageSender.SendConfirmationLink(msgParams)
+	err = s.MessageSender.SendConfirmationCancelLink(msgParams)
 	if err != nil {
 		return uuid.UUID{}, &errs2.BookingError{Code: http.StatusInternalServerError, Message: err.Error()}
 	}

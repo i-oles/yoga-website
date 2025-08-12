@@ -60,6 +60,5 @@ func (h *Handler) Handle(c *gin.Context) {
 		ClassID: classID,
 	}
 
-	//TODO: different template?
-	c.HTML(http.StatusOK, "submit.tmpl", resp)
+	c.HTML(http.StatusOK, "submit_cancel.tmpl", resp)
 }

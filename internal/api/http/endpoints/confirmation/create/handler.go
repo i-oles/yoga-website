@@ -41,5 +41,5 @@ func (h *Handler) Handle(c *gin.Context) {
 		return
 	}
 
-	c.HTML(http.StatusOK, "confirmation.tmpl", dto.ToConfirmationCreateResponse(class))
+	c.HTML(http.StatusOK, "confirmation_create.tmpl", dto.ToConfirmationCreateResponse(class))
 }

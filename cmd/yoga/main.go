@@ -8,6 +8,7 @@ import (
 	"log"
 	"log/slog"
 	"main/internal/api/http/endpoints/book"
+	"main/internal/api/http/endpoints/cancel"
 	"main/internal/api/http/endpoints/classes"
 	confirmationCancel "main/internal/api/http/endpoints/confirmation/cancel"
 	confirmationCreate "main/internal/api/http/endpoints/confirmation/create"
@@ -99,7 +100,8 @@ func setupRouter(db *sql.DB, cfg *configuration.Configuration) *gin.Engine {
 		cfg.EmailSender.User,
 		cfg.EmailSender.Password,
 		cfg.EmailSender.FromName,
-		cfg.SenderTemplatePath,
+		cfg.ConfirmationCreateEmailTmplPath,
+		cfg.ConfirmationCancelEmailTmplPath,
 	)
 
 	classesService := classesService.New(classesRepo)
@@ -121,6 +123,7 @@ func setupRouter(db *sql.DB, cfg *configuration.Configuration) *gin.Engine {
 
 	classesHandler := classes.NewHandler(classesService)
 	bookHandler := book.NewHandler()
+	cancelHandler := cancel.NewHandler()
 	pendingCreateHandler := pendingCreate.NewHandler(
 		pendingOperationsService,
 		errorHandler,
@@ -151,6 +154,7 @@ func setupRouter(db *sql.DB, cfg *configuration.Configuration) *gin.Engine {
 	}
 	{
 		api.POST("/book", bookHandler.Handle)
+		api.POST("/cancel", cancelHandler.Handle)
 		api.POST("/pending_operation/:class_id/create_booking", pendingCreateHandler.Handle)
 		api.POST("/pending_operation/:class_id/cancel_booking", pendingCancelHandler.Handle)
 

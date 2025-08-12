@@ -18,5 +18,6 @@
     "password": ""
   },
   "domainAddr": "localhost:8080",
-  "senderTemplatePath": "internal/infrastructure/sender/templates/confirmation_email.tmpl"
+  "confirmationCreateEmailTmplPath": "internal/infrastructure/sender/templates/confirmation_create_email.tmpl",
+  "confirmationCancelEmailTmplPath": "internal/infrastructure/sender/templates/confirmation_cancel_email.tmpl"
 }
