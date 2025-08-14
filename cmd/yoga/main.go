@@ -109,6 +109,7 @@ func setupRouter(db *sql.DB, cfg *configuration.Configuration) *gin.Engine {
 	pendingOperationsService := pending.New(
 		classesRepo,
 		pendingOperationsRepo,
+		confirmedBookingsRepo,
 		tokenGenerator,
 		emailSender,
 		cfg.DomainAddr,

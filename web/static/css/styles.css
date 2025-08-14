@@ -65,10 +65,18 @@ button {
     margin-top: -10px;
 }
 
+.btn-cancel:hover {
+    background-color: #a12f40;
+}
+
 .btn-book {
     margin-top: 10px;
     background-color: #3498db;
     color: white;
+}
+
+.btn-book:hover {
+    background-color: #3cb0ff;
 }
 
 .err-msg {
@@ -78,9 +86,15 @@ button {
     margin-left: -10px;
 }
 
-.booking-success {
+.pending-operation-create {
     font-size: 12px;
     color: green;
+    height: 60px;
+}
+
+.pending-operation-cancel {
+    font-size: 12px;
+    color: red;
     height: 60px;
 }
 
@@ -89,7 +103,7 @@ button {
 }
 
 button:hover {
-    background-color: #2980b9;
+    background-color: #4b4b4b;
 }
 
 /* Informacje o miejscach */

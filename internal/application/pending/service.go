@@ -2,8 +2,10 @@ package pending
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
-	errs2 "main/internal/domain/errs"
+	domainErrors "main/internal/domain/errs"
 	"main/internal/domain/models"
 	"main/internal/domain/repositories"
 	"main/internal/domain/services"
@@ -18,6 +20,7 @@ import (
 type Service struct {
 	ClassesRepo           repositories.Classes
 	PendingOperationsRepo repositories.PendingOperations
+	ConfirmedBookingsRepo repositories.ConfirmedBookings
 	TokenGenerator        services.ITokenGenerator
 	MessageSender         services.ISender
 	DomainAddr            string
@@ -26,6 +29,7 @@ type Service struct {
 func New(
 	classesRepo repositories.Classes,
 	pendingOperationsRepo repositories.PendingOperations,
+	confirmedBookingsRepo repositories.ConfirmedBookings,
 	tokenGenerator services.ITokenGenerator,
 	messageSender services.ISender,
 	domainAddr string,
@@ -33,6 +37,7 @@ func New(
 	return &Service{
 		ClassesRepo:           classesRepo,
 		PendingOperationsRepo: pendingOperationsRepo,
+		ConfirmedBookingsRepo: confirmedBookingsRepo,
 		TokenGenerator:        tokenGenerator,
 		MessageSender:         messageSender,
 		DomainAddr:            domainAddr,
@@ -50,12 +55,12 @@ func (s *Service) CreateBooking(
 
 	if class.CurrentCapacity == 0 {
 		//TODO: verify this message error on front
-		return uuid.UUID{}, errs2.ErrClassFullyBooked(fmt.Errorf("no spots left in class with id: %d", class.ID))
+		return uuid.UUID{}, domainErrors.ErrClassFullyBooked(fmt.Errorf("no spots left in class with id: %d", class.ID))
 	}
 
 	confirmationToken, err := s.TokenGenerator.Generate(32)
 	if err != nil {
-		return uuid.UUID{}, &errs2.BookingError{Code: http.StatusInternalServerError, Message: err.Error()}
+		return uuid.UUID{}, fmt.Errorf("could not generate confirmation token: %w", err)
 	}
 
 	expiry := time.Now().Add(24 * time.Hour)
@@ -74,7 +79,7 @@ func (s *Service) CreateBooking(
 
 	err = s.PendingOperationsRepo.Insert(ctx, pendingBooking)
 	if err != nil {
-		return uuid.UUID{}, &errs2.BookingError{Code: http.StatusInternalServerError, Message: err.Error()}
+		return uuid.UUID{}, &domainErrors.BookingError{Code: http.StatusInternalServerError, Message: err.Error()}
 	}
 
 	msgParams := models.ConfirmationCreateParams{
@@ -85,7 +90,7 @@ func (s *Service) CreateBooking(
 
 	err = s.MessageSender.SendConfirmationCreateLink(msgParams)
 	if err != nil {
-		return uuid.UUID{}, &errs2.BookingError{Code: http.StatusInternalServerError, Message: err.Error()}
+		return uuid.UUID{}, &domainErrors.BookingError{Code: http.StatusInternalServerError, Message: err.Error()}
 	}
 
 	return class.ID, nil
@@ -95,18 +100,27 @@ func (s *Service) CancelBooking(
 	ctx context.Context,
 	cancelParams models.CancelParams,
 ) (uuid.UUID, error) {
+	_, err := s.ConfirmedBookingsRepo.Get(ctx, cancelParams.ClassID, cancelParams.Email)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return uuid.UUID{}, domainErrors.ErrConfirmedBookingNotFound(cancelParams.Email, cancelParams.ClassID)
+		}
+
+		return uuid.UUID{}, fmt.Errorf("could not get confirmed bookings: %w", err)
+	}
+
 	class, err := s.ClassesRepo.Get(ctx, cancelParams.ClassID)
 	if err != nil {
 		return uuid.UUID{}, fmt.Errorf("could not get class: %w", err)
 	}
 
 	if class.CurrentCapacity == class.MaxCapacity {
-		return uuid.UUID{}, errs2.ErrClassEmpty(fmt.Errorf("max capacity exceeded"))
+		return uuid.UUID{}, domainErrors.ErrClassEmpty(fmt.Errorf("max capacity exceeded"))
 	}
 
 	confirmationToken, err := s.TokenGenerator.Generate(32)
 	if err != nil {
-		return uuid.UUID{}, &errs2.BookingError{Code: http.StatusInternalServerError, Message: err.Error()}
+		return uuid.UUID{}, &domainErrors.BookingError{Code: http.StatusInternalServerError, Message: err.Error()}
 	}
 
 	expiry := time.Now().Add(24 * time.Hour)
@@ -124,7 +138,7 @@ func (s *Service) CancelBooking(
 
 	err = s.PendingOperationsRepo.Insert(ctx, cancelPendingOperation)
 	if err != nil {
-		return uuid.UUID{}, &errs2.BookingError{Code: http.StatusInternalServerError, Message: err.Error()}
+		return uuid.UUID{}, &domainErrors.BookingError{Code: http.StatusInternalServerError, Message: err.Error()}
 	}
 
 	msgParams := models.ConfirmationCancelParams{
@@ -135,7 +149,7 @@ func (s *Service) CancelBooking(
 
 	err = s.MessageSender.SendConfirmationCancelLink(msgParams)
 	if err != nil {
-		return uuid.UUID{}, &errs2.BookingError{Code: http.StatusInternalServerError, Message: err.Error()}
+		return uuid.UUID{}, &domainErrors.BookingError{Code: http.StatusInternalServerError, Message: err.Error()}
 	}
 
 	return class.ID, nil

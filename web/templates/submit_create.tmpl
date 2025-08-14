@@ -1,11 +1,11 @@
-<div id="booking-block-{{ .ClassID }}">
-    <p class="booking-success">
+<div id="submit-create-block-{{ .ClassID }}">
+    <p class="pending-operation-create">
         Kliknij na link wysłany na Twoją pocztę,<br>aby potwierdzić rezerwacje.
     </p>
     <button class="btn-book"
             hx-post="/book"
             hx-swap="outerHTML"
-            hx-target="#booking-block-{{ .ClassID }}"
+            hx-target="#submit-create-block-{{ .ClassID }}"
             hx-vals='{"id": "{{ .ClassID }}"}'
             hx-trigger="click">
         book now

@@ -4,9 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	errs2 "main/internal/domain/errs"
+	domainErrors "main/internal/domain/errs"
 	"main/internal/domain/models"
 	"main/internal/domain/repositories"
+	"main/internal/infrastructure/errs"
 	"time"
 
 	"github.com/google/uuid"
@@ -66,7 +67,7 @@ func (s *Service) CreateBooking(
 	if err != nil {
 		var pgErr *pq.Error
 		if errors.As(err, &pgErr) && pgErr.Code == recordExistsCode {
-			return models.Class{}, errs2.ErrAlreadyBooked(pendingOperation.Email)
+			return models.Class{}, domainErrors.ErrConfirmedBookingAlreadyExists(pendingOperation.Email)
 		}
 
 		return models.Class{}, fmt.Errorf("error while inserting pendingOperation: %w", err)
@@ -108,6 +109,10 @@ func (s *Service) CancelBooking(ctx context.Context, token string) (models.Class
 
 	err = s.ConfirmedBookingRepo.Delete(ctx, pendingOperation.ClassID, pendingOperation.Email)
 	if err != nil {
+		if errors.Is(err, errs.ErrNoRowsAffected) {
+			return models.Class{}, domainErrors.ErrConfirmedBookingNotFound(pendingOperation.Email, pendingOperation.ClassID)
+		}
+
 		return models.Class{}, fmt.Errorf("error while deleting confirmed booking: %w", err)
 	}
 

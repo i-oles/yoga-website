@@ -22,7 +22,12 @@ func (e ErrorHandler) Handle(c *gin.Context, tmplName string, err error) {
 	var bookingError *domainErrs.BookingError
 	switch {
 	case errors.As(err, &bookingError):
-		c.HTML(bookingError.Code, tmplName, gin.H{"error": bookingError.Message})
+		switch bookingError.Code {
+		case domainErrs.ConfirmedBookingNotFoundCode:
+			c.HTML(http.StatusOK, tmplName, gin.H{
+				"ID":    bookingError.ClassID,
+				"Error": bookingError.Message})
+		}
 	default:
 		c.HTML(http.StatusInternalServerError, tmplName, gin.H{"error": err.Error()})
 	}

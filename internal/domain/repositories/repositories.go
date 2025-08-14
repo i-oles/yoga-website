@@ -10,19 +10,20 @@ import (
 
 // TODO: here should be ctx added
 type Classes interface {
-	GetAllClasses(ctx context.Context) ([]models.Class, error)
 	Get(ctx context.Context, id uuid.UUID) (models.Class, error)
+	GetAllClasses(ctx context.Context) ([]models.Class, error)
 	DecrementCurrentCapacity(ctx context.Context, id uuid.UUID) error
 	IncrementCurrentCapacity(ctx context.Context, id uuid.UUID) error
 }
 
 type ConfirmedBookings interface {
+	Get(ctx context.Context, classID uuid.UUID, email string) (models.ConfirmedBooking, error)
 	Insert(ctx context.Context, confirmedBooking models.ConfirmedBooking) error
 	Delete(ctx context.Context, classID uuid.UUID, email string) error
 }
 
 type PendingOperations interface {
-	Insert(ctx context.Context, booking models.PendingOperation) error
 	Get(ctx context.Context, token string) (optional.Optional[models.PendingOperation], error)
+	Insert(ctx context.Context, booking models.PendingOperation) error
 	Delete(ctx context.Context, token string) error
 }

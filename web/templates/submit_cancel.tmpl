@@ -1,15 +1,13 @@
-<div id="booking-block-{{ .ClassID }}">
+<div id="submit-cancel-block-{{ .ClassID }}">
 <p class="pending-operation-cancel">
     Kliknij na link wysłany na Twoją pocztę,<br> aby wycofać rezerwację.
 </p>
-<div id="cancel-button-{{ .ClassID }}">
-    <button class="btn-book"
-            hx-post="/book"
-            hx-swap="outerHTML"
-            hx-target="#book-button-{{ .ClassID }}"
-            hx-vals='{"id": "{{ .ClassID }}"}'
-            hx-trigger="click">
-        book now
-    </button>
-</div>
+<button class="btn-cancel"
+        hx-post="/cancel"
+        hx-swap="outerHTML"
+        hx-target="#submit-cancel-block-{{ .ClassID }}"
+        hx-vals='{"id": "{{ .ClassID }}"}'
+        hx-trigger="click">
+    cancel booking
+</button>
 </div>
