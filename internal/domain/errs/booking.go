@@ -9,17 +9,23 @@ import (
 
 const (
 	ConfirmedBookingNotFoundCode int = iota
+	ConfirmedBookingAlreadyExistsCode
 )
 
 func ErrConfirmedBookingAlreadyExists(email string) *BookingError {
-	return &BookingError{Code: http.StatusConflict, Message: "booking for : " + email + " already exists in this class"}
+	return &BookingError{
+		Code: ConfirmedBookingAlreadyExistsCode,
+		// TODO: should this be in english?
+		Message: "Wygląda na to, że rezerwacja dla: " + email + " już istnieje. " +
+			"Sprawdź swoją skrzynkę pocztową, aby znaleźć wcześniejsze potwierdzenie.",
+	}
 }
 
 func ErrConfirmedBookingNotFound(email string, classID uuid.UUID) *BookingError {
 	return &BookingError{
 		ClassID: &classID,
 		Code:    ConfirmedBookingNotFoundCode,
-		Message: "confirmed booking for " + email + " does not exist in this class",
+		Message: "Brak potwierdzonej rezerwacji na te zajęcia dla: " + email,
 	}
 }
 

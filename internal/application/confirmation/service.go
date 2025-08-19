@@ -49,7 +49,7 @@ func (s *Service) CreateBooking(
 	}
 
 	if !pendingOperationOpt.Exists() {
-		return models.Class{}, errors.New("invalid or expired confirmation link")
+		return models.Class{}, fmt.Errorf("pending operation for token: %s not found", token)
 	}
 
 	pendingOperation := pendingOperationOpt.Get()
@@ -118,7 +118,7 @@ func (s *Service) CancelBooking(ctx context.Context, token string) (models.Class
 	}
 
 	if !pendingOperationOpt.Exists() {
-		return models.Class{}, errors.New("invalid or expired confirmation link")
+		return models.Class{}, fmt.Errorf("pending operation for token: %s not found", token)
 	}
 
 	pendingOperation := pendingOperationOpt.Get()
