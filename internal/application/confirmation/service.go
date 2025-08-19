@@ -7,6 +7,7 @@ import (
 	domainErrors "main/internal/domain/errs"
 	"main/internal/domain/models"
 	"main/internal/domain/repositories"
+	"main/internal/domain/services"
 	"main/internal/infrastructure/errs"
 	"time"
 
@@ -18,17 +19,20 @@ type Service struct {
 	ClassesRepo           repositories.Classes
 	ConfirmedBookingRepo  repositories.ConfirmedBookings
 	PendingOperationsRepo repositories.PendingOperations
+	MessageSender         services.ISender
 }
 
 func New(
 	classesRepo repositories.Classes,
 	confirmedBookingsRepo repositories.ConfirmedBookings,
 	pendingOperationsRepo repositories.PendingOperations,
+	messageSender services.ISender,
 ) *Service {
 	return &Service{
 		ClassesRepo:           classesRepo,
 		ConfirmedBookingRepo:  confirmedBookingsRepo,
 		PendingOperationsRepo: pendingOperationsRepo,
+		MessageSender:         messageSender,
 	}
 }
 
@@ -86,6 +90,22 @@ func (s *Service) CreateBooking(
 	class, err := s.ClassesRepo.Get(ctx, pendingOperation.ClassID)
 	if err != nil {
 		return models.Class{}, fmt.Errorf("error while getting class: %w", err)
+	}
+
+	msgParams := models.ConfirmationFinalParams{
+		RecipientEmail: pendingOperation.Email,
+		RecipientName:  pendingOperation.FirstName,
+		ClassName:      class.ClassCategory,
+		ClassLevel:     class.ClassLevel,
+		DayOfWeek:      class.DayOfWeek,
+		Hour:           class.StartHour(),
+		Date:           class.StartDate(),
+		Location:       class.Location,
+	}
+
+	err = s.MessageSender.SendFinalConfirmation(msgParams)
+	if err != nil {
+		return models.Class{}, fmt.Errorf("error while sending final-confirmation: %w", err)
 	}
 
 	return class, nil

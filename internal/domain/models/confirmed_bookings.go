@@ -14,3 +14,14 @@ type ConfirmedBooking struct {
 	Email     string    `db:"email"`
 	CreatedAt time.Time `db:"created_at"`
 }
+
+type ConfirmationFinalParams struct {
+	RecipientEmail string
+	RecipientName  string
+	ClassName      string
+	ClassLevel     ClassLevel
+	DayOfWeek      string
+	Hour           string
+	Date           string
+	Location       string
+}

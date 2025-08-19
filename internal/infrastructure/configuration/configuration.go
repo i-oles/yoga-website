@@ -42,6 +42,7 @@ type Configuration struct {
 	DomainAddr                      string
 	ConfirmationCreateEmailTmplPath string
 	ConfirmationCancelEmailTmplPath string
+	ConfirmationFinalEmailTmplPath  string
 }
 
 func (c *Configuration) Pretty() string {

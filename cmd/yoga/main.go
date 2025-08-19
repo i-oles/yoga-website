@@ -102,6 +102,7 @@ func setupRouter(db *sql.DB, cfg *configuration.Configuration) *gin.Engine {
 		cfg.EmailSender.FromName,
 		cfg.ConfirmationCreateEmailTmplPath,
 		cfg.ConfirmationCancelEmailTmplPath,
+		cfg.ConfirmationFinalEmailTmplPath,
 	)
 
 	classesService := classesService.New(classesRepo)
