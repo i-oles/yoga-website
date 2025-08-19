@@ -106,7 +106,7 @@ func setupRouter(db *sql.DB, cfg *configuration.Configuration) *gin.Engine {
 	)
 
 	classesService := classesService.New(classesRepo)
-	confirmationService := confirmation.New(classesRepo, confirmedBookingsRepo, pendingOperationsRepo)
+	confirmationService := confirmation.New(classesRepo, confirmedBookingsRepo, pendingOperationsRepo, emailSender)
 	pendingOperationsService := pending.New(
 		classesRepo,
 		pendingOperationsRepo,
