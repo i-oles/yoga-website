@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"main/internal/domain/models"
 	"main/internal/domain/repositories"
+	"time"
 )
+
+const classesLimit = 6
 
 type Service struct {
 	classesRepo repositories.Classes
@@ -16,10 +19,37 @@ func New(classesRepo repositories.Classes) *Service {
 }
 
 func (s *Service) GetAllClasses(ctx context.Context) ([]models.Class, error) {
+	filteredClasses := make([]models.Class, 0)
+
 	classes, err := s.classesRepo.GetAllClasses(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("could not get all classes: %w", err)
 	}
 
-	return classes, nil
+	counter := 0
+
+	for _, class := range classes {
+		if counter >= classesLimit {
+			break
+		}
+
+		if class.StartTime.After(time.Now()) {
+			classStartTime := class.StartTime
+
+			loc, err := time.LoadLocation("Europe/Warsaw")
+			if err != nil {
+				panic(fmt.Errorf("could not load location: %w", err))
+			}
+
+			warsawTime := classStartTime.In(loc)
+
+			class.StartTime = warsawTime
+
+			filteredClasses = append(filteredClasses, class)
+
+			counter++
+		}
+	}
+
+	return filteredClasses, nil
 }

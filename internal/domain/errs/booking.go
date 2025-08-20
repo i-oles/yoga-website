@@ -7,15 +7,17 @@ import (
 	"github.com/google/uuid"
 )
 
+// TODO: should error messages be in english?
+
 const (
 	ConfirmedBookingNotFoundCode int = iota
 	ConfirmedBookingAlreadyExistsCode
+	ExpiredClassBookingCode
 )
 
 func ErrConfirmedBookingAlreadyExists(email string) *BookingError {
 	return &BookingError{
 		Code: ConfirmedBookingAlreadyExistsCode,
-		// TODO: should this be in english?
 		Message: "Wygląda na to, że rezerwacja dla: " + email + " już istnieje. " +
 			"Sprawdź swoją skrzynkę pocztową, aby znaleźć wcześniejsze potwierdzenie.",
 	}
@@ -29,8 +31,12 @@ func ErrConfirmedBookingNotFound(email string, classID uuid.UUID) *BookingError 
 	}
 }
 
-func ErrPendingOperationCreateAlreadyExists(email string) *BookingError {
-	return &BookingError{Code: http.StatusConflict, Message: "link for booking confirmation was already sent to : " + email}
+func ErrExpiredClassBooking(classID uuid.UUID) *BookingError {
+	return &BookingError{
+		ClassID: &classID,
+		Code:    ExpiredClassBookingCode,
+		Message: "Rezerwacja niedostępna – zajęcia już się zaczęły albo odbyły",
+	}
 }
 
 func ErrClassFullyBooked(err error) *BookingError {

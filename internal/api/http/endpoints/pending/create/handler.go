@@ -52,7 +52,7 @@ func (h *Handler) Handle(c *gin.Context) {
 
 	classID, err := h.ServicePendingOperations.CreateBooking(ctx, createBookingParams)
 	if err != nil {
-		h.ErrorHandler.Handle(c, "err.tmpl", err)
+		h.ErrorHandler.Handle(c, "book.tmpl", err)
 
 		return
 	}

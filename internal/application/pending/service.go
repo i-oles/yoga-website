@@ -58,6 +58,13 @@ func (s *Service) CreateBooking(
 		return uuid.UUID{}, domainErrors.ErrClassFullyBooked(fmt.Errorf("no spots left in class with id: %d", class.ID))
 	}
 
+	fmt.Printf("start_Time: %v\n", class.StartTime)
+	fmt.Printf("timeNow: %v\n", time.Now())
+
+	if class.StartTime.Before(time.Now()) {
+		return uuid.UUID{}, domainErrors.ErrExpiredClassBooking(createParams.ClassID)
+	}
+
 	confirmationToken, err := s.TokenGenerator.Generate(32)
 	if err != nil {
 		return uuid.UUID{}, fmt.Errorf("could not generate confirmation token: %w", err)

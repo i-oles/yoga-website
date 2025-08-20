@@ -32,7 +32,13 @@ func (e ErrorHandler) Handle(c *gin.Context, tmplName string, err error) {
 			c.HTML(http.StatusOK, tmplName, gin.H{
 				"Message": bookingError.Message,
 			})
+		case domainErrs.ExpiredClassBookingCode:
+			c.HTML(http.StatusOK, tmplName, gin.H{
+				"ID":    bookingError.ClassID,
+				"Error": bookingError.Message,
+			})
 		}
+
 	default:
 		c.HTML(http.StatusInternalServerError, tmplName, gin.H{"error": err.Error()})
 	}

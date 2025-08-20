@@ -1,4 +1,4 @@
-ALTER DATABASE root SET timezone TO 'Europe/Warsaw';
+ALTER DATABASE root SET timezone TO 'UTC';
 
 -- CREATE TYPE class_level AS ENUM ('beginner', 'intermediate', 'advanced');
 
@@ -6,7 +6,7 @@ CREATE TABLE classes
 (
     id               uuid PRIMARY KEY,
     day_of_week      varchar(20) NOT NULL,
-    start_time       timestamp   NOT NULL,
+    start_time       timestamptz NOT NULL,
     class_level      class_level NOT NULL,
     class_category   varchar(30) NOT NULL,
     current_capacity integer     NOT NULL,
