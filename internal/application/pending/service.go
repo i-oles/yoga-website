@@ -58,9 +58,6 @@ func (s *Service) CreateBooking(
 		return uuid.UUID{}, domainErrors.ErrClassFullyBooked(fmt.Errorf("no spots left in class with id: %d", class.ID))
 	}
 
-	fmt.Printf("start_Time: %v\n", class.StartTime)
-	fmt.Printf("timeNow: %v\n", time.Now())
-
 	if class.StartTime.Before(time.Now()) {
 		return uuid.UUID{}, domainErrors.ErrExpiredClassBooking(createParams.ClassID)
 	}
@@ -119,6 +116,10 @@ func (s *Service) CancelBooking(
 	class, err := s.ClassesRepo.Get(ctx, cancelParams.ClassID)
 	if err != nil {
 		return uuid.UUID{}, fmt.Errorf("could not get class: %w", err)
+	}
+
+	if class.StartTime.Before(time.Now()) {
+		return uuid.UUID{}, domainErrors.ErrExpiredClassBooking(cancelParams.ClassID)
 	}
 
 	if class.CurrentCapacity == class.MaxCapacity {

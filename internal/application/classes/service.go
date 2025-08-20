@@ -33,20 +33,23 @@ func (s *Service) GetAllClasses(ctx context.Context) ([]models.Class, error) {
 			break
 		}
 
+		classStartTime := class.StartTime
+
+		loc, err := time.LoadLocation("Europe/Warsaw")
+		if err != nil {
+			panic(fmt.Errorf("could not load location: %w", err))
+		}
+
+		warsawTime := classStartTime.In(loc)
+
+		now := time.Now()
+
+		fmt.Println(now)
+
+		class.StartTime = warsawTime
+
 		if class.StartTime.After(time.Now()) {
-			classStartTime := class.StartTime
-
-			loc, err := time.LoadLocation("Europe/Warsaw")
-			if err != nil {
-				panic(fmt.Errorf("could not load location: %w", err))
-			}
-
-			warsawTime := classStartTime.In(loc)
-
-			class.StartTime = warsawTime
-
 			filteredClasses = append(filteredClasses, class)
-
 			counter++
 		}
 	}
