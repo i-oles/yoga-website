@@ -22,7 +22,6 @@ type PendingOperation struct {
 	LastName         *string   `db:"last_name"`
 	AuthToken        string    `db:"auth_token"`
 	ClassMaxCapacity int       `db:"class_max_capacity"`
-	TokenExpiresAt   time.Time `db:"token_expires_at"`
 	CreatedAt        time.Time `db:"created_at"`
 }
 

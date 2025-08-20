@@ -25,7 +25,6 @@ CREATE TABLE pending_operations
     first_name       varchar(30)        NOT NULL,
     last_name        varchar(30),
     auth_token       varchar(64) UNIQUE NOT NULL,
-    token_expires_at timestamp          NOT NULL,
     created_at       timestamp DEFAULT NOW()
 );
 

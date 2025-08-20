@@ -26,7 +26,7 @@ func (r PendingOperationsRepo) Insert(
 	pendingOperation models.PendingOperation,
 ) error {
 	query := fmt.Sprintf(
-		"INSERT INTO %s (id, class_id, operation, email, first_name, last_name, auth_token, token_expires_at, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);", r.collName)
+		"INSERT INTO %s (id, class_id, operation, email, first_name, last_name, auth_token, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);", r.collName)
 
 	_, err := r.db.ExecContext(
 		ctx,
@@ -38,7 +38,6 @@ func (r PendingOperationsRepo) Insert(
 		pendingOperation.FirstName,
 		pendingOperation.LastName,
 		pendingOperation.AuthToken,
-		pendingOperation.TokenExpiresAt,
 		pendingOperation.CreatedAt,
 	)
 	if err != nil {
@@ -51,7 +50,7 @@ func (r PendingOperationsRepo) Insert(
 func (r PendingOperationsRepo) Get(ctx context.Context, token string) (optional.Optional[models.PendingOperation], error) {
 	var operation models.PendingOperation
 
-	query := fmt.Sprintf("SELECT id, class_id, operation, email, first_name, last_name, auth_token, token_expires_at, created_at FROM %s WHERE auth_token = $1;", r.collName)
+	query := fmt.Sprintf("SELECT id, class_id, operation, email, first_name, last_name, auth_token, created_at FROM %s WHERE auth_token = $1;", r.collName)
 
 	err := r.db.QueryRowContext(ctx, query, token).Scan(
 		&operation.ID,
@@ -61,7 +60,6 @@ func (r PendingOperationsRepo) Get(ctx context.Context, token string) (optional.
 		&operation.FirstName,
 		&operation.LastName,
 		&operation.AuthToken,
-		&operation.TokenExpiresAt,
 		&operation.CreatedAt,
 	)
 	if err != nil {
