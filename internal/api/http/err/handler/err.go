@@ -30,16 +30,19 @@ func (e ErrorHandler) Handle(c *gin.Context, tmplName string, err error) {
 			})
 		case domainErrs.ConfirmedBookingAlreadyExistsCode:
 			c.HTML(http.StatusOK, tmplName, gin.H{
-				"Message": bookingError.Message,
+				"Error": bookingError.Message,
 			})
 		case domainErrs.ExpiredClassBookingCode:
 			c.HTML(http.StatusOK, tmplName, gin.H{
 				"ID":    bookingError.ClassID,
 				"Error": bookingError.Message,
 			})
+		case domainErrs.PendingOperationNotFoundCode:
+			c.HTML(http.StatusOK, tmplName, gin.H{
+				"Error": bookingError.Message,
+			})
 		}
-
 	default:
-		c.HTML(http.StatusInternalServerError, tmplName, gin.H{"error": err.Error()})
+		c.HTML(http.StatusInternalServerError, tmplName, gin.H{})
 	}
 }

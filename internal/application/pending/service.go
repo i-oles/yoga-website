@@ -68,14 +68,14 @@ func (s *Service) CreateBooking(
 	}
 
 	pendingBooking := models.PendingOperation{
-		ID:        uuid.New(),
-		ClassID:   class.ID,
-		Operation: models.CreateBooking,
-		Email:     createParams.Email,
-		FirstName: createParams.FirstName,
-		LastName:  &createParams.LastName,
-		AuthToken: confirmationToken,
-		CreatedAt: time.Now(),
+		ID:                uuid.New(),
+		ClassID:           class.ID,
+		Operation:         models.CreateBooking,
+		Email:             createParams.Email,
+		FirstName:         createParams.FirstName,
+		LastName:          &createParams.LastName,
+		ConfirmationToken: confirmationToken,
+		CreatedAt:         time.Now(),
 	}
 
 	err = s.PendingOperationsRepo.Insert(ctx, pendingBooking)
@@ -129,13 +129,13 @@ func (s *Service) CancelBooking(
 	}
 
 	cancelPendingOperation := models.PendingOperation{
-		ID:        uuid.New(),
-		ClassID:   class.ID,
-		Operation: models.CancelBooking,
-		Email:     cancelParams.Email,
-		FirstName: cancelParams.FirstName,
-		AuthToken: confirmationToken,
-		CreatedAt: time.Now(),
+		ID:                uuid.New(),
+		ClassID:           class.ID,
+		Operation:         models.CancelBooking,
+		Email:             cancelParams.Email,
+		FirstName:         cancelParams.FirstName,
+		ConfirmationToken: confirmationToken,
+		CreatedAt:         time.Now(),
 	}
 
 	err = s.PendingOperationsRepo.Insert(ctx, cancelPendingOperation)

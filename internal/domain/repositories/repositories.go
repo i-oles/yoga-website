@@ -3,7 +3,6 @@ package repositories
 import (
 	"context"
 	"main/internal/domain/models"
-	"main/pkg/optional"
 
 	"github.com/google/uuid"
 )
@@ -23,7 +22,7 @@ type ConfirmedBookings interface {
 }
 
 type PendingOperations interface {
-	Get(ctx context.Context, token string) (optional.Optional[models.PendingOperation], error)
+	Get(ctx context.Context, token string) (models.PendingOperation, error)
 	Insert(ctx context.Context, booking models.PendingOperation) error
 	Delete(ctx context.Context, token string) error
 }

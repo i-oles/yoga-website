@@ -3,10 +3,8 @@ package postgres
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"main/internal/domain/models"
-	"main/pkg/optional"
 )
 
 type PendingOperationsRepo struct {
@@ -26,7 +24,7 @@ func (r PendingOperationsRepo) Insert(
 	pendingOperation models.PendingOperation,
 ) error {
 	query := fmt.Sprintf(
-		"INSERT INTO %s (id, class_id, operation, email, first_name, last_name, auth_token, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);", r.collName)
+		"INSERT INTO %s (id, class_id, operation, email, first_name, last_name, auth_token, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8);", r.collName)
 
 	_, err := r.db.ExecContext(
 		ctx,
@@ -37,7 +35,7 @@ func (r PendingOperationsRepo) Insert(
 		pendingOperation.Email,
 		pendingOperation.FirstName,
 		pendingOperation.LastName,
-		pendingOperation.AuthToken,
+		pendingOperation.ConfirmationToken,
 		pendingOperation.CreatedAt,
 	)
 	if err != nil {
@@ -47,7 +45,7 @@ func (r PendingOperationsRepo) Insert(
 	return nil
 }
 
-func (r PendingOperationsRepo) Get(ctx context.Context, token string) (optional.Optional[models.PendingOperation], error) {
+func (r PendingOperationsRepo) Get(ctx context.Context, token string) (models.PendingOperation, error) {
 	var operation models.PendingOperation
 
 	query := fmt.Sprintf("SELECT id, class_id, operation, email, first_name, last_name, auth_token, created_at FROM %s WHERE auth_token = $1;", r.collName)
@@ -59,18 +57,14 @@ func (r PendingOperationsRepo) Get(ctx context.Context, token string) (optional.
 		&operation.Email,
 		&operation.FirstName,
 		&operation.LastName,
-		&operation.AuthToken,
+		&operation.ConfirmationToken,
 		&operation.CreatedAt,
 	)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return optional.Empty[models.PendingOperation](), fmt.Errorf("pending operation does not exists in database: %w", err)
-		}
-
-		return optional.Empty[models.PendingOperation](), fmt.Errorf("failed while getting pending operation: %w", err)
+		return models.PendingOperation{}, fmt.Errorf("failed while getting pending operation: %w", err)
 	}
 
-	return optional.Of(operation), nil
+	return operation, nil
 }
 
 // TODO: here should delete(ctx, id) not token ??

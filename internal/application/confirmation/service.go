@@ -2,6 +2,7 @@ package confirmation
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	domainErrors "main/internal/domain/errs"
@@ -43,16 +44,16 @@ const (
 func (s *Service) CreateBooking(
 	ctx context.Context, token string,
 ) (models.Class, error) {
-	pendingOperationOpt, err := s.PendingOperationsRepo.Get(ctx, token)
+	pendingOperation, err := s.PendingOperationsRepo.Get(ctx, token)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return models.Class{}, domainErrors.ErrPendingOperationNotFound(
+				fmt.Errorf("pending operation for token: %s not found", token),
+			)
+		}
+
 		return models.Class{}, fmt.Errorf("error while getting pending pendingOperation: %w", err)
 	}
-
-	if !pendingOperationOpt.Exists() {
-		return models.Class{}, fmt.Errorf("pending operation for token: %s not found", token)
-	}
-
-	pendingOperation := pendingOperationOpt.Get()
 
 	if pendingOperation.Operation != models.CreateBooking {
 		return models.Class{}, fmt.Errorf("invalid operation type: %s", pendingOperation.Operation)
@@ -112,16 +113,16 @@ func (s *Service) CreateBooking(
 }
 
 func (s *Service) CancelBooking(ctx context.Context, token string) (models.Class, error) {
-	pendingOperationOpt, err := s.PendingOperationsRepo.Get(ctx, token)
+	pendingOperation, err := s.PendingOperationsRepo.Get(ctx, token)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return models.Class{}, domainErrors.ErrPendingOperationNotFound(
+				fmt.Errorf("pending operation for token: %s not found", token),
+			)
+		}
+
 		return models.Class{}, fmt.Errorf("error while getting pending pendingOperation: %w", err)
 	}
-
-	if !pendingOperationOpt.Exists() {
-		return models.Class{}, fmt.Errorf("pending operation for token: %s not found", token)
-	}
-
-	pendingOperation := pendingOperationOpt.Get()
 
 	if pendingOperation.Operation != models.CancelBooking {
 		return models.Class{}, fmt.Errorf("invalid operation type: %s", pendingOperation.Operation)

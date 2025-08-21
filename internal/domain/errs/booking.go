@@ -13,6 +13,7 @@ const (
 	ConfirmedBookingNotFoundCode int = iota
 	ConfirmedBookingAlreadyExistsCode
 	ExpiredClassBookingCode
+	PendingOperationNotFoundCode
 )
 
 func ErrConfirmedBookingAlreadyExists(email string) *BookingError {
@@ -36,6 +37,14 @@ func ErrExpiredClassBooking(classID uuid.UUID) *BookingError {
 		ClassID: &classID,
 		Code:    ExpiredClassBookingCode,
 		Message: "Rezerwacja niedostępna – zajęcia już się zaczęły albo odbyły",
+	}
+}
+
+func ErrPendingOperationNotFound(err error) *BookingError {
+	return &BookingError{
+		Code:    PendingOperationNotFoundCode,
+		Message: "Twój link potwierdzający wygasł, stwórz nową sesję.",
+		Err:     err,
 	}
 }
 
