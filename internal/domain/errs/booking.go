@@ -14,13 +14,15 @@ const (
 	ConfirmedBookingAlreadyExistsCode
 	ExpiredClassBookingCode
 	PendingOperationNotFoundCode
+	TooManyPendingOperationsCode
 )
 
-func ErrConfirmedBookingAlreadyExists(email string) *BookingError {
+func ErrConfirmedBookingAlreadyExists(email string, err error) *BookingError {
 	return &BookingError{
 		Code: ConfirmedBookingAlreadyExistsCode,
 		Message: "Wygląda na to, że rezerwacja dla: " + email + " już istnieje. " +
-			"Sprawdź swoją skrzynkę pocztową, aby znaleźć wcześniejsze potwierdzenie.",
+			"Sprawdź skrzynkę mailową, aby znaleźć wcześniejsze potwierdzenie.",
+		Err: err,
 	}
 }
 
@@ -45,6 +47,16 @@ func ErrPendingOperationNotFound(err error) *BookingError {
 		Code:    PendingOperationNotFoundCode,
 		Message: "Twój link potwierdzający wygasł, stwórz nową sesję.",
 		Err:     err,
+	}
+}
+
+func ErrTooManyPendingOperations(classID uuid.UUID, email string, err error) *BookingError {
+	return &BookingError{
+		Code:    TooManyPendingOperationsCode,
+		ClassID: &classID,
+		Message: fmt.Sprintf("Wyczerpano limit linków potwierdzających dla %s. "+
+			"Sprawdź wiadości odebrane lub spam w skrzynce mailowej.", email),
+		Err: err,
 	}
 }
 

@@ -21,7 +21,7 @@ func New(classesRepo repositories.Classes) *Service {
 func (s *Service) GetAllClasses(ctx context.Context) ([]models.Class, error) {
 	filteredClasses := make([]models.Class, 0)
 
-	classes, err := s.classesRepo.GetAllClasses(ctx)
+	classes, err := s.classesRepo.GetAll(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("could not get all classes: %w", err)
 	}

@@ -45,3 +45,12 @@
         </button>
     </form>
 </div>
+<script>
+    document.addEventListener('htmx:beforeSwap', function(event) {
+        // handle status 409 (Conflict), 400 (Bad Request), 404 (Not Found)
+        if ([409, 404, 400].includes(event.detail.xhr.status)) {
+            event.detail.shouldSwap = true;  // force swap
+            event.detail.isError = false;    // treat as proper resp
+        }
+    });
+</script>

@@ -22,7 +22,7 @@ func NewClassesRepo(db *sql.DB) *ClassesRepo {
 		collName: "classes"}
 }
 
-func (c ClassesRepo) GetAllClasses(ctx context.Context) ([]models.Class, error) {
+func (c ClassesRepo) GetAll(ctx context.Context) ([]models.Class, error) {
 	query := fmt.Sprintf("SELECT * FROM %s ORDER BY start_time ASC;", c.collName)
 
 	rows, err := c.db.QueryContext(ctx, query)

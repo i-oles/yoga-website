@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"fmt"
 	"main/internal/domain/models"
+
+	"github.com/google/uuid"
 )
 
 type PendingOperationsRepo struct {
@@ -65,6 +67,23 @@ func (r PendingOperationsRepo) Get(ctx context.Context, token string) (models.Pe
 	}
 
 	return operation, nil
+}
+
+func (r PendingOperationsRepo) CountPendingOperationsPerUser(
+	ctx context.Context,
+	email string,
+	operation models.Operation,
+	classID uuid.UUID,
+) (int8, error) {
+	query := fmt.Sprintf("SELECT COUNT(email) FROM %s WHERE email = $1 AND class_id = $2 AND operation = $3;", r.collName)
+
+	var count int8
+	err := r.db.QueryRowContext(ctx, query, email, classID, operation).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed while counting user in class: %w", err)
+	}
+
+	return count, nil
 }
 
 // TODO: here should delete(ctx, id) not token ??

@@ -72,7 +72,7 @@ func (s *Service) CreateBooking(
 	if err != nil {
 		var pgErr *pq.Error
 		if errors.As(err, &pgErr) && pgErr.Code == recordExistsCode {
-			return models.Class{}, domainErrors.ErrConfirmedBookingAlreadyExists(pendingOperation.Email)
+			return models.Class{}, domainErrors.ErrConfirmedBookingAlreadyExists(pendingOperation.Email, err)
 		}
 
 		return models.Class{}, fmt.Errorf("error while inserting pendingOperation: %w", err)
