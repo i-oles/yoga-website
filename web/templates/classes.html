@@ -9,18 +9,42 @@
 </head>
 <body>
 <h1>classes</h1>
+<br>
 <div>
     {{ range .Classes }}
     <div class="class-container">
         <form id="form-{{ .ID }}">
             <div id="class-info">
-                category: {{ .ClassCategory }}<br>
-                class level: {{ .ClassLevel }}<br>
-                day: {{ .DayOfWeek }}<br>
-                date: {{ .StartDate }}<br>
-                start at: {{ .StartHour }}<br>
-                where: {{ .Location }}<br>
-                spots left: {{ .CurrentCapacity }} / {{ .MaxCapacity }}<br>
+                <table cellpadding="6" cellspacing="0" style="border-collapse: collapse; margin-top: 15px;">
+                    <tr>
+                        <td style="font-weight:bold;">zajęcia:</td>
+                        <td>{{ .ClassCategory }}</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight:bold;">poziom:</td>
+                        <td>{{ .ClassLevel }}</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight:bold;">dzień:</td>
+                        <td>{{ .DayOfWeek }}</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight:bold;">data:</td>
+                        <td>{{ .StartDate }}</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight:bold;">godzina:</td>
+                        <td>{{ .StartHour }}</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight:bold;">gdzie:</td>
+                        <td>{{ .Location }}</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight:bold;">ilość miejsc:</td>
+                        <td>{{ .CurrentCapacity }} / {{ .MaxCapacity }}</td>
+                    </tr>
+                </table>
             </div>
             {{ if eq .CurrentCapacity 0 }}
             <div id="book-button-{{ .ID }}">
