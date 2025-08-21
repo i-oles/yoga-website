@@ -83,8 +83,12 @@ button {
     font-size: 12px;
     color: red;
     height: 50px;
+    line-height: 1.4;
+    margin-top: 8px;
+    margin-bottom: 12px;
     margin-left: -10px;
-}
+    white-space: normal;
+    word-wrap: break-word; }
 
 .pending-operation-create {
     font-size: 12px;
