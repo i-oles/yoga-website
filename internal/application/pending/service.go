@@ -9,7 +9,6 @@ import (
 	"main/internal/domain/models"
 	"main/internal/domain/repositories"
 	"main/internal/domain/services"
-	"net/http"
 	"time"
 
 	"github.com/google/uuid"
@@ -48,21 +47,9 @@ func (s *Service) CreateBooking(
 	ctx context.Context,
 	createParams models.CreateParams,
 ) (uuid.UUID, error) {
-	pendingOperationsPerUserCount, err := s.PendingOperationsRepo.CountPendingOperationsPerUser(
-		ctx,
-		createParams.Email,
-		models.CreateBooking,
-		createParams.ClassID)
+	err := s.validatePendingOperationNumberPerUser(ctx, createParams.ClassID, createParams.Email, models.CreateBooking)
 	if err != nil {
-		return uuid.Nil, err
-	}
-
-	if pendingOperationsPerUserCount >= 2 {
-		return uuid.Nil, domainErrors.ErrTooManyPendingOperations(
-			createParams.ClassID,
-			createParams.Email,
-			fmt.Errorf("found %d pending operations per user", pendingOperationsPerUserCount),
-		)
+		return uuid.Nil, fmt.Errorf("validate pending operation number per user: %w", err)
 	}
 
 	class, err := s.ClassesRepo.Get(ctx, createParams.ClassID)
@@ -71,12 +58,17 @@ func (s *Service) CreateBooking(
 	}
 
 	if class.CurrentCapacity == 0 {
-		//TODO: verify this message error on front
-		return uuid.Nil, domainErrors.ErrClassFullyBooked(fmt.Errorf("no spots left in class with id: %d", class.ID))
+		return uuid.Nil, domainErrors.ErrClassFullyBooked(
+			createParams.ClassID,
+			fmt.Errorf("no spots left in class with id: %d", createParams.ClassID),
+		)
 	}
 
 	if class.StartTime.Before(time.Now()) {
-		return uuid.Nil, domainErrors.ErrExpiredClassBooking(createParams.ClassID)
+		return uuid.Nil, domainErrors.ErrExpiredClassBooking(
+			createParams.ClassID,
+			fmt.Errorf("class %s has expired at %v", createParams.ClassID, class.StartTime),
+		)
 	}
 
 	confirmationToken, err := s.TokenGenerator.Generate(32)
@@ -97,7 +89,7 @@ func (s *Service) CreateBooking(
 
 	err = s.PendingOperationsRepo.Insert(ctx, pendingBooking)
 	if err != nil {
-		return uuid.Nil, &domainErrors.BookingError{Code: http.StatusInternalServerError, Message: err.Error()}
+		return uuid.Nil, fmt.Errorf("could not insert pending booking: %w", err)
 	}
 
 	msgParams := models.ConfirmationCreateParams{
@@ -108,10 +100,32 @@ func (s *Service) CreateBooking(
 
 	err = s.MessageSender.SendConfirmationCreateLink(msgParams)
 	if err != nil {
-		return uuid.Nil, &domainErrors.BookingError{Code: http.StatusInternalServerError, Message: err.Error()}
+		return uuid.Nil, fmt.Errorf("could not send confirmation create link: %w", err)
 	}
 
 	return class.ID, nil
+}
+
+func (s *Service) validatePendingOperationNumberPerUser(
+	ctx context.Context,
+	classID uuid.UUID,
+	email string,
+	operation models.Operation,
+) error {
+	count, err := s.PendingOperationsRepo.CountPendingOperationsPerUser(ctx, email, operation, classID)
+	if err != nil {
+		return fmt.Errorf("could not count pending operations for email: %s, error: %w", email, err)
+	}
+
+	if count >= 2 {
+		return domainErrors.ErrTooManyPendingOperations(
+			classID,
+			email,
+			fmt.Errorf("found %d pending operations per user", count),
+		)
+	}
+
+	return nil
 }
 
 func (s *Service) CancelBooking(
@@ -121,10 +135,19 @@ func (s *Service) CancelBooking(
 	confirmedBooking, err := s.ConfirmedBookingsRepo.Get(ctx, cancelParams.ClassID, cancelParams.Email)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return uuid.Nil, domainErrors.ErrConfirmedBookingNotFound(cancelParams.Email, cancelParams.ClassID)
+			return uuid.Nil, domainErrors.ErrConfirmedBookingNotFound(
+				cancelParams.ClassID, cancelParams.Email,
+				fmt.Errorf("no such booking with email %s for class %v",
+					cancelParams.Email, cancelParams.ClassID),
+			)
 		}
 
 		return uuid.Nil, fmt.Errorf("could not get confirmed bookings: %w", err)
+	}
+
+	err = s.validatePendingOperationNumberPerUser(ctx, cancelParams.ClassID, cancelParams.Email, models.CancelBooking)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("validate pending operation number per user: %w", err)
 	}
 
 	class, err := s.ClassesRepo.Get(ctx, cancelParams.ClassID)
@@ -133,16 +156,21 @@ func (s *Service) CancelBooking(
 	}
 
 	if class.StartTime.Before(time.Now()) {
-		return uuid.Nil, domainErrors.ErrExpiredClassBooking(cancelParams.ClassID)
+		return uuid.Nil, domainErrors.ErrExpiredClassBooking(
+			cancelParams.ClassID,
+			fmt.Errorf("class %s has expired at %v", cancelParams.ClassID, class.StartTime),
+		)
 	}
 
 	if class.CurrentCapacity == class.MaxCapacity {
-		return uuid.Nil, domainErrors.ErrClassEmpty(fmt.Errorf("max capacity exceeded"))
+		return uuid.Nil, domainErrors.ErrClassEmpty(
+			cancelParams.ClassID,
+			fmt.Errorf("class max capacity: %d exceeded", class.MaxCapacity))
 	}
 
 	confirmationToken, err := s.TokenGenerator.Generate(32)
 	if err != nil {
-		return uuid.Nil, &domainErrors.BookingError{Code: http.StatusInternalServerError, Message: err.Error()}
+		return uuid.Nil, fmt.Errorf("could not generate confirmation token: %w", err)
 	}
 
 	cancelPendingOperation := models.PendingOperation{
@@ -157,7 +185,7 @@ func (s *Service) CancelBooking(
 
 	err = s.PendingOperationsRepo.Insert(ctx, cancelPendingOperation)
 	if err != nil {
-		return uuid.Nil, &domainErrors.BookingError{Code: http.StatusInternalServerError, Message: err.Error()}
+		return uuid.Nil, fmt.Errorf("could not insert pending booking: %w", err)
 	}
 
 	msgParams := models.ConfirmationCancelParams{
@@ -168,7 +196,7 @@ func (s *Service) CancelBooking(
 
 	err = s.MessageSender.SendConfirmationCancelLink(msgParams)
 	if err != nil {
-		return uuid.Nil, &domainErrors.BookingError{Code: http.StatusInternalServerError, Message: err.Error()}
+		return uuid.Nil, fmt.Errorf("could not send confirmation cancel link: %w", err)
 	}
 
 	return class.ID, nil

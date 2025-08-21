@@ -46,6 +46,16 @@ func (e ErrorHandler) Handle(c *gin.Context, tmplName string, err error) {
 				"ID":    bookingError.ClassID,
 				"Error": bookingError.Message,
 			})
+		case domainErrs.ClassFullyBookedCode:
+			c.HTML(http.StatusConflict, tmplName, gin.H{
+				"ID":    bookingError.ClassID,
+				"Error": bookingError.Message,
+			})
+		case domainErrs.ClassEmptyCode:
+			c.HTML(http.StatusNotFound, tmplName, gin.H{
+				"ID":    bookingError.ClassID,
+				"Error": bookingError.Message,
+			})
 		}
 	default:
 		c.HTML(http.StatusInternalServerError, tmplName, gin.H{})

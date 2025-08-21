@@ -2,7 +2,6 @@ package errs
 
 import (
 	"fmt"
-	"net/http"
 
 	"github.com/google/uuid"
 )
@@ -15,6 +14,8 @@ const (
 	ExpiredClassBookingCode
 	PendingOperationNotFoundCode
 	TooManyPendingOperationsCode
+	ClassFullyBookedCode
+	ClassEmptyCode
 )
 
 func ErrConfirmedBookingAlreadyExists(email string, err error) *BookingError {
@@ -26,19 +27,21 @@ func ErrConfirmedBookingAlreadyExists(email string, err error) *BookingError {
 	}
 }
 
-func ErrConfirmedBookingNotFound(email string, classID uuid.UUID) *BookingError {
+func ErrConfirmedBookingNotFound(classID uuid.UUID, email string, err error) *BookingError {
 	return &BookingError{
 		ClassID: &classID,
 		Code:    ConfirmedBookingNotFoundCode,
 		Message: "Brak potwierdzonej rezerwacji na te zajęcia dla: " + email,
+		Err:     err,
 	}
 }
 
-func ErrExpiredClassBooking(classID uuid.UUID) *BookingError {
+func ErrExpiredClassBooking(classID uuid.UUID, err error) *BookingError {
 	return &BookingError{
 		ClassID: &classID,
 		Code:    ExpiredClassBookingCode,
 		Message: "Rezerwacja niedostępna – zajęcia już się zaczęły albo odbyły",
+		Err:     err,
 	}
 }
 
@@ -60,12 +63,22 @@ func ErrTooManyPendingOperations(classID uuid.UUID, email string, err error) *Bo
 	}
 }
 
-func ErrClassFullyBooked(err error) *BookingError {
-	return &BookingError{Code: http.StatusConflict, Message: "this class is fully booked, please choose different term", Err: err}
+func ErrClassFullyBooked(classID uuid.UUID, err error) *BookingError {
+	return &BookingError{
+		Code:    ClassFullyBookedCode,
+		ClassID: &classID,
+		Message: "Brak wolnych miejsc na te zajęcia",
+		Err:     err,
+	}
 }
 
-func ErrClassEmpty(err error) *BookingError {
-	return &BookingError{Code: http.StatusConflict, Message: "this class is empty, booking cancellation is impossible", Err: err}
+func ErrClassEmpty(classID uuid.UUID, err error) *BookingError {
+	return &BookingError{
+		Code:    ClassEmptyCode,
+		ClassID: &classID,
+		Message: "Nie możesz odwołać zajęć, ponieważ nikt jeszcze nie zrobił rezerwacji.",
+		Err:     err,
+	}
 }
 
 type BookingError struct {

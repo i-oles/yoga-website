@@ -131,7 +131,14 @@ func (s *Service) CancelBooking(ctx context.Context, token string) (models.Class
 	err = s.ConfirmedBookingRepo.Delete(ctx, pendingOperation.ClassID, pendingOperation.Email)
 	if err != nil {
 		if errors.Is(err, errs.ErrNoRowsAffected) {
-			return models.Class{}, domainErrors.ErrConfirmedBookingNotFound(pendingOperation.Email, pendingOperation.ClassID)
+			return models.Class{}, domainErrors.ErrConfirmedBookingNotFound(
+				pendingOperation.ClassID,
+				pendingOperation.Email,
+				fmt.Errorf("no such booking with email %s for class %v",
+					pendingOperation.Email,
+					pendingOperation.ClassID,
+				),
+			)
 		}
 
 		return models.Class{}, fmt.Errorf("error while deleting confirmed booking: %w", err)
