@@ -106,28 +106,6 @@ func (s *Service) CreateBooking(
 	return class.ID, nil
 }
 
-func (s *Service) validatePendingOperationNumberPerUser(
-	ctx context.Context,
-	classID uuid.UUID,
-	email string,
-	operation models.Operation,
-) error {
-	count, err := s.PendingOperationsRepo.CountPendingOperationsPerUser(ctx, email, operation, classID)
-	if err != nil {
-		return fmt.Errorf("could not count pending operations for email: %s, error: %w", email, err)
-	}
-
-	if count >= 2 {
-		return domainErrors.ErrTooManyPendingOperations(
-			classID,
-			email,
-			fmt.Errorf("found %d pending operations per user", count),
-		)
-	}
-
-	return nil
-}
-
 func (s *Service) CancelBooking(
 	ctx context.Context,
 	cancelParams models.CancelParams,
@@ -200,4 +178,26 @@ func (s *Service) CancelBooking(
 	}
 
 	return class.ID, nil
+}
+
+func (s *Service) validatePendingOperationNumberPerUser(
+	ctx context.Context,
+	classID uuid.UUID,
+	email string,
+	operation models.Operation,
+) error {
+	count, err := s.PendingOperationsRepo.CountPendingOperationsPerUser(ctx, email, operation, classID)
+	if err != nil {
+		return fmt.Errorf("could not count pending operations for email: %s, error: %w", email, err)
+	}
+
+	if count >= 2 {
+		return domainErrors.ErrTooManyPendingOperations(
+			classID,
+			email,
+			fmt.Errorf("found %d pending operations per user", count),
+		)
+	}
+
+	return nil
 }
