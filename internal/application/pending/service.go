@@ -101,7 +101,7 @@ func (s *Service) CancelBooking(
 	ctx context.Context,
 	cancelParams models.CancelParams,
 ) (uuid.UUID, error) {
-	_, err := s.ConfirmedBookingsRepo.Get(ctx, cancelParams.ClassID, cancelParams.Email)
+	confirmedBooking, err := s.ConfirmedBookingsRepo.Get(ctx, cancelParams.ClassID, cancelParams.Email)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return uuid.UUID{}, domainErrors.ErrConfirmedBookingNotFound(cancelParams.Email, cancelParams.ClassID)
@@ -133,7 +133,7 @@ func (s *Service) CancelBooking(
 		ClassID:           class.ID,
 		Operation:         models.CancelBooking,
 		Email:             cancelParams.Email,
-		FirstName:         cancelParams.FirstName,
+		FirstName:         confirmedBooking.FirstName,
 		ConfirmationToken: confirmationToken,
 		CreatedAt:         time.Now(),
 	}
@@ -145,7 +145,7 @@ func (s *Service) CancelBooking(
 
 	msgParams := models.ConfirmationCancelParams{
 		RecipientEmail:         cancelParams.Email,
-		RecipientName:          cancelParams.FirstName,
+		RecipientName:          confirmedBooking.FirstName,
 		ConfirmationCancelLink: fmt.Sprintf("%s/confirmation/cancel_booking?token=%s", s.DomainAddr, confirmationToken),
 	}
 
@@ -155,5 +155,4 @@ func (s *Service) CancelBooking(
 	}
 
 	return class.ID, nil
-
 }

@@ -93,9 +93,8 @@ type PendingOperationCreateResponse struct {
 }
 
 type PendingOperationCancelRequest struct {
-	ClassID   string `form:"class_id" binding:"required,uuid"`
-	FirstName string `form:"first_name" binding:"required,min=3,max=30"`
-	Email     string `form:"email" binding:"required,email"`
+	ClassID string `form:"class_id" binding:"required,uuid"`
+	Email   string `form:"email" binding:"required,email"`
 }
 
 type PendingOperationCancelResponse struct {

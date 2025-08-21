@@ -33,9 +33,8 @@ type CreateParams struct {
 }
 
 type CancelParams struct {
-	ClassID   uuid.UUID `json:"class_id"`
-	FirstName string    `json:"first_name"`
-	Email     string    `json:"email"`
+	ClassID uuid.UUID `json:"class_id"`
+	Email   string    `json:"email"`
 }
 
 type ConfirmationCreateParams struct {

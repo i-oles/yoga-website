@@ -42,9 +42,8 @@ func (h *Handler) Handle(c *gin.Context) {
 	}
 
 	cancelParams := models.CancelParams{
-		ClassID:   parsedUUID,
-		FirstName: req.FirstName,
-		Email:     req.Email,
+		ClassID: parsedUUID,
+		Email:   req.Email,
 	}
 
 	ctx := c.Request.Context()
