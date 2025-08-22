@@ -16,6 +16,7 @@ const (
 	TooManyPendingOperationsCode
 	ClassFullyBookedCode
 	ClassEmptyCode
+	SomeoneBookedClassFasterCode
 )
 
 func ErrConfirmedBookingAlreadyExists(email string, err error) *BookingError {
@@ -68,6 +69,14 @@ func ErrClassFullyBooked(classID uuid.UUID, err error) *BookingError {
 		Code:    ClassFullyBookedCode,
 		ClassID: &classID,
 		Message: "Brak wolnych miejsc na te zajęcia",
+		Err:     err,
+	}
+}
+
+func ErrSomeoneBookedClassFaster(err error) *BookingError {
+	return &BookingError{
+		Code:    SomeoneBookedClassFasterCode,
+		Message: "Ktoś Cię uprzedził... :( Brak wolnych miejsc na te zajęcia.",
 		Err:     err,
 	}
 }

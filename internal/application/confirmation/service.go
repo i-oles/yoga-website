@@ -55,6 +55,24 @@ func (s *Service) CreateBooking(
 		return models.Class{}, fmt.Errorf("error while getting pending pendingOperation: %w", err)
 	}
 
+	class, err := s.ClassesRepo.Get(ctx, pendingOperation.ClassID)
+	if err != nil {
+		return models.Class{}, fmt.Errorf("error while getting class: %w", err)
+	}
+
+	if class.StartTime.Before(time.Now()) {
+		return models.Class{}, domainErrors.ErrExpiredClassBooking(
+			class.ID,
+			fmt.Errorf("class %s has expired at %v", pendingOperation.ClassID, class.StartTime),
+		)
+	}
+
+	if class.CurrentCapacity < 1 {
+		return models.Class{}, domainErrors.ErrSomeoneBookedClassFaster(
+			fmt.Errorf("max capacity of class %d exceeded", class.MaxCapacity),
+		)
+	}
+
 	if pendingOperation.Operation != models.CreateBooking {
 		return models.Class{}, fmt.Errorf("invalid operation type: %s", pendingOperation.Operation)
 	}
@@ -88,7 +106,7 @@ func (s *Service) CreateBooking(
 		return models.Class{}, fmt.Errorf("error while decrementing class max capacity: %w", err)
 	}
 
-	class, err := s.ClassesRepo.Get(ctx, pendingOperation.ClassID)
+	class, err = s.ClassesRepo.Get(ctx, pendingOperation.ClassID)
 	if err != nil {
 		return models.Class{}, fmt.Errorf("error while getting class: %w", err)
 	}
@@ -124,6 +142,18 @@ func (s *Service) CancelBooking(ctx context.Context, token string) (models.Class
 		return models.Class{}, fmt.Errorf("error while getting pending pendingOperation: %w", err)
 	}
 
+	class, err := s.ClassesRepo.Get(ctx, pendingOperation.ClassID)
+	if err != nil {
+		return models.Class{}, fmt.Errorf("error while getting class: %w", err)
+	}
+
+	if class.StartTime.Before(time.Now()) {
+		return models.Class{}, domainErrors.ErrExpiredClassBooking(
+			class.ID,
+			fmt.Errorf("class %s has expired at %v", pendingOperation.ClassID, class.StartTime),
+		)
+	}
+
 	if pendingOperation.Operation != models.CancelBooking {
 		return models.Class{}, fmt.Errorf("invalid operation type: %s", pendingOperation.Operation)
 	}
@@ -154,7 +184,7 @@ func (s *Service) CancelBooking(ctx context.Context, token string) (models.Class
 		return models.Class{}, fmt.Errorf("error while incrementing class max capacity: %w", err)
 	}
 
-	class, err := s.ClassesRepo.Get(ctx, pendingOperation.ClassID)
+	class, err = s.ClassesRepo.Get(ctx, pendingOperation.ClassID)
 	if err != nil {
 		return models.Class{}, fmt.Errorf("error while getting class: %w", err)
 	}
