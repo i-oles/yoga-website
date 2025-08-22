@@ -48,7 +48,7 @@ func ErrExpiredClassBooking(classID uuid.UUID, err error) *BookingError {
 func ErrPendingOperationNotFound(err error) *BookingError {
 	return &BookingError{
 		Code:    PendingOperationNotFoundCode,
-		Message: "Twój link potwierdzający wygasł, stwórz nową sesję.",
+		Message: "Twój link potwierdzający operację wygasł, stwórz nową sesję.",
 		Err:     err,
 	}
 }

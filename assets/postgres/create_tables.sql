@@ -28,6 +28,9 @@ CREATE TABLE pending_operations
     created_at       timestamp DEFAULT NOW()
 );
 
+ALTER TABLE pending_operations
+    ADD FOREIGN KEY (class_id) REFERENCES classes (id);
+
 CREATE TABLE confirmed_bookings
 (
     id         uuid PRIMARY KEY,
@@ -41,9 +44,6 @@ CREATE TABLE confirmed_bookings
 COMMENT ON COLUMN classes.max_capacity IS 'must be positive';
 
 ALTER TABLE confirmed_bookings
-    ADD FOREIGN KEY (class_id) REFERENCES classes (id);
-
-ALTER TABLE pending_operations
     ADD FOREIGN KEY (class_id) REFERENCES classes (id);
 
 CREATE UNIQUE INDEX idx_confirmed_bookings_unique
