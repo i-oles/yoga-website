@@ -26,7 +26,7 @@ func (r PendingOperationsRepo) Insert(
 	pendingOperation models.PendingOperation,
 ) error {
 	query := fmt.Sprintf(
-		"INSERT INTO %s (id, class_id, operation, email, first_name, last_name, auth_token, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8);", r.collName)
+		"INSERT INTO %s (id, class_id, operation, email, first_name, last_name, confirmation_token, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8);", r.collName)
 
 	_, err := r.db.ExecContext(
 		ctx,
@@ -50,7 +50,7 @@ func (r PendingOperationsRepo) Insert(
 func (r PendingOperationsRepo) Get(ctx context.Context, token string) (models.PendingOperation, error) {
 	var operation models.PendingOperation
 
-	query := fmt.Sprintf("SELECT id, class_id, operation, email, first_name, last_name, auth_token, created_at FROM %s WHERE auth_token = $1;", r.collName)
+	query := fmt.Sprintf("SELECT id, class_id, operation, email, first_name, last_name, confirmation_token, created_at FROM %s WHERE confirmation_token = $1;", r.collName)
 
 	err := r.db.QueryRowContext(ctx, query, token).Scan(
 		&operation.ID,
@@ -87,10 +87,10 @@ func (r PendingOperationsRepo) CountPendingOperationsPerUser(
 }
 
 // TODO: here should delete(ctx, id) not token ??
-func (r PendingOperationsRepo) Delete(ctx context.Context, authToken string) error {
-	query := fmt.Sprintf("DELETE FROM %s WHERE auth_token = $1;", r.collName)
+func (r PendingOperationsRepo) Delete(ctx context.Context, confirmationToken string) error {
+	query := fmt.Sprintf("DELETE FROM %s WHERE confirmation_token = $1;", r.collName)
 
-	_, err := r.db.ExecContext(ctx, query, authToken)
+	_, err := r.db.ExecContext(ctx, query, confirmationToken)
 	if err != nil {
 		return fmt.Errorf("delete pending confirmation: %w", err)
 	}

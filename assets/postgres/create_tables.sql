@@ -18,14 +18,14 @@ CREATE TABLE classes
 
 CREATE TABLE pending_operations
 (
-    id               uuid PRIMARY KEY,
-    class_id         uuid               NOT NULL,
-    operation        booking_operation  NOT NULL,
-    email            varchar(50)        NOT NULL,
-    first_name       varchar(30)        NOT NULL,
-    last_name        varchar(30),
-    auth_token       varchar(64) UNIQUE NOT NULL,
-    created_at       timestamp DEFAULT NOW()
+    id                 uuid PRIMARY KEY,
+    class_id           uuid               NOT NULL,
+    operation          booking_operation  NOT NULL,
+    email              varchar(50)        NOT NULL,
+    first_name         varchar(30)        NOT NULL,
+    last_name          varchar(30),
+    confirmation_token varchar(64) UNIQUE NOT NULL,
+    created_at         timestamp DEFAULT NOW()
 );
 
 ALTER TABLE pending_operations
