@@ -33,15 +33,6 @@ func (s *Service) GetAllClasses(ctx context.Context) ([]models.Class, error) {
 			break
 		}
 
-		loc, err := time.LoadLocation("Europe/Warsaw")
-		if err != nil {
-			panic(fmt.Errorf("could not load location: %w", err))
-		}
-
-		warsawTime := class.StartTime.In(loc)
-
-		class.StartTime = warsawTime
-
 		if class.StartTime.After(time.Now()) {
 			filteredClasses = append(filteredClasses, class)
 			counter++

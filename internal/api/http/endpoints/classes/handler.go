@@ -1,6 +1,7 @@
 package classes
 
 import (
+	"fmt"
 	"main/internal/api/http/dto"
 	"main/internal/domain/models"
 	"main/internal/domain/services"
@@ -27,16 +28,26 @@ func (h *Handler) Handle(c *gin.Context) {
 		return
 	}
 
+	classesResp, err := toClassesListResponse(classes)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
+
 	c.HTML(http.StatusOK, "classes.html", gin.H{
-		"Classes": toClassesListResponse(classes),
+		"Classes": classesResp,
 	})
 }
 
-func toClassesListResponse(classes []models.Class) []dto.ClassResponse {
+func toClassesListResponse(classes []models.Class) ([]dto.ClassResponse, error) {
 	classesResponse := make([]dto.ClassResponse, len(classes))
 	for i, class := range classes {
-		classesResponse[i] = dto.ToClassResponse(class)
+		classResponse, err := dto.ToClassResponse(class)
+		if err != nil {
+			return nil, fmt.Errorf("could not convert class to classResponse: %w", err)
+		}
+
+		classesResponse[i] = classResponse
 	}
 
-	return classesResponse
+	return classesResponse, nil
 }

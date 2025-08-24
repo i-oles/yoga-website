@@ -41,5 +41,10 @@ func (h *Handler) Handle(c *gin.Context) {
 		return
 	}
 
-	c.HTML(http.StatusOK, "confirmation_cancel.tmpl", dto.ToConfirmationCancelResponse(class))
+	resp, err := dto.ToConfirmationCancelResponse(class)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
+
+	c.HTML(http.StatusOK, "confirmation_cancel.tmpl", resp)
 }

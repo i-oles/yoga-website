@@ -25,7 +25,7 @@ CREATE TABLE pending_operations
     first_name         varchar(30)        NOT NULL,
     last_name          varchar(30),
     confirmation_token varchar(64) UNIQUE NOT NULL,
-    created_at         timestamp DEFAULT NOW()
+    created_at         timestamptz DEFAULT NOW()
 );
 
 ALTER TABLE pending_operations
@@ -38,7 +38,7 @@ CREATE TABLE confirmed_bookings
     first_name varchar(30) NOT NULL,
     last_name  varchar(30) NOT NULL,
     email      varchar(50) NOT NULL,
-    created_at timestamp DEFAULT (now())
+    created_at timestamptz DEFAULT (now())
 );
 
 COMMENT ON COLUMN classes.max_capacity IS 'must be positive';

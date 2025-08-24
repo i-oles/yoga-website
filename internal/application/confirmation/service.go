@@ -10,6 +10,7 @@ import (
 	"main/internal/domain/repositories"
 	"main/internal/domain/services"
 	"main/internal/infrastructure/errs"
+	"main/pkg/converter"
 	"time"
 
 	"github.com/google/uuid"
@@ -111,14 +112,19 @@ func (s *Service) CreateBooking(
 		return models.Class{}, fmt.Errorf("error while getting class: %w", err)
 	}
 
+	warsawTime, err := converter.ConvertToWarsawTime(class.StartTime)
+	if err != nil {
+		return models.Class{}, fmt.Errorf("error while converting to warsaw time: %w", err)
+	}
+
 	msgParams := models.ConfirmationFinalParams{
 		RecipientEmail: pendingOperation.Email,
 		RecipientName:  pendingOperation.FirstName,
 		ClassName:      class.ClassCategory,
 		ClassLevel:     class.ClassLevel,
 		DayOfWeek:      class.DayOfWeek,
-		Hour:           class.StartHour(),
-		Date:           class.StartDate(),
+		Hour:           warsawTime.Format(converter.HourLayout),
+		Date:           warsawTime.Format(converter.DateLayout),
 		Location:       class.Location,
 	}
 

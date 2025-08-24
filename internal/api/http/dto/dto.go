@@ -3,6 +3,7 @@ package dto
 import (
 	"fmt"
 	"main/internal/domain/models"
+	"main/pkg/converter"
 
 	"github.com/google/uuid"
 )
@@ -27,18 +28,23 @@ type ClassResponse struct {
 	Location        string     `json:"location"`
 }
 
-func ToClassResponse(class models.Class) ClassResponse {
+func ToClassResponse(class models.Class) (ClassResponse, error) {
+	warsawTime, err := converter.ConvertToWarsawTime(class.StartTime)
+	if err != nil {
+		return ClassResponse{}, fmt.Errorf("error while converting time to warsaw time: %w", err)
+	}
+
 	return ClassResponse{
 		ID:              class.ID,
 		DayOfWeek:       class.DayOfWeek,
-		StartDate:       class.StartDate(),
-		StartHour:       class.StartHour(),
+		StartDate:       warsawTime.Format(converter.DateLayout),
+		StartHour:       warsawTime.Format(converter.HourLayout),
 		ClassLevel:      ClassLevel(class.ClassLevel),
 		ClassCategory:   class.ClassCategory,
 		CurrentCapacity: class.CurrentCapacity,
 		MaxCapacity:     class.MaxCapacity,
 		Location:        class.Location,
-	}
+	}, nil
 }
 
 type ConfirmationCancelRequest struct {
@@ -51,14 +57,18 @@ type ConfirmationCancelResponse struct {
 	Location  string `json:"location"`
 }
 
-// TODO: do I want to return all this in cancel response?
-func ToConfirmationCancelResponse(class models.Class) ConfirmationCancelResponse {
+func ToConfirmationCancelResponse(class models.Class) (ConfirmationCancelResponse, error) {
+	warsawTimeDate, err := converter.ConvertToWarsawTime(class.StartTime)
+	if err != nil {
+		return ConfirmationCancelResponse{}, fmt.Errorf("could not convert start time: %w", err)
+	}
+
 	return ConfirmationCancelResponse{
 		ClassType: class.ClassCategory,
-		Date:      fmt.Sprintf("%d %s %d", class.StartTime.Day(), class.StartTime.Month(), class.StartTime.Year()),
-		Hour:      fmt.Sprintf("%d:%02d", class.StartTime.Hour(), class.StartTime.Minute()),
+		Date:      warsawTimeDate.Format(converter.DateLayout),
+		Hour:      warsawTimeDate.Format(converter.HourLayout),
 		Location:  class.Location,
-	}
+	}, nil
 }
 
 type ConfirmationCreateRequest struct {
@@ -71,13 +81,18 @@ type ConfirmationCreateResponse struct {
 	Location  string `json:"location"`
 }
 
-func ToConfirmationCreateResponse(class models.Class) ConfirmationCreateResponse {
+func ToConfirmationCreateResponse(class models.Class) (ConfirmationCreateResponse, error) {
+	warsawTimeDate, err := converter.ConvertToWarsawTime(class.StartTime)
+	if err != nil {
+		return ConfirmationCreateResponse{}, fmt.Errorf("could not convert start time: %w", err)
+	}
+
 	return ConfirmationCreateResponse{
 		ClassType: class.ClassCategory,
-		Date:      fmt.Sprintf("%d %s %d", class.StartTime.Day(), class.StartTime.Month(), class.StartTime.Year()),
-		Hour:      fmt.Sprintf("%d:%02d", class.StartTime.Hour(), class.StartTime.Minute()),
+		Date:      warsawTimeDate.Format(converter.DateLayout),
+		Hour:      warsawTimeDate.Format(converter.HourLayout),
 		Location:  class.Location,
-	}
+	}, nil
 }
 
 // TODO: w routach pending jest classID - ale nie jest parsowane z URL - zobacz co lepsze
