@@ -1,7 +1,5 @@
 package models
 
-import models2 "main/internal/domain/models"
-
 type PendingConfirmationTmplData struct {
 	SenderName       string
 	RecipientName    string
@@ -12,7 +10,7 @@ type FinalConfirmationTmplData struct {
 	SenderName    string
 	RecipientName string
 	ClassName     string
-	ClassLevel    models2.ClassLevel
+	ClassLevel    string
 	DayOfWeek     string
 	Hour          string
 	Date          string

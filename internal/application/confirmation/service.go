@@ -120,7 +120,7 @@ func (s *Service) CreateBooking(
 	msgParams := models.ConfirmationFinalParams{
 		RecipientEmail: pendingOperation.Email,
 		RecipientName:  pendingOperation.FirstName,
-		ClassName:      class.ClassCategory,
+		ClassName:      class.ClassName,
 		ClassLevel:     class.ClassLevel,
 		DayOfWeek:      class.DayOfWeek,
 		Hour:           warsawTime.Format(converter.HourLayout),

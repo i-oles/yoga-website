@@ -8,24 +8,16 @@ import (
 	"github.com/google/uuid"
 )
 
-type ClassLevel string
-
-const (
-	beginner     ClassLevel = "beginner"
-	intermediate ClassLevel = "intermediate"
-	advanced     ClassLevel = "advanced"
-)
-
 type ClassResponse struct {
-	ID              uuid.UUID  `json:"id"`
-	DayOfWeek       string     `json:"day_of_week"`
-	StartDate       string     `json:"start_date"`
-	StartHour       string     `json:"start_hour"`
-	ClassLevel      ClassLevel `json:"class_level"`
-	ClassCategory   string     `json:"class_category"`
-	CurrentCapacity int        `json:"current_capacity"`
-	MaxCapacity     int        `json:"max_capacity"`
-	Location        string     `json:"location"`
+	ID              uuid.UUID `json:"id"`
+	DayOfWeek       string    `json:"day_of_week"`
+	StartDate       string    `json:"start_date"`
+	StartHour       string    `json:"start_hour"`
+	ClassLevel      string    `json:"class_level"`
+	ClassName       string    `json:"class_name"`
+	CurrentCapacity int       `json:"current_capacity"`
+	MaxCapacity     int       `json:"max_capacity"`
+	Location        string    `json:"location"`
 }
 
 func ToClassResponse(class models.Class) (ClassResponse, error) {
@@ -39,8 +31,8 @@ func ToClassResponse(class models.Class) (ClassResponse, error) {
 		DayOfWeek:       class.DayOfWeek,
 		StartDate:       warsawTime.Format(converter.DateLayout),
 		StartHour:       warsawTime.Format(converter.HourLayout),
-		ClassLevel:      ClassLevel(class.ClassLevel),
-		ClassCategory:   class.ClassCategory,
+		ClassLevel:      class.ClassLevel,
+		ClassName:       class.ClassName,
 		CurrentCapacity: class.CurrentCapacity,
 		MaxCapacity:     class.MaxCapacity,
 		Location:        class.Location,
@@ -51,7 +43,7 @@ type ConfirmationCancelRequest struct {
 	Token string `form:"token" binding:"required,len=44"`
 }
 type ConfirmationCancelResponse struct {
-	ClassType string `json:"class_type"`
+	ClassName string `json:"class_name"`
 	Date      string `json:"date"`
 	Hour      string `json:"hour"`
 	Location  string `json:"location"`
@@ -64,7 +56,7 @@ func ToConfirmationCancelResponse(class models.Class) (ConfirmationCancelRespons
 	}
 
 	return ConfirmationCancelResponse{
-		ClassType: class.ClassCategory,
+		ClassName: class.ClassName,
 		Date:      warsawTimeDate.Format(converter.DateLayout),
 		Hour:      warsawTimeDate.Format(converter.HourLayout),
 		Location:  class.Location,
@@ -75,7 +67,7 @@ type ConfirmationCreateRequest struct {
 	Token string `form:"token" binding:"required,len=44"`
 }
 type ConfirmationCreateResponse struct {
-	ClassType string `json:"class_type"`
+	ClassName string `json:"class_name"`
 	Date      string `json:"date"`
 	Hour      string `json:"hour"`
 	Location  string `json:"location"`
@@ -88,7 +80,7 @@ func ToConfirmationCreateResponse(class models.Class) (ConfirmationCreateRespons
 	}
 
 	return ConfirmationCreateResponse{
-		ClassType: class.ClassCategory,
+		ClassName: class.ClassName,
 		Date:      warsawTimeDate.Format(converter.DateLayout),
 		Hour:      warsawTimeDate.Format(converter.HourLayout),
 		Location:  class.Location,
