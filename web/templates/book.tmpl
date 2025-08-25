@@ -6,7 +6,7 @@
 
         <input type="hidden" name="class_id" value="{{ .ID }}">
 
-        <label for="firstname-{{ .ID }}">First Name:</label>
+        <label for="firstname-{{ .ID }}">imię:</label>
         <input type="text"
                id="firstname-{{ .ID }}"
                name="first_name"
@@ -16,7 +16,7 @@
                pattern="^[A-Za-zÀ-ž]+$"
                class="form-input">
 
-        <label for="lastname-{{ .ID }}">Last Name:</label>
+        <label for="lastname-{{ .ID }}">nazwisko:</label>
         <input type="text"
                id="lastname-{{ .ID }}"
                name="last_name"
@@ -26,7 +26,7 @@
                pattern="^[A-Za-zÀ-ž]+$"
                class="form-input">
 
-        <label for="email-{{ .ID }}">Email:</label>
+        <label for="email-{{ .ID }}">email:</label>
         <input type="email"
                id="email-{{ .ID }}"
                name="email"
@@ -40,8 +40,8 @@
         </div>
 
         <button type="submit" class="btn-book">
-            <span class="submit-text">Submit Booking</span>
-            <span class="htmx-indicator">Processing...</span>
+            <span class="submit-text">rezerwuj</span>
+            <span class="htmx-indicator">przetwarzam...</span>
         </button>
     </form>
     <div id="cancel-button-{{ .ID }}">
@@ -51,7 +51,7 @@
                 hx-target="#book-block-{{ .ID }}"
                 hx-vals='{"id": "{{ .ID }}"}'
                 hx-trigger="click">
-            cancel booking
+            odwołaj
         </button>
     </div>
 </div>

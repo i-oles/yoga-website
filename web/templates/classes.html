@@ -49,7 +49,7 @@
             <div id="booking-form-{{ .ID }}">
             {{ if eq .CurrentCapacity 0 }}
             <div id="book-button-{{ .ID }}">
-                <button disabled>book now</button>
+                <button disabled>rezerwuj</button>
             </div>
             {{ else }}
             <div id="book-button-{{ .ID }}">
@@ -59,13 +59,13 @@
                         hx-target="#booking-form-{{ .ID }}"
                         hx-vals='{"id": "{{ .ID }}"}'
                         hx-trigger="click">
-                    book now
+                    rezerwuj
                 </button>
             </div>
             {{ end }}
             {{ if eq .CurrentCapacity .MaxCapacity }}
             <div id="cancel-button-{{ .ID }}">
-                <button disabled>cancel booking</button>
+                <button disabled>odwołaj</button>
             </div>
             {{ else }}
             <div id="cancel-button-{{ .ID }}">
@@ -75,7 +75,7 @@
                         hx-target="#booking-form-{{ .ID }}"
                         hx-vals='{"id": "{{ .ID }}"}'
                         hx-trigger="click">
-                    cancel booking
+                    odwołaj
                 </button>
             </div>
             {{ end }}
