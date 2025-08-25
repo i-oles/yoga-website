@@ -16,12 +16,17 @@ h1 {
     font-size: 2.5rem;
 }
 
-/* Kontener główny */
-div {
+div#main-container {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 20px;
     padding: 10px;
+}
+
+div {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 10px;
 }
 
 /* Karty zajęć */
@@ -32,6 +37,10 @@ div {
     padding: 20px;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     margin-left: 10px;
+}
+
+.book-block {
+    margin-top: 15px;
 }
 
 .class-container:hover {
@@ -47,11 +56,15 @@ div {
     margin-bottom: 20px;
 }
 
-/* Przycisk rezerwacji */
+.class-info {
+   margin-bottom: 15px;
+}
+
 button {
     border: none;
     padding: 10px 10px 10px 20px;
     border-radius: 5px;
+    margin-top: 7px;
     text-align: left;
     cursor: pointer;
     font-size: 1rem;
@@ -59,10 +72,13 @@ button {
     transition: background-color 0.3s ease;
 }
 
+button:hover {
+    background-color: #4b4b4b;
+}
+
 .btn-cancel {
     background-color: #dc425d;
     color: white;
-    margin-top: -10px;
 }
 
 .btn-cancel:hover {
@@ -70,7 +86,6 @@ button {
 }
 
 .btn-book {
-    margin-top: 10px;
     background-color: #3498db;
     color: white;
 }
@@ -86,9 +101,9 @@ button {
     line-height: 1.4;
     margin-top: 8px;
     margin-bottom: 12px;
-    margin-left: -10px;
     white-space: normal;
-    word-wrap: break-word; }
+    word-wrap: break-word;
+}
 
 .pending-operation-create {
     font-size: 12px;
@@ -106,9 +121,6 @@ button {
     color: gray;
 }
 
-button:hover {
-    background-color: #4b4b4b;
-}
 
 /* Informacje o miejscach */
 .class-container form br:nth-last-child(2) + strong {

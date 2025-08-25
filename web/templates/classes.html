@@ -10,11 +10,11 @@
 <body>
 <h1>classes</h1>
 <br>
-<div>
+<div id="main-container">
     {{ range .Classes }}
     <div class="class-container">
         <form id="form-{{ .ID }}">
-            <div id="class-info">
+            <div class="class-info">
                 <table style="border-collapse: collapse; margin-top: 15px;">
                     <tr>
                         <td style="font-weight:bold;">zajęcia:</td>
@@ -46,6 +46,7 @@
                     </tr>
                 </table>
             </div>
+            <div id="booking-form-{{ .ID }}">
             {{ if eq .CurrentCapacity 0 }}
             <div id="book-button-{{ .ID }}">
                 <button disabled>book now</button>
@@ -55,7 +56,7 @@
                 <button class="btn-book"
                         hx-post="/book"
                         hx-swap="outerHTML"
-                        hx-target="#book-button-{{ .ID }}"
+                        hx-target="#booking-form-{{ .ID }}"
                         hx-vals='{"id": "{{ .ID }}"}'
                         hx-trigger="click">
                     book now
@@ -71,13 +72,14 @@
                 <button class="btn-cancel"
                         hx-post="/cancel"
                         hx-swap="outerHTML"
-                        hx-target="#cancel-button-{{ .ID }}"
+                        hx-target="#booking-form-{{ .ID }}"
                         hx-vals='{"id": "{{ .ID }}"}'
                         hx-trigger="click">
                     cancel booking
                 </button>
             </div>
             {{ end }}
+            </div>
         </form>
     </div>
     {{ end }}

@@ -1,4 +1,4 @@
-<div id="book-block-{{ .ID }}">
+<div class="book-block" id="book-block-{{ .ID }}">
     <form id="booking-form-{{ .ID }}"
           hx-post="/pending_operation/{{ .ID }}/create_booking"
           hx-target="#book-block-{{ .ID }}"
@@ -44,6 +44,16 @@
             <span class="htmx-indicator">Processing...</span>
         </button>
     </form>
+    <div id="cancel-button-{{ .ID }}">
+        <button class="btn-cancel"
+                hx-post="/cancel"
+                hx-swap="outerHTML"
+                hx-target="#book-block-{{ .ID }}"
+                hx-vals='{"id": "{{ .ID }}"}'
+                hx-trigger="click">
+            cancel booking
+        </button>
+    </div>
 </div>
 <script>
     document.addEventListener('htmx:beforeSwap', function(event) {
