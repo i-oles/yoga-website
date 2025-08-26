@@ -8,7 +8,6 @@ import (
 
 type Class struct {
 	ID              uuid.UUID `db:"id"`
-	DayOfWeek       string    `db:"day_of_week"`
 	StartTime       time.Time `db:"start_time"`
 	ClassLevel      string    `db:"class_level"`
 	ClassName       string    `db:"class_name"`

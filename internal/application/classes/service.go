@@ -41,3 +41,12 @@ func (s *Service) GetAllClasses(ctx context.Context) ([]models.Class, error) {
 
 	return filteredClasses, nil
 }
+
+func (s *Service) CreateClasses(ctx context.Context, classes []models.Class) ([]models.Class, error) {
+	classes, err := s.classesRepo.Insert(ctx, classes)
+	if err != nil {
+		return nil, fmt.Errorf("could not insert classes: %w", err)
+	}
+
+	return classes, nil
+}

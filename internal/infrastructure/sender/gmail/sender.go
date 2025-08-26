@@ -113,7 +113,7 @@ func (s Sender) SendFinalConfirmation(msgParams models.ConfirmationFinalParams) 
 		RecipientName: msgParams.RecipientName,
 		ClassName:     msgParams.ClassName,
 		ClassLevel:    msgParams.ClassLevel,
-		DayOfWeek:     msgParams.DayOfWeek,
+		WeekDay:       msgParams.WeekDay,
 		Hour:          msgParams.Hour,
 		Date:          msgParams.Date,
 		Location:      msgParams.Location,

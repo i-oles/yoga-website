@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"log/slog"
+	"main/internal/api/http/endpoints/addclasses"
 	"main/internal/api/http/endpoints/book"
 	"main/internal/api/http/endpoints/cancel"
 	"main/internal/api/http/endpoints/classes"
@@ -145,6 +146,8 @@ func setupRouter(db *sql.DB, cfg *configuration.Configuration) *gin.Engine {
 		errorHandler,
 	)
 
+	addClassesHandler := addclasses.NewHandler(classesService)
+
 	router.Static("web/static", "./web/static")
 	router.LoadHTMLGlob("web/templates/*")
 	api := router.Group("/")
@@ -157,6 +160,7 @@ func setupRouter(db *sql.DB, cfg *configuration.Configuration) *gin.Engine {
 	{
 		api.POST("/book", bookHandler.Handle)
 		api.POST("/cancel", cancelHandler.Handle)
+		api.POST("/classes", addClassesHandler.Handle)
 		api.POST("/pending_operation/:class_id/create_booking", pendingCreateHandler.Handle)
 		api.POST("/pending_operation/:class_id/cancel_booking", pendingCancelHandler.Handle)
 

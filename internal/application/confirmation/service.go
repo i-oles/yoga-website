@@ -122,7 +122,7 @@ func (s *Service) CreateBooking(
 		RecipientName:  pendingOperation.FirstName,
 		ClassName:      class.ClassName,
 		ClassLevel:     class.ClassLevel,
-		DayOfWeek:      class.DayOfWeek,
+		WeekDay:        warsawTime.Weekday().String(),
 		Hour:           warsawTime.Format(converter.HourLayout),
 		Date:           warsawTime.Format(converter.DateLayout),
 		Location:       class.Location,

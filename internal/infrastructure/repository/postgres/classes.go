@@ -38,7 +38,6 @@ func (c ClassesRepo) GetAll(ctx context.Context) ([]models.Class, error) {
 		class := models.Class{}
 		err = rows.Scan(
 			&class.ID,
-			&class.DayOfWeek,
 			&class.StartTime,
 			&class.ClassLevel,
 			&class.ClassName,
@@ -62,7 +61,6 @@ func (c ClassesRepo) Get(ctx context.Context, id uuid.UUID) (models.Class, error
 	var class models.Class
 	err := c.db.QueryRowContext(ctx, query, id).Scan(
 		&class.ID,
-		&class.DayOfWeek,
 		&class.StartTime,
 		&class.ClassLevel,
 		&class.ClassName,
@@ -119,4 +117,43 @@ func (c ClassesRepo) IncrementCurrentCapacity(ctx context.Context, id uuid.UUID)
 	}
 
 	return nil
+}
+
+func (c ClassesRepo) Insert(ctx context.Context, classes []models.Class) ([]models.Class, error) {
+	tx, err := c.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf("could not begin transaction: %w", err)
+	}
+
+	defer tx.Rollback()
+
+	query := fmt.Sprintf(
+		"INSERT INTO %s (id, start_time, class_level, class_name, current_capacity, max_capacity, location) VALUES ($1, $2, $3, $4, $5, $6, $7)", c.collName)
+
+	inserted := make([]models.Class, 0, len(classes))
+
+	for _, class := range classes {
+		_, err = tx.ExecContext(
+			ctx,
+			query,
+			class.ID,
+			class.StartTime,
+			class.ClassLevel,
+			class.ClassName,
+			class.CurrentCapacity,
+			class.MaxCapacity,
+			class.Location,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("could not insert class: %w", err)
+		}
+
+		inserted = append(inserted, class)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("could not commit transaction: %w", err)
+	}
+
+	return inserted, nil
 }

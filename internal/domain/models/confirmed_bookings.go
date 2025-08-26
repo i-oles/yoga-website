@@ -20,7 +20,7 @@ type ConfirmationFinalParams struct {
 	RecipientName  string
 	ClassName      string
 	ClassLevel     string
-	DayOfWeek      string
+	WeekDay        string
 	Hour           string
 	Date           string
 	Location       string

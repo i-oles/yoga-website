@@ -3,7 +3,6 @@ ALTER DATABASE root SET timezone TO 'UTC';
 CREATE TABLE classes
 (
     id               uuid PRIMARY KEY,
-    day_of_week      varchar(20) NOT NULL,
     start_time       timestamptz NOT NULL,
     class_level      varchar(40) NOT NULL,
     class_name       varchar(30) NOT NULL,

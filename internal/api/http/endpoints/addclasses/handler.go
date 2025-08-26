@@ -1,7 +1,8 @@
-package classes
+package addclasses
 
 import (
 	"main/internal/api/http/dto"
+	"main/internal/domain/models"
 	"main/internal/domain/services"
 	"net/http"
 
@@ -19,19 +20,24 @@ func NewHandler(classesService services.IClassesService) *Handler {
 func (h *Handler) Handle(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	classes, err := h.classesService.GetAllClasses(ctx)
+	var classes []models.Class
+
+	err := c.ShouldBindJSON(&classes)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	}
+
+	createdClasses, err := h.classesService.CreateClasses(ctx, classes)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 
 		return
 	}
 
-	classesResp, err := dto.ToClassesListResponse(classes)
+	classesResp, err := dto.ToClassesListResponse(createdClasses)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	}
 
-	c.HTML(http.StatusOK, "classes.html", gin.H{
-		"Classes": classesResp,
-	})
+	c.JSON(http.StatusCreated, classesResp)
 }

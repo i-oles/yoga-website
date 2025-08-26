@@ -7,10 +7,10 @@ import (
 	"github.com/google/uuid"
 )
 
-// TODO: here should be ctx added
 type Classes interface {
 	Get(ctx context.Context, id uuid.UUID) (models.Class, error)
 	GetAll(ctx context.Context) ([]models.Class, error)
+	Insert(ctx context.Context, classes []models.Class) ([]models.Class, error)
 	DecrementCurrentCapacity(ctx context.Context, id uuid.UUID) error
 	IncrementCurrentCapacity(ctx context.Context, id uuid.UUID) error
 }

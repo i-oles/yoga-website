@@ -10,7 +10,7 @@ import (
 
 type ClassResponse struct {
 	ID              uuid.UUID `json:"id"`
-	DayOfWeek       string    `json:"day_of_week"`
+	WeekDay         string    `json:"week_day"`
 	StartDate       string    `json:"start_date"`
 	StartHour       string    `json:"start_hour"`
 	ClassLevel      string    `json:"class_level"`
@@ -28,7 +28,7 @@ func ToClassResponse(class models.Class) (ClassResponse, error) {
 
 	return ClassResponse{
 		ID:              class.ID,
-		DayOfWeek:       class.DayOfWeek,
+		WeekDay:         warsawTime.Weekday().String(),
 		StartDate:       warsawTime.Format(converter.DateLayout),
 		StartHour:       warsawTime.Format(converter.HourLayout),
 		ClassLevel:      class.ClassLevel,
@@ -37,6 +37,20 @@ func ToClassResponse(class models.Class) (ClassResponse, error) {
 		MaxCapacity:     class.MaxCapacity,
 		Location:        class.Location,
 	}, nil
+}
+
+func ToClassesListResponse(classes []models.Class) ([]ClassResponse, error) {
+	classesResponse := make([]ClassResponse, len(classes))
+	for i, class := range classes {
+		classResponse, err := ToClassResponse(class)
+		if err != nil {
+			return nil, fmt.Errorf("could not convert class to classResponse: %w", err)
+		}
+
+		classesResponse[i] = classResponse
+	}
+
+	return classesResponse, nil
 }
 
 type ConfirmationCancelRequest struct {
