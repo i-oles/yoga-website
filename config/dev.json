@@ -5,6 +5,7 @@
   "contextTimeout": 5,
   "postgresDBName": "root",
   "logErrors": true,
+  "authSecret": "",
   "emailSender": {
     "host": "smtp.gmail.com",
     "port": 587,

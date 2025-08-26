@@ -61,13 +61,17 @@ func (e ErrorHandler) HandleHTMLError(c *gin.Context, tmplName string, err error
 				"Error": bookingError.Message,
 			})
 		default:
-			c.HTML(http.StatusInternalServerError, tmplName, gin.H{})
+			c.HTML(http.StatusInternalServerError, "err.tmpl", gin.H{
+				"Error": "Coś poszło nie tak... Contact me :)",
+			})
 		}
 
 		return
 	}
 
-	c.HTML(http.StatusInternalServerError, tmplName, gin.H{"error": err.Error()})
+	c.HTML(http.StatusInternalServerError, "err.tmpl", gin.H{
+		"Error": "Coś poszło nie tak... Contact me :)",
+	})
 
 	return
 }
@@ -77,9 +81,9 @@ func (e ErrorHandler) HandleJSONError(c *gin.Context, err error) {
 	if errors.As(err, &classError) {
 		switch classError.Code {
 		case domainErrs.BadRequestCode:
-			c.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		default:
-			c.AbortWithStatusJSON(http.StatusInternalServerError, err.Error())
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		}
 
 		return

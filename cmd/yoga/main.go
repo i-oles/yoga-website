@@ -17,6 +17,7 @@ import (
 	pendingCreate "main/internal/api/http/endpoints/pending/create"
 	"main/internal/api/http/err/handler"
 	logWrapper "main/internal/api/http/err/wrapper"
+	"main/internal/api/http/middleware"
 	classesService "main/internal/application/classes"
 	"main/internal/application/confirmation"
 	"main/internal/application/pending"
@@ -146,6 +147,8 @@ func setupRouter(db *sql.DB, cfg *configuration.Configuration) *gin.Engine {
 		errorHandler,
 	)
 
+	authMiddleware := middleware.Auth(cfg.AuthSecret)
+
 	addClassesHandler := addclasses.NewHandler(classesService, errorHandler)
 
 	router.Static("web/static", "./web/static")
@@ -160,7 +163,7 @@ func setupRouter(db *sql.DB, cfg *configuration.Configuration) *gin.Engine {
 	{
 		api.POST("/book", bookHandler.Handle)
 		api.POST("/cancel", cancelHandler.Handle)
-		api.POST("/classes", addClassesHandler.Handle)
+		api.POST("/classes", authMiddleware, addClassesHandler.Handle)
 		api.POST("/pending_operation/:class_id/create_booking", pendingCreateHandler.Handle)
 		api.POST("/pending_operation/:class_id/cancel_booking", pendingCancelHandler.Handle)
 

@@ -36,6 +36,7 @@ type Configuration struct {
 	ReadTimeout                     time.Duration
 	WriteTimeout                    time.Duration
 	ContextTimeout                  time.Duration
+	AuthSecret                      string
 	Postgres                        PostgresSettings
 	LogErrors                       bool
 	EmailSender                     EmailSenderSettings
@@ -96,5 +97,9 @@ func loadEnvs(cfg *Configuration) {
 
 	if postgresPassword := os.Getenv("POSTGRES_PASSWORD"); postgresPassword != "" {
 		cfg.Postgres.Password = postgresPassword
+	}
+
+	if authSecret := os.Getenv("AUTH_SECRET"); authSecret != "" {
+		cfg.AuthSecret = authSecret
 	}
 }
