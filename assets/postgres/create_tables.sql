@@ -5,7 +5,7 @@ CREATE TABLE classes
     id               uuid PRIMARY KEY,
     start_time       timestamptz NOT NULL,
     class_level      varchar(40) NOT NULL,
-    class_name       varchar(30) NOT NULL,
+    class_name       varchar(40) NOT NULL,
     current_capacity integer     NOT NULL,
     max_capacity     integer     NOT NULL,
     location         varchar(40) NOT NULL

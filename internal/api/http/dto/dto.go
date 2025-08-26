@@ -4,9 +4,19 @@ import (
 	"fmt"
 	"main/internal/domain/models"
 	"main/pkg/converter"
+	"time"
 
 	"github.com/google/uuid"
 )
+
+type ClassRequest struct {
+	StartTime       time.Time `json:"start_time" binding:"required" time_format:"2006-01-02T15:04:05Z07:00"`
+	ClassLevel      string    `json:"class_level" binding:"required,min=3,max=40"`
+	ClassName       string    `json:"class_name" binding:"required,min=3,max=40"`
+	CurrentCapacity int       `json:"current_capacity" binding:"gte=0"`
+	MaxCapacity     int       `json:"max_capacity" binding:"gte=1"`
+	Location        string    `json:"location" binding:"required"`
+}
 
 type ClassResponse struct {
 	ID              uuid.UUID `json:"id"`
@@ -26,9 +36,14 @@ func ToClassResponse(class models.Class) (ClassResponse, error) {
 		return ClassResponse{}, fmt.Errorf("error while converting time to warsaw time: %w", err)
 	}
 
+	weekday, err := translateToWeekDayToPolish(warsawTime.Weekday())
+	if err != nil {
+		return ClassResponse{}, fmt.Errorf("error while translating week day to polish: %w", err)
+	}
+
 	return ClassResponse{
 		ID:              class.ID,
-		WeekDay:         warsawTime.Weekday().String(),
+		WeekDay:         weekday,
 		StartDate:       warsawTime.Format(converter.DateLayout),
 		StartHour:       warsawTime.Format(converter.HourLayout),
 		ClassLevel:      class.ClassLevel,
@@ -37,6 +52,27 @@ func ToClassResponse(class models.Class) (ClassResponse, error) {
 		MaxCapacity:     class.MaxCapacity,
 		Location:        class.Location,
 	}, nil
+}
+
+func translateToWeekDayToPolish(weekDay time.Weekday) (string, error) {
+	switch weekDay {
+	case time.Monday:
+		return "poniedziałek", nil
+	case time.Tuesday:
+		return "wtorek", nil
+	case time.Wednesday:
+		return "środa", nil
+	case time.Thursday:
+		return "czwartek", nil
+	case time.Friday:
+		return "piątek", nil
+	case time.Saturday:
+		return "sobota", nil
+	case time.Sunday:
+		return "niedziela", nil
+	default:
+		return "", fmt.Errorf("unknown weekday")
+	}
 }
 
 func ToClassesListResponse(classes []models.Class) ([]ClassResponse, error) {
