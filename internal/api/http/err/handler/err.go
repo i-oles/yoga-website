@@ -9,7 +9,8 @@ import (
 )
 
 type IErrorHandler interface {
-	Handle(ctx *gin.Context, tmplName string, err error)
+	HandleHTMLError(ctx *gin.Context, tmplName string, err error)
+	HandleJSONError(ctx *gin.Context, err error)
 }
 
 type ErrorHandler struct{}
@@ -18,10 +19,9 @@ func NewErrorHandler() ErrorHandler {
 	return ErrorHandler{}
 }
 
-func (e ErrorHandler) Handle(c *gin.Context, tmplName string, err error) {
+func (e ErrorHandler) HandleHTMLError(c *gin.Context, tmplName string, err error) {
 	var bookingError *domainErrs.BookingError
-	switch {
-	case errors.As(err, &bookingError):
+	if errors.As(err, &bookingError) {
 		switch bookingError.Code {
 		case domainErrs.ConfirmedBookingNotFoundCode:
 			c.HTML(http.StatusNotFound, tmplName, gin.H{
@@ -60,8 +60,32 @@ func (e ErrorHandler) Handle(c *gin.Context, tmplName string, err error) {
 				"ID":    bookingError.ClassID,
 				"Error": bookingError.Message,
 			})
+		default:
+			c.HTML(http.StatusInternalServerError, tmplName, gin.H{})
 		}
-	default:
-		c.HTML(http.StatusInternalServerError, tmplName, gin.H{})
+
+		return
 	}
+
+	c.HTML(http.StatusInternalServerError, tmplName, gin.H{"error": err.Error()})
+
+	return
+}
+
+func (e ErrorHandler) HandleJSONError(c *gin.Context, err error) {
+	var classError *domainErrs.ClassError
+	if errors.As(err, &classError) {
+		switch classError.Code {
+		case domainErrs.BadRequestCode:
+			c.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		default:
+			c.AbortWithStatusJSON(http.StatusInternalServerError, err.Error())
+		}
+
+		return
+	}
+
+	c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+
+	return
 }

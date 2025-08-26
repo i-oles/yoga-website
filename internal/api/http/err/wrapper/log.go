@@ -19,12 +19,22 @@ func NewErrorHandler(
 	}
 }
 
-func (e ErrorHandler) Handle(c *gin.Context, tmplName string, err error) {
-	slog.Error("",
+func (e ErrorHandler) HandleHTMLError(c *gin.Context, tmplName string, err error) {
+	slog.Error("bookingBusinessError",
 		slog.String("error", err.Error()),
 		slog.Any("params", c.Request.URL.Query()),
 		slog.String("endpoint", c.FullPath()),
 	)
 
-	e.errorHandler.Handle(c, tmplName, err)
+	e.errorHandler.HandleHTMLError(c, tmplName, err)
+}
+
+func (e ErrorHandler) HandleJSONError(c *gin.Context, err error) {
+	slog.Error("classOwnerError",
+		slog.String("error", err.Error()),
+		slog.Any("params", c.Request.URL.Query()),
+		slog.String("endpoint", c.FullPath()),
+	)
+
+	e.errorHandler.HandleJSONError(c, err)
 }

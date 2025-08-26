@@ -36,7 +36,7 @@ func (h *Handler) Handle(c *gin.Context) {
 
 	class, err := h.serviceConfirmation.CancelBooking(ctx, req.Token)
 	if err != nil {
-		h.errorHandler.Handle(c, "err.tmpl", err)
+		h.errorHandler.HandleHTMLError(c, "err.tmpl", err)
 
 		return
 	}
@@ -44,6 +44,8 @@ func (h *Handler) Handle(c *gin.Context) {
 	resp, err := dto.ToConfirmationCancelResponse(class)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+
+		return
 	}
 
 	c.HTML(http.StatusOK, "confirmation_cancel.tmpl", resp)

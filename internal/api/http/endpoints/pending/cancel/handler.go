@@ -50,7 +50,7 @@ func (h *Handler) Handle(c *gin.Context) {
 
 	classID, err := h.ServicePendingOperations.CancelBooking(ctx, cancelParams)
 	if err != nil {
-		h.ErrorHandler.Handle(c, "cancel.tmpl", err)
+		h.ErrorHandler.HandleHTMLError(c, "cancel.tmpl", err)
 
 		return
 	}

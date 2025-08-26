@@ -146,7 +146,7 @@ func setupRouter(db *sql.DB, cfg *configuration.Configuration) *gin.Engine {
 		errorHandler,
 	)
 
-	addClassesHandler := addclasses.NewHandler(classesService)
+	addClassesHandler := addclasses.NewHandler(classesService, errorHandler)
 
 	router.Static("web/static", "./web/static")
 	router.LoadHTMLGlob("web/templates/*")

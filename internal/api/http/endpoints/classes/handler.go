@@ -21,14 +21,16 @@ func (h *Handler) Handle(c *gin.Context) {
 
 	classes, err := h.classesService.GetAllClasses(ctx)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 
 		return
 	}
 
 	classesResp, err := dto.ToClassesListResponse(classes)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+
+		return
 	}
 
 	c.HTML(http.StatusOK, "classes.html", gin.H{

@@ -2,6 +2,7 @@ package addclasses
 
 import (
 	"main/internal/api/http/dto"
+	"main/internal/api/http/err/handler"
 	"main/internal/domain/models"
 	"main/internal/domain/services"
 	"net/http"
@@ -12,20 +13,27 @@ import (
 
 type Handler struct {
 	classesService services.IClassesService
+	errorHandler   handler.IErrorHandler
 }
 
-func NewHandler(classesService services.IClassesService) *Handler {
-	return &Handler{classesService: classesService}
+func NewHandler(
+	classesService services.IClassesService,
+	errorHandler handler.IErrorHandler,
+) *Handler {
+	return &Handler{
+		classesService: classesService,
+		errorHandler:   errorHandler,
+	}
 }
 
 func (h *Handler) Handle(c *gin.Context) {
-	ctx := c.Request.Context()
-
 	var dtoClasses []dto.ClassRequest
 
 	err := c.ShouldBindJSON(&dtoClasses)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+
+		return
 	}
 
 	classes := make([]models.Class, 0, len(dtoClasses))
@@ -44,16 +52,20 @@ func (h *Handler) Handle(c *gin.Context) {
 		classes = append(classes, class)
 	}
 
+	ctx := c.Request.Context()
+
 	createdClasses, err := h.classesService.CreateClasses(ctx, classes)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		h.errorHandler.HandleJSONError(c, err)
 
 		return
 	}
 
 	classesResp, err := dto.ToClassesListResponse(createdClasses)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		h.errorHandler.HandleJSONError(c, err)
+
+		return
 	}
 
 	c.JSON(http.StatusCreated, classesResp)

@@ -6,8 +6,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// TODO: should error messages be in english?
-
 const (
 	ConfirmedBookingNotFoundCode int = iota
 	ConfirmedBookingAlreadyExistsCode
