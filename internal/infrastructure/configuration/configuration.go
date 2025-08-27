@@ -83,12 +83,12 @@ func loadEnvs(cfg *Configuration) {
 		slog.Info("No .env file found, using environment variables...")
 	}
 
-	if user := os.Getenv("EMAIL_SENDER_USER"); user != "" {
-		cfg.EmailSender.User = user
+	if emailSenderUser := os.Getenv("EMAIL_SENDER_USER"); emailSenderUser != "" {
+		cfg.EmailSender.User = emailSenderUser
 	}
 
-	if password := os.Getenv("EMAIL_SENDER_PASSWORD"); password != "" {
-		cfg.EmailSender.Password = password
+	if emailSenderPassword := os.Getenv("EMAIL_SENDER_PASSWORD"); emailSenderPassword != "" {
+		cfg.EmailSender.Password = emailSenderPassword
 	}
 
 	if postgresUser := os.Getenv("POSTGRES_USER"); postgresUser != "" {
@@ -97,6 +97,10 @@ func loadEnvs(cfg *Configuration) {
 
 	if postgresPassword := os.Getenv("POSTGRES_PASSWORD"); postgresPassword != "" {
 		cfg.Postgres.Password = postgresPassword
+	}
+
+	if postgresDBName := os.Getenv("POSTGRES_DB"); postgresDBName != "" {
+		cfg.Postgres.DBName = postgresDBName
 	}
 
 	if authSecret := os.Getenv("AUTH_SECRET"); authSecret != "" {

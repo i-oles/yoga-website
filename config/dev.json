@@ -3,7 +3,6 @@
   "readTimeout": 5,
   "writeTimeout": 10,
   "contextTimeout": 5,
-  "postgresDBName": "root",
   "logErrors": true,
   "authSecret": "",
   "emailSender": {
@@ -14,7 +13,7 @@
     "fromName": "Igor"
   },
   "postgres": {
-    "dbName": "root",
+    "dbName": "",
     "user": "",
     "password": ""
   },

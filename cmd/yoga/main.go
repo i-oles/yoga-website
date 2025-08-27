@@ -42,7 +42,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	connStr := fmt.Sprintf("dbname=%s user=%s password=%s host=localhost sslmode=disable",
+	//connStr := fmt.Sprintf("dbname=%s user=%s password=%s host=db sslmode=disable",
+	connStr := fmt.Sprintf("dbname=%s user=%s password=%s host=db sslmode=disable",
 		cfg.Postgres.DBName,
 		cfg.Postgres.User,
 		cfg.Postgres.Password,

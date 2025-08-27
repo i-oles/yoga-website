@@ -1,4 +1,4 @@
-ALTER DATABASE root SET timezone TO 'UTC';
+ALTER DATABASE yoga SET timezone TO 'UTC';
 
 CREATE TABLE classes
 (
@@ -11,7 +11,7 @@ CREATE TABLE classes
     location         varchar(40) NOT NULL
 );
 
--- CREATE TYPE booking_operation AS ENUM ('create_booking', 'cancel_booking');
+CREATE TYPE booking_operation AS ENUM ('create_booking', 'cancel_booking');
 
 CREATE TABLE pending_operations
 (
