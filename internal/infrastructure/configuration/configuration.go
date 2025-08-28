@@ -13,10 +13,6 @@ import (
 	"github.com/tkanos/gonfig"
 )
 
-const (
-	defaultCfgFilename = "dev.json"
-)
-
 type EmailSenderSettings struct {
 	Host     string
 	Port     int
@@ -29,6 +25,7 @@ type PostgresSettings struct {
 	User     string
 	Password string
 	DBName   string
+	Host     string
 }
 
 type Configuration struct {
@@ -38,7 +35,8 @@ type Configuration struct {
 	ContextTimeout                  time.Duration
 	AuthSecret                      string
 	Postgres                        PostgresSettings
-	LogErrors                       bool
+	LogBusinessErrors               bool
+	LogConfig                       bool
 	EmailSender                     EmailSenderSettings
 	DomainAddr                      string
 	ConfirmationCreateEmailTmplPath string
@@ -55,9 +53,16 @@ func (c *Configuration) Pretty() string {
 func GetConfig(cfgPath string) (*Configuration, error) {
 	cfg := &Configuration{}
 
-	cfgFinalPath := filepath.Join(cfgPath, defaultCfgFilename)
+	err := godotenv.Load()
+	if err != nil {
+		slog.Info("No .env file found, using environment variables...")
+	}
 
-	err := gonfig.GetConf(cfgFinalPath, cfg)
+	configFileName := os.Getenv("CONFIG")
+
+	cfgFinalPath := filepath.Join(cfgPath, configFileName+".json")
+
+	err = gonfig.GetConf(cfgFinalPath, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("could not load configuration: %s", err.Error())
 	}
@@ -78,11 +83,6 @@ func GetConfig(cfgPath string) (*Configuration, error) {
 }
 
 func loadEnvs(cfg *Configuration) {
-	err := godotenv.Load()
-	if err != nil {
-		slog.Info("No .env file found, using environment variables...")
-	}
-
 	if emailSenderUser := os.Getenv("EMAIL_SENDER_USER"); emailSenderUser != "" {
 		cfg.EmailSender.User = emailSenderUser
 	}
@@ -97,10 +97,6 @@ func loadEnvs(cfg *Configuration) {
 
 	if postgresPassword := os.Getenv("POSTGRES_PASSWORD"); postgresPassword != "" {
 		cfg.Postgres.Password = postgresPassword
-	}
-
-	if postgresDBName := os.Getenv("POSTGRES_DB"); postgresDBName != "" {
-		cfg.Postgres.DBName = postgresDBName
 	}
 
 	if authSecret := os.Getenv("AUTH_SECRET"); authSecret != "" {

@@ -3,8 +3,8 @@
   "readTimeout": 5,
   "writeTimeout": 10,
   "contextTimeout": 5,
-  "logBusinessErrors": true,
-  "logConfig": true,
+  "logBusinessErrors": false,
+  "logConfig": false,
   "authSecret": "",
   "emailSender": {
     "host": "smtp.gmail.com",
@@ -17,7 +17,7 @@
     "dbName": "yoga",
     "user": "",
     "password": "",
-    "host" : "localhost"
+    "host": "db"
   },
   "domainAddr": "localhost:8080",
   "confirmationCreateEmailTmplPath": "internal/infrastructure/sender/templates/confirmation_create_email.tmpl",

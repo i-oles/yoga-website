@@ -8,23 +8,28 @@ import (
 )
 
 type ErrorHandler struct {
-	errorHandler handler.IErrorHandler
+	errorHandler      handler.IErrorHandler
+	logBusinessErrors bool
 }
 
 func NewErrorHandler(
 	errorHandler handler.IErrorHandler,
+	logBusinessErrors bool,
 ) ErrorHandler {
 	return ErrorHandler{
-		errorHandler: errorHandler,
+		errorHandler:      errorHandler,
+		logBusinessErrors: logBusinessErrors,
 	}
 }
 
 func (e ErrorHandler) HandleHTMLError(c *gin.Context, tmplName string, err error) {
-	slog.Error("bookingBusinessError",
-		slog.String("error", err.Error()),
-		slog.Any("params", c.Request.URL.Query()),
-		slog.String("endpoint", c.FullPath()),
-	)
+	if e.logBusinessErrors {
+		slog.Error("bookingBusinessError",
+			slog.String("error", err.Error()),
+			slog.Any("params", c.Request.URL.Query()),
+			slog.String("endpoint", c.FullPath()),
+		)
+	}
 
 	e.errorHandler.HandleHTMLError(c, tmplName, err)
 }

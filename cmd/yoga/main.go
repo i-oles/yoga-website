@@ -42,11 +42,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	//connStr := fmt.Sprintf("dbname=%s user=%s password=%s host=db sslmode=disable",
-	connStr := fmt.Sprintf("dbname=%s user=%s password=%s host=db sslmode=disable",
+	connStr := fmt.Sprintf("dbname=%s user=%s password=%s host=%s sslmode=disable",
 		cfg.Postgres.DBName,
 		cfg.Postgres.User,
 		cfg.Postgres.Password,
+		cfg.Postgres.Host,
 	)
 
 	db, err := sql.Open("postgres", connStr)
@@ -82,7 +82,9 @@ func loadConfig() (*configuration.Configuration, error) {
 		return nil, fmt.Errorf("error loading configuration: %w", err)
 	}
 
-	slog.Info(cfg.Pretty())
+	if cfg.LogConfig {
+		slog.Info(cfg.Pretty())
+	}
 
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
 
@@ -122,9 +124,7 @@ func setupRouter(db *sql.DB, cfg *configuration.Configuration) *gin.Engine {
 	var errorHandler handler.IErrorHandler
 
 	errorHandler = handler.NewErrorHandler()
-	if cfg.LogErrors {
-		errorHandler = logWrapper.NewErrorHandler(errorHandler)
-	}
+	errorHandler = logWrapper.NewErrorHandler(errorHandler, cfg.LogBusinessErrors)
 
 	classesHandler := classes.NewHandler(classesService)
 	bookHandler := book.NewHandler()
