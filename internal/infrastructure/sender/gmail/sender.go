@@ -66,7 +66,7 @@ func (s Sender) SendConfirmationCreateLink(msgParams models.ConfirmationCreatePa
 	m := gomail.NewMessage()
 	m.SetHeader("From", s.SenderEmail)
 	m.SetHeader("To", msgParams.RecipientEmail)
-	m.SetHeader("Subject", "Yoga - Potwierdź rezerwację!")
+	m.SetHeader("Subject", "Yoga - Prośba o potwierdzenie rezerwacji!")
 	m.SetBody("text/html", msg.String())
 
 	if err = s.Dialer.DialAndSend(m); err != nil {
@@ -97,7 +97,7 @@ func (s Sender) SendConfirmationCancelLink(msgParams models.ConfirmationCancelPa
 	m := gomail.NewMessage()
 	m.SetHeader("From", s.SenderEmail)
 	m.SetHeader("To", msgParams.RecipientEmail)
-	m.SetHeader("Subject", "Yoga - Odwołanie rezerwacji")
+	m.SetHeader("Subject", "Yoga - Prośba o potwierdzenie odwołania rezerwacji")
 	m.SetBody("text/html", msg.String())
 
 	if err = s.Dialer.DialAndSend(m); err != nil {
@@ -133,7 +133,7 @@ func (s Sender) SendFinalConfirmation(msgParams models.ConfirmationFinalParams) 
 	m := gomail.NewMessage()
 	m.SetHeader("From", s.SenderEmail)
 	m.SetHeader("To", msgParams.RecipientEmail)
-	m.SetHeader("Subject", "Yoga - Potwierdzenie rezerwacji!")
+	m.SetHeader("Subject", "Yoga - Rezerwacja potwierdzona!")
 	m.SetBody("text/html", msg.String())
 
 	if err = s.Dialer.DialAndSend(m); err != nil {

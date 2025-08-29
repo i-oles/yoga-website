@@ -21,20 +21,12 @@ type EmailSenderSettings struct {
 	FromName string
 }
 
-type PostgresSettings struct {
-	User     string
-	Password string
-	DBName   string
-	Host     string
-}
-
 type Configuration struct {
 	ListenAddress                   string
 	ReadTimeout                     time.Duration
 	WriteTimeout                    time.Duration
 	ContextTimeout                  time.Duration
 	AuthSecret                      string
-	Postgres                        PostgresSettings
 	LogBusinessErrors               bool
 	LogConfig                       bool
 	EmailSender                     EmailSenderSettings
@@ -69,11 +61,6 @@ func GetConfig(cfgPath string) (*Configuration, error) {
 
 	loadEnvs(cfg)
 
-	if cfg.Postgres.User == "" || cfg.Postgres.Password == "" {
-		return nil,
-			errors.New("provide envs for postgres access")
-	}
-
 	if cfg.EmailSender.User == "" || cfg.EmailSender.Password == "" {
 		return nil,
 			errors.New("provide envs for email sender")
@@ -89,14 +76,6 @@ func loadEnvs(cfg *Configuration) {
 
 	if emailSenderPassword := os.Getenv("EMAIL_SENDER_PASSWORD"); emailSenderPassword != "" {
 		cfg.EmailSender.Password = emailSenderPassword
-	}
-
-	if postgresUser := os.Getenv("POSTGRES_USER"); postgresUser != "" {
-		cfg.Postgres.User = postgresUser
-	}
-
-	if postgresPassword := os.Getenv("POSTGRES_PASSWORD"); postgresPassword != "" {
-		cfg.Postgres.Password = postgresPassword
 	}
 
 	if authSecret := os.Getenv("AUTH_SECRET"); authSecret != "" {

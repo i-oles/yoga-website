@@ -1,8 +1,10 @@
 package wrapper
 
 import (
+	"errors"
 	"log/slog"
 	"main/internal/api/http/err/handler"
+	"main/internal/domain/errs"
 
 	"github.com/gin-gonic/gin"
 )
@@ -23,7 +25,8 @@ func NewErrorHandler(
 }
 
 func (e ErrorHandler) HandleHTMLError(c *gin.Context, tmplName string, err error) {
-	if e.logBusinessErrors {
+	var bookingError *errs.BookingError
+	if e.logBusinessErrors && errors.As(err, &bookingError) {
 		slog.Error("bookingBusinessError",
 			slog.String("error", err.Error()),
 			slog.Any("params", c.Request.URL.Query()),

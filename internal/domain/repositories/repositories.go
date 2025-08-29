@@ -24,7 +24,7 @@ type ConfirmedBookings interface {
 type PendingOperations interface {
 	Get(ctx context.Context, token string) (models.PendingOperation, error)
 	Insert(ctx context.Context, booking models.PendingOperation) error
-	Delete(ctx context.Context, token string) error
+	Delete(ctx context.Context, id uuid.UUID) error
 	CountPendingOperationsPerUser(
 		ctx context.Context,
 		email string,

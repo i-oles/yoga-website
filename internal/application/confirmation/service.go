@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/lib/pq"
 )
 
 type Service struct {
@@ -84,20 +83,15 @@ func (s *Service) CreateBooking(
 		FirstName: pendingOperation.FirstName,
 		LastName:  *pendingOperation.LastName,
 		Email:     pendingOperation.Email,
-		CreatedAt: time.Now(),
+		CreatedAt: time.Now().UTC(),
 	}
 
 	err = s.ConfirmedBookingRepo.Insert(ctx, confirmedBooking)
 	if err != nil {
-		var pgErr *pq.Error
-		if errors.As(err, &pgErr) && pgErr.Code == recordExistsCode {
-			return models.Class{}, domainErrors.ErrConfirmedBookingAlreadyExists(pendingOperation.Email, err)
-		}
-
 		return models.Class{}, fmt.Errorf("error while inserting pendingOperation: %w", err)
 	}
 
-	err = s.PendingOperationsRepo.Delete(ctx, token)
+	err = s.PendingOperationsRepo.Delete(ctx, pendingOperation.ID)
 	if err != nil {
 		return models.Class{}, fmt.Errorf("error while deleting pending pendingOperation: %w", err)
 	}
@@ -180,7 +174,7 @@ func (s *Service) CancelBooking(ctx context.Context, token string) (models.Class
 		return models.Class{}, fmt.Errorf("error while deleting confirmed booking: %w", err)
 	}
 
-	err = s.PendingOperationsRepo.Delete(ctx, token)
+	err = s.PendingOperationsRepo.Delete(ctx, pendingOperation.ID)
 	if err != nil {
 		return models.Class{}, fmt.Errorf("error while deleting pending pendingOperation: %w", err)
 	}

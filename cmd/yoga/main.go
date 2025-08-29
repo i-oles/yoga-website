@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"log"
@@ -23,7 +22,10 @@ import (
 	"main/internal/application/pending"
 	"main/internal/infrastructure/configuration"
 	"main/internal/infrastructure/generator/token"
-	"main/internal/infrastructure/repository/postgres"
+	dbModels "main/internal/infrastructure/models/db/classes"
+	"main/internal/infrastructure/models/db/confirmedbookings"
+	"main/internal/infrastructure/models/db/pendingoperations"
+	sqliteRepo "main/internal/infrastructure/repository/sqlite"
 	"main/internal/infrastructure/sender/gmail"
 	"net/http"
 	"os"
@@ -33,6 +35,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 )
 
 func main() {
@@ -42,28 +46,23 @@ func main() {
 		os.Exit(1)
 	}
 
-	connStr := fmt.Sprintf("dbname=%s user=%s password=%s host=%s sslmode=disable",
-		cfg.Postgres.DBName,
-		cfg.Postgres.User,
-		cfg.Postgres.Password,
-		cfg.Postgres.Host,
-	)
-
-	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	defer db.Close()
-
-	err = db.Ping()
+	gormDB, err := gorm.Open(sqlite.Open("yoga.db"), &gorm.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	slog.Info("Successfully connected to database")
 
-	router := setupRouter(db, cfg)
+	err = gormDB.AutoMigrate(
+		&dbModels.SQLClass{},
+		&pendingoperations.SQLPendingOperation{},
+		&confirmedbookings.SQLConfirmedBooking{},
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	router := setupRouter(gormDB, cfg)
 
 	srv := &http.Server{
 		Addr:              cfg.ListenAddress,
@@ -91,12 +90,12 @@ func loadConfig() (*configuration.Configuration, error) {
 	return cfg, nil
 }
 
-func setupRouter(db *sql.DB, cfg *configuration.Configuration) *gin.Engine {
+func setupRouter(db *gorm.DB, cfg *configuration.Configuration) *gin.Engine {
 	router := gin.Default()
 
-	classesRepo := postgres.NewClassesRepo(db)
-	confirmedBookingsRepo := postgres.NewConfirmedBookingsRepo(db)
-	pendingOperationsRepo := postgres.NewPendingOperationsRepo(db)
+	classesRepo := sqliteRepo.NewClassesRepo(db)
+	confirmedBookingsRepo := sqliteRepo.NewConfirmedBookingsRepo(db)
+	pendingOperationsRepo := sqliteRepo.NewPendingOperationsRepo(db)
 
 	tokenGenerator := token.NewGenerator()
 	emailSender := gmail.NewSender(

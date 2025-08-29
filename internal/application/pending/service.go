@@ -2,13 +2,13 @@ package pending
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	domainErrors "main/internal/domain/errs"
 	"main/internal/domain/models"
 	"main/internal/domain/repositories"
 	"main/internal/domain/services"
+	"main/internal/infrastructure/errs"
 	"time"
 
 	"github.com/google/uuid"
@@ -47,7 +47,16 @@ func (s *Service) CreateBooking(
 	ctx context.Context,
 	createParams models.CreateParams,
 ) (uuid.UUID, error) {
-	err := s.validatePendingOperationNumberPerUser(ctx, createParams.ClassID, createParams.Email, models.CreateBooking)
+	_, err := s.ConfirmedBookingsRepo.Get(ctx, createParams.ClassID, createParams.Email)
+	if err == nil {
+		return uuid.Nil, domainErrors.ErrConfirmedBookingAlreadyExists(createParams.ClassID, createParams.Email, err)
+	}
+
+	if !errors.Is(err, errs.ErrNotFound) {
+		return uuid.Nil, fmt.Errorf("could not get confirmed booking: %w", err)
+	}
+
+	err = s.validatePendingOperationNumberPerUser(ctx, createParams.ClassID, createParams.Email, models.CreateBooking)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("validate pending operation number per user: %w", err)
 	}
@@ -78,13 +87,13 @@ func (s *Service) CreateBooking(
 
 	pendingBooking := models.PendingOperation{
 		ID:                uuid.New(),
-		ClassID:           class.ID,
+		ClassID:           createParams.ClassID,
 		Operation:         models.CreateBooking,
 		Email:             createParams.Email,
 		FirstName:         createParams.FirstName,
 		LastName:          &createParams.LastName,
 		ConfirmationToken: confirmationToken,
-		CreatedAt:         time.Now(),
+		CreatedAt:         time.Now().UTC(),
 	}
 
 	err = s.PendingOperationsRepo.Insert(ctx, pendingBooking)
@@ -112,7 +121,7 @@ func (s *Service) CancelBooking(
 ) (uuid.UUID, error) {
 	confirmedBooking, err := s.ConfirmedBookingsRepo.Get(ctx, cancelParams.ClassID, cancelParams.Email)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, errs.ErrNotFound) {
 			return uuid.Nil, domainErrors.ErrConfirmedBookingNotFound(
 				cancelParams.ClassID, cancelParams.Email,
 				fmt.Errorf("no such booking with email %s for class %v",
@@ -120,7 +129,7 @@ func (s *Service) CancelBooking(
 			)
 		}
 
-		return uuid.Nil, fmt.Errorf("could not get confirmed bookings: %w", err)
+		return uuid.Nil, fmt.Errorf("could not get confirmed booking: %w", err)
 	}
 
 	err = s.validatePendingOperationNumberPerUser(ctx, cancelParams.ClassID, cancelParams.Email, models.CancelBooking)
@@ -158,7 +167,7 @@ func (s *Service) CancelBooking(
 		Email:             cancelParams.Email,
 		FirstName:         confirmedBooking.FirstName,
 		ConfirmationToken: confirmationToken,
-		CreatedAt:         time.Now(),
+		CreatedAt:         time.Now().UTC(),
 	}
 
 	err = s.PendingOperationsRepo.Insert(ctx, cancelPendingOperation)

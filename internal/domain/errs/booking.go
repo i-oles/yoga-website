@@ -17,9 +17,10 @@ const (
 	SomeoneBookedClassFasterCode
 )
 
-func ErrConfirmedBookingAlreadyExists(email string, err error) *BookingError {
+func ErrConfirmedBookingAlreadyExists(classID uuid.UUID, email string, err error) *BookingError {
 	return &BookingError{
-		Code: ConfirmedBookingAlreadyExistsCode,
+		ClassID: &classID,
+		Code:    ConfirmedBookingAlreadyExistsCode,
 		Message: "Wygląda na to, że rezerwacja dla: " + email + " już istnieje. " +
 			"Sprawdź skrzynkę mailową, aby znaleźć wcześniejsze potwierdzenie.",
 		Err: err,

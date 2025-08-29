@@ -30,6 +30,7 @@ func (e ErrorHandler) HandleHTMLError(c *gin.Context, tmplName string, err error
 			})
 		case domainErrs.ConfirmedBookingAlreadyExistsCode:
 			c.HTML(http.StatusConflict, tmplName, gin.H{
+				"ID":    bookingError.ClassID,
 				"Error": bookingError.Message,
 			})
 		case domainErrs.ExpiredClassBookingCode:

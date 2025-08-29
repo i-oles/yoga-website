@@ -21,7 +21,6 @@ type PendingOperation struct {
 	FirstName         string    `db:"first_name"`
 	LastName          *string   `db:"last_name"`
 	ConfirmationToken string    `db:"confirmation_token"`
-	ClassMaxCapacity  int       `db:"class_max_capacity"`
 	CreatedAt         time.Time `db:"created_at"`
 }
 

@@ -38,12 +38,6 @@ CREATE TABLE confirmed_bookings
     created_at timestamptz DEFAULT (now())
 );
 
-COMMENT ON COLUMN classes.max_capacity IS 'must be positive';
-
 ALTER TABLE confirmed_bookings
     ADD FOREIGN KEY (class_id) REFERENCES classes (id);
-
-CREATE UNIQUE INDEX idx_confirmed_bookings_unique
-    ON confirmed_bookings (class_id, email);
-
 

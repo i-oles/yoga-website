@@ -41,7 +41,7 @@ func (h *Handler) Handle(c *gin.Context) {
 	for _, dtoClass := range dtoClasses {
 		class := models.Class{
 			ID:              uuid.New(),
-			StartTime:       dtoClass.StartTime,
+			StartTime:       dtoClass.StartTime.UTC(),
 			ClassLevel:      dtoClass.ClassLevel,
 			ClassName:       dtoClass.ClassName,
 			CurrentCapacity: dtoClass.CurrentCapacity,
