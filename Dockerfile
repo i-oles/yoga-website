@@ -1,6 +1,6 @@
 FROM golang:1.23-alpine AS builder
 
-RUN apk add --no-cache make git tzdata
+RUN apk add --no-cache gcc musl-dev git make
 
 WORKDIR /app
 
@@ -9,14 +9,16 @@ RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux make build
+ENV CGO_ENABLED=1
+RUN go build -o /yoga ./cmd/yoga
 
 FROM alpine:latest
-WORKDIR /app
 
 RUN apk add --no-cache tzdata
 
-COPY --from=builder /app/bin/yoga /app/yoga
+WORKDIR /app
+
+COPY --from=builder /yoga /app/yoga
 COPY --from=builder /app/config /app/config
 COPY --from=builder /app/web /app/web
 COPY --from=builder /app/internal/infrastructure/sender/templates /app/internal/infrastructure/sender/templates
