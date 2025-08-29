@@ -37,6 +37,7 @@ import (
 	_ "github.com/lib/pq"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 func main() {
@@ -46,14 +47,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	gormDB, err := gorm.Open(sqlite.Open("yoga.db"), &gorm.Config{})
+	db, err := gorm.Open(sqlite.Open("yoga.db"), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent),
+	})
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 
 	slog.Info("Successfully connected to database")
 
-	err = gormDB.AutoMigrate(
+	err = db.AutoMigrate(
 		&dbModels.SQLClass{},
 		&pendingoperations.SQLPendingOperation{},
 		&confirmedbookings.SQLConfirmedBooking{},
@@ -62,7 +65,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	router := setupRouter(gormDB, cfg)
+	router := setupRouter(db, cfg)
 
 	srv := &http.Server{
 		Addr:              cfg.ListenAddress,
