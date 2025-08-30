@@ -21,3 +21,10 @@ primary_region = 'waw'
   cpu_kind = 'shared'
   cpus = 1
   memory_mb = 256
+
+[mounts]
+  source="yoga_data"
+  destination="/data"
+
+[env]
+  DATABASE_PATH="/data/yoga.db"

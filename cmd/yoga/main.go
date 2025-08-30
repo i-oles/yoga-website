@@ -47,7 +47,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	db, err := gorm.Open(sqlite.Open("yoga.db"), &gorm.Config{
+	db, err := gorm.Open(sqlite.Open(cfg.DBPath), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
 	if err != nil {

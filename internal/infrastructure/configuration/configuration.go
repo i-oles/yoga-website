@@ -23,6 +23,7 @@ type EmailSenderSettings struct {
 
 type Configuration struct {
 	ListenAddress                   string
+	DBPath                          string
 	ReadTimeout                     time.Duration
 	WriteTimeout                    time.Duration
 	ContextTimeout                  time.Duration
@@ -80,5 +81,9 @@ func loadEnvs(cfg *Configuration) {
 
 	if authSecret := os.Getenv("AUTH_SECRET"); authSecret != "" {
 		cfg.AuthSecret = authSecret
+	}
+
+	if dbPath := os.Getenv("DATABASE_PATH"); dbPath != "" {
+		cfg.DBPath = dbPath
 	}
 }
