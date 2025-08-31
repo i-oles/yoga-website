@@ -1,8 +1,17 @@
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Potwierdzenie odwołania</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Alegreya+Sans+SC:ital,wght@0,100;0,300;0,400;0,500;0,700;0,800;0,900;1,100;1,300;1,400;1,500;1,700;1,800;1,900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/web/static/css/styles.css">
+</head>
 <div class="confirmation-container">
     <div class="confirmation-card">
         <h2>Rezerwacja odwołana!</h2>
 
-        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="#2ecc71" style="margin: 20px auto; display: block;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="#2ecc71" style="margin: 20px auto;">
             <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm-1.25 17.292l-4.5-4.364 1.857-1.858 2.643 2.506 5.643-5.784 1.857 1.857-7.5 7.643z"/>
         </svg>
 
@@ -10,94 +19,28 @@
             Twoja rezerwacja została odwołana.
         </p>
 
-        <div class="booking-details">
-            <p><strong>Zajęcia:</strong> {{.ClassName}}</p>
-            <p><strong>Data:</strong> {{.Date}}</p>
-            <p><strong>Godzina:</strong> {{.Hour}}</p>
-            <p><strong>Miejsce:</strong> {{.Location}}</p>
+        <div class="booking-info">
+            <table style="border-collapse: collapse;">
+                    <tr>
+                        <td style="font-weight:300;">zajęcia:</td>
+                        <td style="font-weight:500;">{{ .ClassName }}</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight:300;">data:</td>
+                        <td style="font-weight:500;">{{ .Date }}</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight:300;">godzina:</td>
+                        <td style="font-weight:500;">{{ .Hour }}</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight:300;">miejsce:</td>
+                        <td style="font-weight:500;">{{ .Location }}</td>
+                    </tr>
+                </table>
         </div>
-
-        <a href="/" role="button" class="btn-return">
+        <button onclick="window.location.href='/'" class="btn-return">
             Powrót do listy zajęć
-        </a>
+        </button>
     </div>
 </div>
-
-<style>
-    .confirmation-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 80vh;
-        padding: 20px;
-    }
-
-    .confirmation-card {
-        background-color: white;
-        border-radius: 8px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        padding: 30px;
-        max-width: 500px;
-        width: 100%;
-        text-align: center;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-
-    .confirmation-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-    }
-
-    .confirmation-card h2 {
-        color: #2c3e50;
-        margin-bottom: 20px;
-        font-size: 1.8rem;
-    }
-
-    .confirmation-message {
-        color: #333;
-        font-size: 1.1rem;
-        margin-bottom: 25px;
-    }
-
-    .booking-details {
-        text-align: left;
-        background-color: #f8f9fa;
-        padding: 15px;
-        border-radius: 6px;
-        margin: 20px 0;
-    }
-
-    .booking-details p {
-        margin: 10px 0;
-        color: #333;
-    }
-
-    .booking-details strong {
-        color: #2c3e50;
-    }
-
-    .btn-return {
-        background-color: #3498db;
-        color: white;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        font-size: 1rem;
-        transition: background-color 0.3s ease;
-    }
-
-    .btn-return:hover {
-        background-color: #2980b9;
-    }
-
-    @media (max-width: 600px) {
-        .confirmation-card {
-            padding: 20px;
-        }
-
-        .confirmation-card h2 {
-            font-size: 1.5rem;
-        }
-    }
-</style>

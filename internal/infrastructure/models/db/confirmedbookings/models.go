@@ -2,6 +2,7 @@ package confirmedbookings
 
 import (
 	"main/internal/domain/models"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -37,7 +38,7 @@ func FromDomain(domain models.ConfirmedBooking) SQLConfirmedBooking {
 		ClassID:   domain.ClassID,
 		FirstName: domain.FirstName,
 		LastName:  domain.LastName,
-		Email:     domain.Email,
+		Email:     strings.ToLower(domain.Email),
 		CreatedAt: domain.CreatedAt,
 	}
 }

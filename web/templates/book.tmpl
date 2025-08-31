@@ -39,20 +39,15 @@
             {{ .Error }}
         </div>
         <button type="submit" class="btn-book">
-            <span class="submit-text">rezerwuj</span>
-            <span class="htmx-indicator">przetwarzam...</span>
+            <span class="btn-content">
+                <span class="submit-text">rezerwuj</span>
+                <span class="htmx-indicator">...</span>
+            </span>
         </button>
     </form>
-    <div id="cancel-button-{{ .ID }}">
-        <button class="btn-cancel"
-                hx-post="/cancel"
-                hx-swap="outerHTML"
-                hx-target="#book-block-{{ .ID }}"
-                hx-vals='{"id": "{{ .ID }}"}'
-                hx-trigger="click">
-            odwołaj
-        </button>
-    </div>
+    <button onclick="window.location.href='/'" class="btn-return">
+       < Wróć
+    </button>
 </div>
 <script>
     document.addEventListener('htmx:beforeSwap', function(event) {

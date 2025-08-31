@@ -1,14 +1,9 @@
 <div id="submit-create-block-{{ .ClassID }}">
-    <p class="pending-operation-create">
+    <p class="pending-operation">
         Kliknij na link wysłany na Twoją pocztę,<br>aby potwierdzić rezerwacje.<br>
         Link będzie aktywny przez 60 min.
     </p>
-    <button class="btn-book"
-            hx-post="/book"
-            hx-swap="outerHTML"
-            hx-target="#submit-create-block-{{ .ClassID }}"
-            hx-vals='{"id": "{{ .ClassID }}"}'
-            hx-trigger="click">
-        book now
+    <button onclick="window.location.href='/'" class="btn-return">
+       < Wróć
     </button>
 </div>

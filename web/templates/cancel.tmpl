@@ -1,15 +1,4 @@
 <div id="cancel-block-{{ .ID }}">
-    <div id="book-button-{{ .ID }}">
-        <button class="btn-book"
-                hx-post="/book"
-                hx-swap="outerHTML"
-                hx-target="#cancel-block-{{ .ID }}"
-                hx-vals='{"id": "{{ .ID }}"}'
-                hx-trigger="click">
-            rezerwuj
-        </button>
-        <br>
-    </div>
     <form id="cancel-form-{{ .ID }}"
           hx-post="/pending_operation/{{ .ID }}/cancel_booking"
           hx-target="#cancel-block-{{ .ID }}"
@@ -27,9 +16,12 @@
 
         <button type="cancel" class="btn-cancel">
             <span class="submit-text">odwołaj</span>
-            <span class="htmx-indicator">przetwarzam...</span>
+            <span class="htmx-indicator">...</span>
         </button>
     </form>
+    <button onclick="window.location.href='/'" class="btn-return">
+       < Wróć
+    </button>
 </div>
 <script>
     document.addEventListener('htmx:beforeSwap', function(event) {

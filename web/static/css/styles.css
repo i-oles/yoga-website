@@ -47,23 +47,27 @@ div#main-container {
 }
 
 /* Tabele z informacjami */
+.booking-info table,
 .class-info table {
     width: 100%;
     border-collapse: collapse;
     margin-bottom: 20px;
 }
 
+.booking-info td,
 .class-info td {
     padding: 6px 0;
     vertical-align: top;
 }
 
+.booking-info td:first-child,
 .class-info td:first-child {
     font-weight: 600;
     width: 35%;
     color: #333;
 }
 
+.booking-info td:last-child,
 .class-info td:last-child {
     color: #000;
 }
@@ -87,12 +91,6 @@ button {
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
 }
 
-button:hover:not(:disabled) {
-    background-color: #000;
-    color: #fff;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
 button:disabled {
     opacity: 0.5;
     cursor: not-allowed;
@@ -101,18 +99,18 @@ button:disabled {
     box-shadow: none;
 }
 
-/* Specyficzne style dla przycisków */
-.btn-cancel {
-    border-color: #000;
-    color: #000;
-    font-weight: 300;
+.btn-return:hover {
+    background-color: #dadada;
 }
 
-.btn-cancel:hover:not(:disabled) {
-    background-color: #6c6c6c;
+.btn-book:hover,
+.btn-cancel:hover {
+    background-color: #727272;
     color: #fff;
 }
 
+.btn-cancel,
+.btn-return,
 .btn-book {
     border-color: #000;
     color: #000;
@@ -145,13 +143,6 @@ button:disabled {
 
 
 
-
-
-.btn-book:hover:not(:disabled) {
-    background-color: #6c6c6c;
-    color: #fff;
-}
-
 /* Komunikaty o błędach */
 .err-msg {
     font-size: 0.8rem;
@@ -166,15 +157,7 @@ button:disabled {
     padding-left: 8px;
 }
 
-.pending-operation-create {
-    font-size: 0.8rem;
-    color: #2e7d32;
-    height: auto;
-    border-left: 2px solid #2e7d32;
-    padding-left: 8px;
-}
-
-.pending-operation-cancel {
+.pending-operation {
     font-size: 0.8rem;
     color: #d32f2f;
     height: auto;
@@ -232,4 +215,77 @@ button:disabled {
     border-color: #000;
     outline: none;
     box-shadow: 0 1px 6px rgba(0, 0, 0, 0.1);
+}
+* {
+    font-family: "Alegreya Sans SC", sans-serif;
+    font-style: normal;
+}
+
+.confirmation-container .error-container {
+    display: flex;
+    justify-content: center;
+    align-items: center; /* Wyśrodkowanie wertykalne */
+    background-color: #fff;
+    border: 1px solid #e0e0e0;
+    padding: 24px;
+    transition: all 0.2s ease;
+    margin-left: 0;
+    border-radius: 4px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    min-height: 400px;
+    min-width: 350px;
+}
+
+.confirmation-card, .error-card {
+    background-color: #fff;
+    border: 1px solid #e0e0e0;
+    padding: 24px;
+    transition: all 0.2s ease;
+    border-radius: 4px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    width: 100%; /* Pełna szerokość kontenera */
+    max-width: 400px; /* Maksymalna szerokość */
+    display: flex;
+    flex-direction: column;
+    margin: 0 auto; /* Wyśrodkowanie poziome */
+}
+
+.confirmation-card:hover .error-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.confirmation-card .error-card h2 {
+    color: #2c3e50;
+    margin-bottom: 20px;
+    font-size: 1.2rem;
+}
+
+.confirmation-message .error-message {
+    color: #333;
+    font-size: 0.9rem;
+    margin-bottom: 30px;
+    margin-top: 40px;
+}
+
+.booking-info {
+    margin-bottom: 40px;
+}
+
+/* Dodatkowe style dla responsywności */
+@media (max-width: 480px) {
+    .confirmation-card, .error-card {
+        max-width: 90%; /* Mniejsza szerokość na małych ekranach */
+        padding: 16px;
+    }
+
+    .confirmation-container .error-container {
+        min-height: 300px;
+        padding: 16px;
+    }
+
+    .confirmation-card .error-card {
+        padding: 15px;
+        font-size: 1.5rem;
+    }
 }

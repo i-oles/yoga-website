@@ -2,6 +2,7 @@ package pendingoperations
 
 import (
 	"main/internal/domain/models"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -40,7 +41,7 @@ func FromDomain(d models.PendingOperation) SQLPendingOperation {
 		ID:                d.ID,
 		ClassID:           d.ClassID,
 		Operation:         string(d.Operation),
-		Email:             d.Email,
+		Email:             strings.ToLower(d.Email),
 		FirstName:         d.FirstName,
 		LastName:          d.LastName,
 		ConfirmationToken: d.ConfirmationToken,
