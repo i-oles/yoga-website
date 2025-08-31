@@ -6,6 +6,7 @@ import (
 	"main/internal/domain/models"
 	"main/internal/domain/services"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -43,7 +44,7 @@ func (h *Handler) Handle(c *gin.Context) {
 
 	cancelParams := models.CancelParams{
 		ClassID: parsedUUID,
-		Email:   req.Email,
+		Email:   strings.ToLower(req.Email),
 	}
 
 	ctx := c.Request.Context()
