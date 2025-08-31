@@ -159,7 +159,8 @@ func setupRouter(db *gorm.DB, cfg *configuration.Configuration) *gin.Engine {
 	api := router.Group("/")
 
 	{
-		api.GET("/classes", classesHandler.Handle)
+		//TODO: For now: '/' later '/classes'
+		api.GET("/", classesHandler.Handle)
 		api.GET("/confirmation/create_booking", confirmationCreateHandler.Handle)
 		api.GET("/confirmation/cancel_booking", confirmationCancelHandler.Handle)
 	}
