@@ -12,10 +12,10 @@ import (
 const classesLimit = 6
 
 type Service struct {
-	classesRepo repositories.Classes
+	classesRepo repositories.IClasses
 }
 
-func New(classesRepo repositories.Classes) *Service {
+func New(classesRepo repositories.IClasses) *Service {
 	return &Service{classesRepo: classesRepo}
 }
 

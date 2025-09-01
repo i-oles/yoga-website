@@ -17,18 +17,18 @@ import (
 //TODO: refactor this methods - duplicated code
 
 type Service struct {
-	ClassesRepo           repositories.Classes
-	PendingOperationsRepo repositories.PendingOperations
-	ConfirmedBookingsRepo repositories.ConfirmedBookings
+	ClassesRepo           repositories.IClasses
+	PendingOperationsRepo repositories.IPendingOperations
+	ConfirmedBookingsRepo repositories.IConfirmedBookings
 	TokenGenerator        services.ITokenGenerator
 	MessageSender         services.ISender
 	DomainAddr            string
 }
 
 func New(
-	classesRepo repositories.Classes,
-	pendingOperationsRepo repositories.PendingOperations,
-	confirmedBookingsRepo repositories.ConfirmedBookings,
+	classesRepo repositories.IClasses,
+	pendingOperationsRepo repositories.IPendingOperations,
+	confirmedBookingsRepo repositories.IConfirmedBookings,
 	tokenGenerator services.ITokenGenerator,
 	messageSender services.ISender,
 	domainAddr string,
@@ -103,7 +103,7 @@ func (s *Service) CreateBooking(
 
 	msgParams := models.ConfirmationCreateParams{
 		RecipientEmail:         createParams.Email,
-		RecipientName:          createParams.FirstName,
+		RecipientFirstName:     createParams.FirstName,
 		ConfirmationCreateLink: fmt.Sprintf("%s/confirmation/create_booking?token=%s", s.DomainAddr, confirmationToken),
 	}
 
@@ -177,7 +177,7 @@ func (s *Service) CancelBooking(
 
 	msgParams := models.ConfirmationCancelParams{
 		RecipientEmail:         cancelParams.Email,
-		RecipientName:          confirmedBooking.FirstName,
+		RecipientFirstName:     confirmedBooking.FirstName,
 		ConfirmationCancelLink: fmt.Sprintf("%s/confirmation/cancel_booking?token=%s", s.DomainAddr, confirmationToken),
 	}
 

@@ -14,11 +14,12 @@ const (
 )
 
 type PendingOperation struct {
-	ID                uuid.UUID `db:"id"`
-	ClassID           uuid.UUID `db:"class_id"`
-	Operation         Operation `db:"operation"`
-	Email             string    `db:"email"`
-	FirstName         string    `db:"first_name"`
+	ID        uuid.UUID `db:"id"`
+	ClassID   uuid.UUID `db:"class_id"`
+	Operation Operation `db:"operation"`
+	Email     string    `db:"email"`
+	FirstName string    `db:"first_name"`
+	//TODO: remove pointer when will be no pending operation for cancel
 	LastName          *string   `db:"last_name"`
 	ConfirmationToken string    `db:"confirmation_token"`
 	CreatedAt         time.Time `db:"created_at"`
@@ -38,12 +39,12 @@ type CancelParams struct {
 
 type ConfirmationCreateParams struct {
 	RecipientEmail         string
-	RecipientName          string
+	RecipientFirstName     string
 	ConfirmationCreateLink string
 }
 
 type ConfirmationCancelParams struct {
 	RecipientEmail         string
-	RecipientName          string
+	RecipientFirstName     string
 	ConfirmationCancelLink string
 }

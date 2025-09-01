@@ -16,12 +16,21 @@ type ConfirmedBooking struct {
 }
 
 type ConfirmationFinalParams struct {
-	RecipientEmail string
-	RecipientName  string
-	ClassName      string
-	ClassLevel     string
-	WeekDay        string
-	Hour           string
-	Date           string
-	Location       string
+	RecipientEmail     string
+	RecipientFirstName string
+	RecipientLastName  string
+	ClassName          string
+	ClassLevel         string
+	WeekDay            string
+	Hour               string
+	Date               string
+	Location           string
+}
+
+type ConfirmationCancelToOwnerParams struct {
+	RecipientFirstName string
+	RecipientLastName  string
+	WeekDay            string
+	Hour               string
+	Date               string
 }

@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type Classes interface {
+type IClasses interface {
 	Get(ctx context.Context, id uuid.UUID) (models.Class, error)
 	GetAll(ctx context.Context) ([]models.Class, error)
 	Insert(ctx context.Context, classes []models.Class) ([]models.Class, error)
@@ -15,13 +15,13 @@ type Classes interface {
 	IncrementCurrentCapacity(ctx context.Context, id uuid.UUID) error
 }
 
-type ConfirmedBookings interface {
+type IConfirmedBookings interface {
 	Get(ctx context.Context, classID uuid.UUID, email string) (models.ConfirmedBooking, error)
 	Insert(ctx context.Context, confirmedBooking models.ConfirmedBooking) error
 	Delete(ctx context.Context, classID uuid.UUID, email string) error
 }
 
-type PendingOperations interface {
+type IPendingOperations interface {
 	Get(ctx context.Context, token string) (models.PendingOperation, error)
 	Insert(ctx context.Context, booking models.PendingOperation) error
 	Delete(ctx context.Context, id uuid.UUID) error

@@ -17,16 +17,16 @@ import (
 )
 
 type Service struct {
-	ClassesRepo           repositories.Classes
-	ConfirmedBookingRepo  repositories.ConfirmedBookings
-	PendingOperationsRepo repositories.PendingOperations
+	ClassesRepo           repositories.IClasses
+	ConfirmedBookingRepo  repositories.IConfirmedBookings
+	PendingOperationsRepo repositories.IPendingOperations
 	MessageSender         services.ISender
 }
 
 func New(
-	classesRepo repositories.Classes,
-	confirmedBookingsRepo repositories.ConfirmedBookings,
-	pendingOperationsRepo repositories.PendingOperations,
+	classesRepo repositories.IClasses,
+	confirmedBookingsRepo repositories.IConfirmedBookings,
+	pendingOperationsRepo repositories.IPendingOperations,
 	messageSender services.ISender,
 ) *Service {
 	return &Service{
@@ -112,17 +112,18 @@ func (s *Service) CreateBooking(
 	}
 
 	msgParams := models.ConfirmationFinalParams{
-		RecipientEmail: pendingOperation.Email,
-		RecipientName:  pendingOperation.FirstName,
-		ClassName:      class.ClassName,
-		ClassLevel:     class.ClassLevel,
-		WeekDay:        warsawTime.Weekday().String(),
-		Hour:           warsawTime.Format(converter.HourLayout),
-		Date:           warsawTime.Format(converter.DateLayout),
-		Location:       class.Location,
+		RecipientEmail:     pendingOperation.Email,
+		RecipientFirstName: pendingOperation.FirstName,
+		RecipientLastName:  *pendingOperation.LastName,
+		ClassName:          class.ClassName,
+		ClassLevel:         class.ClassLevel,
+		WeekDay:            warsawTime.Weekday().String(),
+		Hour:               warsawTime.Format(converter.HourLayout),
+		Date:               warsawTime.Format(converter.DateLayout),
+		Location:           class.Location,
 	}
 
-	err = s.MessageSender.SendFinalConfirmation(msgParams)
+	err = s.MessageSender.SendFinalConfirmations(msgParams)
 	if err != nil {
 		return models.Class{}, fmt.Errorf("error while sending final-confirmation: %w", err)
 	}
@@ -187,6 +188,25 @@ func (s *Service) CancelBooking(ctx context.Context, token string) (models.Class
 	class, err = s.ClassesRepo.Get(ctx, pendingOperation.ClassID)
 	if err != nil {
 		return models.Class{}, fmt.Errorf("error while getting class: %w", err)
+	}
+
+	warsawTime, err := converter.ConvertToWarsawTime(class.StartTime)
+	if err != nil {
+		return models.Class{}, fmt.Errorf("error while converting to warsaw time: %w", err)
+	}
+
+	//TODO: lastname should be added here when will not be a pending operation for cancel
+	msgParams := models.ConfirmationCancelToOwnerParams{
+		RecipientFirstName: pendingOperation.FirstName,
+		RecipientLastName:  "",
+		WeekDay:            warsawTime.Weekday().String(),
+		Hour:               warsawTime.Format(converter.HourLayout),
+		Date:               warsawTime.Format(converter.DateLayout),
+	}
+
+	err = s.MessageSender.SendInfoAboutCancellationToOwner(msgParams)
+	if err != nil {
+		return models.Class{}, fmt.Errorf("error while sending info about cancellation to owner: %w", err)
 	}
 
 	return class, nil
