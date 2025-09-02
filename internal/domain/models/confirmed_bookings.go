@@ -15,7 +15,7 @@ type ConfirmedBooking struct {
 	CreatedAt time.Time `db:"created_at"`
 }
 
-type ConfirmationFinalParams struct {
+type ConfirmationMessage struct {
 	RecipientEmail     string
 	RecipientFirstName string
 	RecipientLastName  string
@@ -27,7 +27,7 @@ type ConfirmationFinalParams struct {
 	Location           string
 }
 
-type ConfirmationCancelToOwnerParams struct {
+type ConfirmationToOwnerMsg struct {
 	RecipientFirstName string
 	RecipientLastName  string
 	WeekDay            string

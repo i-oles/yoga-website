@@ -17,6 +17,7 @@ type IClasses interface {
 
 type IConfirmedBookings interface {
 	Get(ctx context.Context, classID uuid.UUID, email string) (models.ConfirmedBooking, error)
+	GetAll(ctx context.Context) ([]models.ConfirmedBooking, error)
 	Insert(ctx context.Context, confirmedBooking models.ConfirmedBooking) error
 	Delete(ctx context.Context, classID uuid.UUID, email string) error
 }

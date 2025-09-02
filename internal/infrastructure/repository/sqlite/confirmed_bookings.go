@@ -44,6 +44,22 @@ func (r ConfirmedBookingsRepo) Get(
 	return sqlConfirmedBooking.ToDomain(), nil
 }
 
+func (r ConfirmedBookingsRepo) GetAll(ctx context.Context) ([]models.ConfirmedBooking, error) {
+	var SQLConfirmedBookings []confirmedbookings.SQLConfirmedBooking
+
+	if err := r.db.WithContext(ctx).Find(&SQLConfirmedBookings).Error; err != nil {
+		return nil, fmt.Errorf("failed to get all confirmed bookings: %w", err)
+	}
+
+	confirmedBookings := make([]models.ConfirmedBooking, len(SQLConfirmedBookings))
+
+	for i, SQLConfirmedBooking := range SQLConfirmedBookings {
+		confirmedBookings[i] = SQLConfirmedBooking.ToDomain()
+	}
+
+	return confirmedBookings, nil
+}
+
 func (r ConfirmedBookingsRepo) Insert(
 	ctx context.Context,
 	confirmedBooking models.ConfirmedBooking,

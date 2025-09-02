@@ -7,6 +7,7 @@ import (
 	"log"
 	"log/slog"
 	"main/internal/api/http/endpoints/addclasses"
+	"main/internal/api/http/endpoints/allconfirmedbookings"
 	"main/internal/api/http/endpoints/book"
 	"main/internal/api/http/endpoints/cancel"
 	"main/internal/api/http/endpoints/classes"
@@ -153,6 +154,9 @@ func setupRouter(db *gorm.DB, cfg *configuration.Configuration) *gin.Engine {
 	authMiddleware := middleware.Auth(cfg.AuthSecret)
 
 	addClassesHandler := addclasses.NewHandler(classesService, errorHandler)
+	allConfirmedBookingsHandler := allconfirmedbookings.NewHandler(confirmedBookingsRepo, errorHandler)
+	//deleteConfirmedBookingHandler := deleteconfirmedbooking.NewHandler(confirmedBookingsRepo, errorHandler)
+	//addConfirmedBookingHandler := addconfirmedbooking.NewHandler(confirmedBookingsRepo, errorHandler)
 
 	router.Static("web/static", "./web/static")
 	router.LoadHTMLGlob("web/templates/*")
@@ -163,14 +167,16 @@ func setupRouter(db *gorm.DB, cfg *configuration.Configuration) *gin.Engine {
 		api.GET("/", classesHandler.Handle)
 		api.GET("/confirmation/create_booking", confirmationCreateHandler.Handle)
 		api.GET("/confirmation/cancel_booking", confirmationCancelHandler.Handle)
+		api.GET("confirmation/all", authMiddleware, allConfirmedBookingsHandler.Handle)
 	}
 	{
 		api.POST("/book", bookHandler.Handle)
 		api.POST("/cancel", cancelHandler.Handle)
 		api.POST("/classes", authMiddleware, addClassesHandler.Handle)
+		//api.POST("/confirmation/delete/:id", authMiddleware, .Handle)
+		//api.POST("/confirmation/add", authMiddleware, .Handle)
 		api.POST("/pending_operation/:class_id/create_booking", pendingCreateHandler.Handle)
 		api.POST("/pending_operation/:class_id/cancel_booking", pendingCancelHandler.Handle)
-
 	}
 
 	return router

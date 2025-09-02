@@ -101,7 +101,7 @@ func (s *Service) CreateBooking(
 		return uuid.Nil, fmt.Errorf("could not insert pending booking: %w", err)
 	}
 
-	msgParams := models.ConfirmationCreateParams{
+	msgParams := models.ConfirmationCreateMsg{
 		RecipientEmail:         createParams.Email,
 		RecipientFirstName:     createParams.FirstName,
 		ConfirmationCreateLink: fmt.Sprintf("%s/confirmation/create_booking?token=%s", s.DomainAddr, confirmationToken),
@@ -175,13 +175,13 @@ func (s *Service) CancelBooking(
 		return uuid.Nil, fmt.Errorf("could not insert pending booking: %w", err)
 	}
 
-	msgParams := models.ConfirmationCancelParams{
+	msg := models.ConfirmationCancelMsg{
 		RecipientEmail:         cancelParams.Email,
 		RecipientFirstName:     confirmedBooking.FirstName,
 		ConfirmationCancelLink: fmt.Sprintf("%s/confirmation/cancel_booking?token=%s", s.DomainAddr, confirmationToken),
 	}
 
-	err = s.MessageSender.SendConfirmationCancelLink(msgParams)
+	err = s.MessageSender.SendConfirmationCancelLink(msg)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("could not send confirmation cancel link: %w", err)
 	}

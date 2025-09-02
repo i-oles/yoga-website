@@ -157,3 +157,43 @@ type PendingOperationCancelRequest struct {
 type PendingOperationCancelResponse struct {
 	ClassID uuid.UUID `json:"class_id"`
 }
+
+type ConfirmedBookingResponse struct {
+	ID        uuid.UUID `json:"id"`
+	ClassID   uuid.UUID `json:"class_id"`
+	FirstName string    `json:"first_name"`
+	LastName  string    `json:"last_name"`
+	Email     string    `json:"email"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+func ToConfirmedBookingResponse(confirmedBooking models.ConfirmedBooking) (ConfirmedBookingResponse, error) {
+	createdAtWarsawTime, err := converter.ConvertToWarsawTime(confirmedBooking.CreatedAt)
+	if err != nil {
+		return ConfirmedBookingResponse{}, fmt.Errorf("could not convert createdAt to warsaw time: %w", err)
+	}
+
+	return ConfirmedBookingResponse{
+		ID:        confirmedBooking.ID,
+		ClassID:   confirmedBooking.ClassID,
+		FirstName: confirmedBooking.FirstName,
+		LastName:  confirmedBooking.LastName,
+		Email:     confirmedBooking.Email,
+		CreatedAt: createdAtWarsawTime,
+	}, nil
+
+}
+
+func ToConfirmedBookingListResponse(confirmedBookings []models.ConfirmedBooking) ([]ConfirmedBookingResponse, error) {
+	confirmedBookingsResponse := make([]ConfirmedBookingResponse, len(confirmedBookings))
+	for i, confirmedBooking := range confirmedBookings {
+		confirmedBookingResponse, err := ToConfirmedBookingResponse(confirmedBooking)
+		if err != nil {
+			return nil, fmt.Errorf("could not convert confirmedBooking to confirmedBookingResponse: %w", err)
+		}
+
+		confirmedBookingsResponse[i] = confirmedBookingResponse
+	}
+
+	return confirmedBookingsResponse, nil
+}

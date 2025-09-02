@@ -111,7 +111,7 @@ func (s *Service) CreateBooking(
 		return models.Class{}, fmt.Errorf("error while converting to warsaw time: %w", err)
 	}
 
-	msgParams := models.ConfirmationFinalParams{
+	msg := models.ConfirmationMessage{
 		RecipientEmail:     pendingOperation.Email,
 		RecipientFirstName: pendingOperation.FirstName,
 		RecipientLastName:  *pendingOperation.LastName,
@@ -123,7 +123,7 @@ func (s *Service) CreateBooking(
 		Location:           class.Location,
 	}
 
-	err = s.MessageSender.SendFinalConfirmations(msgParams)
+	err = s.MessageSender.SendFinalConfirmations(msg)
 	if err != nil {
 		return models.Class{}, fmt.Errorf("error while sending final-confirmation: %w", err)
 	}
@@ -196,7 +196,7 @@ func (s *Service) CancelBooking(ctx context.Context, token string) (models.Class
 	}
 
 	//TODO: lastname should be added here when will not be a pending operation for cancel
-	msgParams := models.ConfirmationCancelToOwnerParams{
+	msg := models.ConfirmationToOwnerMsg{
 		RecipientFirstName: pendingOperation.FirstName,
 		RecipientLastName:  "",
 		WeekDay:            warsawTime.Weekday().String(),
@@ -204,7 +204,7 @@ func (s *Service) CancelBooking(ctx context.Context, token string) (models.Class
 		Date:               warsawTime.Format(converter.DateLayout),
 	}
 
-	err = s.MessageSender.SendInfoAboutCancellationToOwner(msgParams)
+	err = s.MessageSender.SendInfoAboutCancellationToOwner(msg)
 	if err != nil {
 		return models.Class{}, fmt.Errorf("error while sending info about cancellation to owner: %w", err)
 	}

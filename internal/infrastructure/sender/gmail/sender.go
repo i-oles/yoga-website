@@ -45,11 +45,11 @@ func NewSender(
 
 //TODO: refactor - one common function
 
-func (s Sender) SendConfirmationCreateLink(msgParams models.ConfirmationCreateParams) error {
+func (s Sender) SendConfirmationCreateLink(msg models.ConfirmationCreateMsg) error {
 	tmplData := infrastructureModels.PendingConfirmationTmplData{
 		SenderName:         s.SenderName,
-		RecipientFirstName: msgParams.RecipientFirstName,
-		ConfirmationLink:   msgParams.ConfirmationCreateLink,
+		RecipientFirstName: msg.RecipientFirstName,
+		ConfirmationLink:   msg.ConfirmationCreateLink,
 	}
 
 	tmpl, err := template.ParseFiles(s.ConfirmationCreateEmailTmplPath)
@@ -57,17 +57,17 @@ func (s Sender) SendConfirmationCreateLink(msgParams models.ConfirmationCreatePa
 		return fmt.Errorf("could not parse template: %w", err)
 	}
 
-	var msg strings.Builder
-	err = tmpl.Execute(&msg, tmplData)
+	var msgContent strings.Builder
+	err = tmpl.Execute(&msgContent, tmplData)
 	if err != nil {
 		return fmt.Errorf("could not execute template: %w", err)
 	}
 
 	m := gomail.NewMessage()
 	m.SetHeader("From", s.SenderEmail)
-	m.SetHeader("To", msgParams.RecipientEmail)
+	m.SetHeader("To", msg.RecipientEmail)
 	m.SetHeader("Subject", "Yoga - Prośba o potwierdzenie rezerwacji!")
-	m.SetBody("text/html", msg.String())
+	m.SetBody("text/html", msgContent.String())
 
 	if err = s.Dialer.DialAndSend(m); err != nil {
 		return fmt.Errorf("failed to send email: %w", err)
@@ -76,11 +76,11 @@ func (s Sender) SendConfirmationCreateLink(msgParams models.ConfirmationCreatePa
 	return nil
 }
 
-func (s Sender) SendConfirmationCancelLink(msgParams models.ConfirmationCancelParams) error {
+func (s Sender) SendConfirmationCancelLink(msg models.ConfirmationCancelMsg) error {
 	tmplData := infrastructureModels.PendingConfirmationTmplData{
 		SenderName:         s.SenderName,
-		RecipientFirstName: msgParams.RecipientFirstName,
-		ConfirmationLink:   msgParams.ConfirmationCancelLink,
+		RecipientFirstName: msg.RecipientFirstName,
+		ConfirmationLink:   msg.ConfirmationCancelLink,
 	}
 
 	tmpl, err := template.ParseFiles(s.ConfirmationCancelEmailTmplPath)
@@ -88,17 +88,17 @@ func (s Sender) SendConfirmationCancelLink(msgParams models.ConfirmationCancelPa
 		return fmt.Errorf("could not parse template: %w", err)
 	}
 
-	var msg strings.Builder
-	err = tmpl.Execute(&msg, tmplData)
+	var msgContent strings.Builder
+	err = tmpl.Execute(&msgContent, tmplData)
 	if err != nil {
 		return fmt.Errorf("could not execute template: %w", err)
 	}
 
 	m := gomail.NewMessage()
 	m.SetHeader("From", s.SenderEmail)
-	m.SetHeader("To", msgParams.RecipientEmail)
+	m.SetHeader("To", msg.RecipientEmail)
 	m.SetHeader("Subject", "Yoga - Prośba o potwierdzenie odwołania rezerwacji")
-	m.SetBody("text/html", msg.String())
+	m.SetBody("text/html", msgContent.String())
 
 	if err = s.Dialer.DialAndSend(m); err != nil {
 		return fmt.Errorf("failed to send email: %w", err)
@@ -107,16 +107,16 @@ func (s Sender) SendConfirmationCancelLink(msgParams models.ConfirmationCancelPa
 	return nil
 }
 
-func (s Sender) SendFinalConfirmations(msgParams models.ConfirmationFinalParams) error {
+func (s Sender) SendFinalConfirmations(msg models.ConfirmationMessage) error {
 	tmplData := infrastructureModels.FinalConfirmationTmplData{
 		SenderName:         s.SenderName,
-		RecipientFirstName: msgParams.RecipientFirstName,
-		ClassName:          msgParams.ClassName,
-		ClassLevel:         msgParams.ClassLevel,
-		WeekDay:            msgParams.WeekDay,
-		Hour:               msgParams.Hour,
-		Date:               msgParams.Date,
-		Location:           msgParams.Location,
+		RecipientFirstName: msg.RecipientFirstName,
+		ClassName:          msg.ClassName,
+		ClassLevel:         msg.ClassLevel,
+		WeekDay:            msg.WeekDay,
+		Hour:               msg.Hour,
+		Date:               msg.Date,
+		Location:           msg.Location,
 	}
 
 	tmpl, err := template.ParseFiles(s.ConfirmationFinalEmailTmplPath)
@@ -124,51 +124,51 @@ func (s Sender) SendFinalConfirmations(msgParams models.ConfirmationFinalParams)
 		return fmt.Errorf("could not parse template: %w", err)
 	}
 
-	var msgToRecipient strings.Builder
-	err = tmpl.Execute(&msgToRecipient, tmplData)
+	var msgContent strings.Builder
+	err = tmpl.Execute(&msgContent, tmplData)
 	if err != nil {
 		return fmt.Errorf("could not execute template: %w", err)
 	}
 
-	m1 := gomail.NewMessage()
-	m1.SetHeader("From", s.SenderEmail)
-	m1.SetHeader("To", msgParams.RecipientEmail)
-	m1.SetHeader("Subject", "Yoga - Rezerwacja potwierdzona!")
-	m1.SetBody("text/html", msgToRecipient.String())
+	msgToRecipient := gomail.NewMessage()
+	msgToRecipient.SetHeader("From", s.SenderEmail)
+	msgToRecipient.SetHeader("To", msg.RecipientEmail)
+	msgToRecipient.SetHeader("Subject", "Yoga - Rezerwacja potwierdzona!")
+	msgToRecipient.SetBody("text/html", msgContent.String())
 
-	subjectEmailToOwner := fmt.Sprintf("%s %s booked: %s (%s) at %s.",
-		msgParams.RecipientFirstName,
-		msgParams.RecipientLastName,
-		msgParams.WeekDay,
-		msgParams.Date,
-		msgParams.Hour,
+	subject := fmt.Sprintf("%s %s booked: %s (%s) at %s.",
+		msg.RecipientFirstName,
+		msg.RecipientLastName,
+		msg.WeekDay,
+		msg.Date,
+		msg.Hour,
 	)
 
-	m2 := gomail.NewMessage()
-	m2.SetHeader("From", s.SenderEmail)
-	m2.SetHeader("To", s.SenderEmail)
-	m2.SetHeader("Subject", subjectEmailToOwner)
+	msgToOwner := gomail.NewMessage()
+	msgToOwner.SetHeader("From", s.SenderEmail)
+	msgToOwner.SetHeader("To", s.SenderEmail)
+	msgToOwner.SetHeader("Subject", subject)
 
-	if err = s.Dialer.DialAndSend(m1, m2); err != nil {
+	if err = s.Dialer.DialAndSend(msgToRecipient, msgToOwner); err != nil {
 		return fmt.Errorf("failed to send emails: %w", err)
 	}
 
 	return nil
 }
 
-func (s Sender) SendInfoAboutCancellationToOwner(msgParams models.ConfirmationCancelToOwnerParams) error {
-	subjectEmailToOwner := fmt.Sprintf("%s %s cancelled: %s (%s) at %s.",
-		msgParams.RecipientFirstName,
-		msgParams.RecipientLastName,
-		msgParams.WeekDay,
-		msgParams.Date,
-		msgParams.Hour,
+func (s Sender) SendInfoAboutCancellationToOwner(msg models.ConfirmationToOwnerMsg) error {
+	subject := fmt.Sprintf("%s %s cancelled: %s (%s) at %s.",
+		msg.RecipientFirstName,
+		msg.RecipientLastName,
+		msg.WeekDay,
+		msg.Date,
+		msg.Hour,
 	)
 
 	m := gomail.NewMessage()
 	m.SetHeader("From", s.SenderEmail)
 	m.SetHeader("To", s.SenderEmail)
-	m.SetHeader("Subject", subjectEmailToOwner)
+	m.SetHeader("Subject", subject)
 
 	if err := s.Dialer.DialAndSend(m); err != nil {
 		return fmt.Errorf("failed to send email: %w", err)
