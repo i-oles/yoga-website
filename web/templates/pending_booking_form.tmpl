@@ -1,6 +1,6 @@
 <div class="book-block" id="book-block-{{ .ID }}">
     <form id="booking-form-{{ .ID }}"
-          hx-post="/pending_operation/{{ .ID }}/create_booking"
+          hx-post="/bookings/pending"
           hx-target="#book-block-{{ .ID }}"
           hx-swap="outerHTML">
 

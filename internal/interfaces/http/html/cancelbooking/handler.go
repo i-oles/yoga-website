@@ -48,5 +48,5 @@ func (h *Handler) Handle(c *gin.Context) {
 		return
 	}
 
-	c.HTML(http.StatusOK, "confirmation_cancel.tmpl", view)
+	c.HTML(http.StatusOK, "confirmation_cancel_booking.tmpl", view)
 }

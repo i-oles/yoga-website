@@ -33,7 +33,7 @@ func (h *Handler) Handle(c *gin.Context) {
 		return
 	}
 
-	c.HTML(http.StatusOK, "classes.html", gin.H{
+	c.HTML(http.StatusOK, "index.html", gin.H{
 		"Classes": classesView,
 	})
 }
