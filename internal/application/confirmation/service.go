@@ -17,23 +17,23 @@ import (
 )
 
 type Service struct {
-	ClassesRepo           repositories.IClasses
-	ConfirmedBookingRepo  repositories.IConfirmedBookings
-	PendingOperationsRepo repositories.IPendingOperations
-	MessageSender         services.ISender
+	ClassesRepo         repositories.IClasses
+	BookingsRepo        repositories.IBookings
+	PendingBookingsRepo repositories.IPendingBookings
+	MessageSender       services.ISender
 }
 
 func New(
 	classesRepo repositories.IClasses,
-	confirmedBookingsRepo repositories.IConfirmedBookings,
-	pendingOperationsRepo repositories.IPendingOperations,
+	bookingsRepo repositories.IBookings,
+	pendingBookingsRepo repositories.IPendingBookings,
 	messageSender services.ISender,
 ) *Service {
 	return &Service{
-		ClassesRepo:           classesRepo,
-		ConfirmedBookingRepo:  confirmedBookingsRepo,
-		PendingOperationsRepo: pendingOperationsRepo,
-		MessageSender:         messageSender,
+		ClassesRepo:         classesRepo,
+		BookingsRepo:        bookingsRepo,
+		PendingBookingsRepo: pendingBookingsRepo,
+		MessageSender:       messageSender,
 	}
 }
 
@@ -44,26 +44,26 @@ const (
 func (s *Service) CreateBooking(
 	ctx context.Context, token string,
 ) (models.Class, error) {
-	pendingOperation, err := s.PendingOperationsRepo.Get(ctx, token)
+	pendingBooking, err := s.PendingBookingsRepo.Get(ctx, token)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return models.Class{}, domainErrors.ErrPendingOperationNotFound(
-				fmt.Errorf("pending operation for token: %s not found", token),
+			return models.Class{}, domainErrors.ErrPendingBookingNotFound(
+				fmt.Errorf("pending booking for token: %s not found", token),
 			)
 		}
 
-		return models.Class{}, fmt.Errorf("error while getting pending pendingOperation: %w", err)
+		return models.Class{}, fmt.Errorf("could not get pending booking: %w", err)
 	}
 
-	class, err := s.ClassesRepo.Get(ctx, pendingOperation.ClassID)
+	class, err := s.ClassesRepo.Get(ctx, pendingBooking.ClassID)
 	if err != nil {
-		return models.Class{}, fmt.Errorf("error while getting class: %w", err)
+		return models.Class{}, fmt.Errorf("could not get class with id: %s, %w", pendingBooking.ClassID, err)
 	}
 
 	if class.StartTime.Before(time.Now()) {
-		return models.Class{}, domainErrors.ErrExpiredClassBooking(
+		return models.Class{}, domainErrors.ErrClassExpired(
 			class.ID,
-			fmt.Errorf("class %s has expired at %v", pendingOperation.ClassID, class.StartTime),
+			fmt.Errorf("class %s has expired at %v", pendingBooking.ClassID, class.StartTime),
 		)
 	}
 
@@ -73,53 +73,54 @@ func (s *Service) CreateBooking(
 		)
 	}
 
-	if pendingOperation.Operation != models.CreateBooking {
-		return models.Class{}, fmt.Errorf("invalid operation type: %s", pendingOperation.Operation)
+	if pendingBooking.Operation != models.CreateBooking {
+		return models.Class{}, fmt.Errorf("invalid operation type: %s", pendingBooking.Operation)
 	}
 
-	confirmedBooking := models.ConfirmedBooking{
+	confirmedBooking := models.Booking{
 		ID:        uuid.New(),
-		ClassID:   pendingOperation.ClassID,
-		FirstName: pendingOperation.FirstName,
-		LastName:  *pendingOperation.LastName,
-		Email:     pendingOperation.Email,
+		ClassID:   pendingBooking.ClassID,
+		FirstName: pendingBooking.FirstName,
+		LastName:  *pendingBooking.LastName,
+		Email:     pendingBooking.Email,
 		CreatedAt: time.Now().UTC(),
 	}
 
-	err = s.ConfirmedBookingRepo.Insert(ctx, confirmedBooking)
+	err = s.BookingsRepo.Insert(ctx, confirmedBooking)
 	if err != nil {
-		return models.Class{}, fmt.Errorf("error while inserting pendingOperation: %w", err)
+		return models.Class{}, fmt.Errorf("could not insert pendingOperation: %w", err)
 	}
 
-	err = s.PendingOperationsRepo.Delete(ctx, pendingOperation.ID)
+	err = s.PendingBookingsRepo.Delete(ctx, pendingBooking.ID)
 	if err != nil {
-		return models.Class{}, fmt.Errorf("error while deleting pending pendingOperation: %w", err)
+		return models.Class{}, fmt.Errorf("could not delete pending pendingOperation: %w", err)
 	}
 
-	err = s.ClassesRepo.DecrementCurrentCapacity(ctx, pendingOperation.ClassID)
+	//TODO: should this return class?
+	err = s.ClassesRepo.DecrementCurrentCapacity(ctx, pendingBooking.ClassID)
 	if err != nil {
-		return models.Class{}, fmt.Errorf("error while decrementing class max capacity: %w", err)
+		return models.Class{}, fmt.Errorf("could not decrement class max capacity: %w", err)
 	}
 
-	class, err = s.ClassesRepo.Get(ctx, pendingOperation.ClassID)
+	class, err = s.ClassesRepo.Get(ctx, pendingBooking.ClassID)
 	if err != nil {
-		return models.Class{}, fmt.Errorf("error while getting class: %w", err)
+		return models.Class{}, fmt.Errorf("could not get class: %w", err)
 	}
 
-	warsawTime, err := converter.ConvertToWarsawTime(class.StartTime)
+	startTimeWarsawUTC, err := converter.ConvertToWarsawTime(class.StartTime)
 	if err != nil {
-		return models.Class{}, fmt.Errorf("error while converting to warsaw time: %w", err)
+		return models.Class{}, fmt.Errorf("could not convert to warsaw time: %w", err)
 	}
 
-	msg := models.ConfirmationMessage{
-		RecipientEmail:     pendingOperation.Email,
-		RecipientFirstName: pendingOperation.FirstName,
-		RecipientLastName:  *pendingOperation.LastName,
+	msg := models.ConfirmationMsg{
+		RecipientEmail:     pendingBooking.Email,
+		RecipientFirstName: pendingBooking.FirstName,
+		RecipientLastName:  *pendingBooking.LastName,
 		ClassName:          class.ClassName,
 		ClassLevel:         class.ClassLevel,
-		WeekDay:            warsawTime.Weekday().String(),
-		Hour:               warsawTime.Format(converter.HourLayout),
-		Date:               warsawTime.Format(converter.DateLayout),
+		WeekDay:            startTimeWarsawUTC.Weekday().String(),
+		Hour:               startTimeWarsawUTC.Format(converter.HourLayout),
+		Date:               startTimeWarsawUTC.Format(converter.DateLayout),
 		Location:           class.Location,
 	}
 
@@ -132,81 +133,81 @@ func (s *Service) CreateBooking(
 }
 
 func (s *Service) CancelBooking(ctx context.Context, token string) (models.Class, error) {
-	pendingOperation, err := s.PendingOperationsRepo.Get(ctx, token)
+	pendingBooking, err := s.PendingBookingsRepo.Get(ctx, token)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return models.Class{}, domainErrors.ErrPendingOperationNotFound(
-				fmt.Errorf("pending operation for token: %s not found", token),
+			return models.Class{}, domainErrors.ErrPendingBookingNotFound(
+				fmt.Errorf("pending booking for token: %s not found", token),
 			)
 		}
 
-		return models.Class{}, fmt.Errorf("error while getting pending pendingOperation: %w", err)
+		return models.Class{}, fmt.Errorf("could not get pending booking: %w", err)
 	}
 
-	class, err := s.ClassesRepo.Get(ctx, pendingOperation.ClassID)
+	class, err := s.ClassesRepo.Get(ctx, pendingBooking.ClassID)
 	if err != nil {
-		return models.Class{}, fmt.Errorf("error while getting class: %w", err)
+		return models.Class{}, fmt.Errorf("could not get class with id: %s, %w", pendingBooking.ClassID, err)
 	}
 
 	if class.StartTime.Before(time.Now()) {
-		return models.Class{}, domainErrors.ErrExpiredClassBooking(
+		return models.Class{}, domainErrors.ErrClassExpired(
 			class.ID,
-			fmt.Errorf("class %s has expired at %v", pendingOperation.ClassID, class.StartTime),
+			fmt.Errorf("class %s has expired at %v", pendingBooking.ClassID, class.StartTime),
 		)
 	}
 
-	if pendingOperation.Operation != models.CancelBooking {
-		return models.Class{}, fmt.Errorf("invalid operation type: %s", pendingOperation.Operation)
+	if pendingBooking.Operation != models.CancelBooking {
+		return models.Class{}, fmt.Errorf("invalid operation type: %s", pendingBooking.Operation)
 	}
 
-	err = s.ConfirmedBookingRepo.Delete(ctx, pendingOperation.ClassID, pendingOperation.Email)
+	err = s.BookingsRepo.Delete(ctx, pendingBooking.ClassID, pendingBooking.Email)
 	if err != nil {
 		if errors.Is(err, errs.ErrNoRowsAffected) {
-			return models.Class{}, domainErrors.ErrConfirmedBookingNotFound(
-				pendingOperation.ClassID,
-				pendingOperation.Email,
-				fmt.Errorf("no such booking with email %s for class %v",
-					pendingOperation.Email,
-					pendingOperation.ClassID,
+			return models.Class{}, domainErrors.ErrBookingNotFound(
+				pendingBooking.ClassID,
+				pendingBooking.Email,
+				fmt.Errorf("could not find booking with email %s for class %s",
+					pendingBooking.Email,
+					pendingBooking.ClassID,
 				),
 			)
 		}
 
-		return models.Class{}, fmt.Errorf("error while deleting confirmed booking: %w", err)
+		return models.Class{}, fmt.Errorf("could not delete booking: %w", err)
 	}
 
-	err = s.PendingOperationsRepo.Delete(ctx, pendingOperation.ID)
+	err = s.PendingBookingsRepo.Delete(ctx, pendingBooking.ID)
 	if err != nil {
-		return models.Class{}, fmt.Errorf("error while deleting pending pendingOperation: %w", err)
+		return models.Class{}, fmt.Errorf("could not delete pending booking: %w", err)
 	}
 
-	err = s.ClassesRepo.IncrementCurrentCapacity(ctx, pendingOperation.ClassID)
+	err = s.ClassesRepo.IncrementCurrentCapacity(ctx, pendingBooking.ClassID)
 	if err != nil {
-		return models.Class{}, fmt.Errorf("error while incrementing class max capacity: %w", err)
+		return models.Class{}, fmt.Errorf("could not increment class max capacity: %w", err)
 	}
 
-	class, err = s.ClassesRepo.Get(ctx, pendingOperation.ClassID)
+	class, err = s.ClassesRepo.Get(ctx, pendingBooking.ClassID)
 	if err != nil {
-		return models.Class{}, fmt.Errorf("error while getting class: %w", err)
+		return models.Class{}, fmt.Errorf("could not get class: %w", err)
 	}
 
-	warsawTime, err := converter.ConvertToWarsawTime(class.StartTime)
+	startTimeWarsawUTC, err := converter.ConvertToWarsawTime(class.StartTime)
 	if err != nil {
-		return models.Class{}, fmt.Errorf("error while converting to warsaw time: %w", err)
+		return models.Class{}, fmt.Errorf("could not convert to warsaw time: %w", err)
 	}
 
 	//TODO: lastname should be added here when will not be a pending operation for cancel
 	msg := models.ConfirmationToOwnerMsg{
-		RecipientFirstName: pendingOperation.FirstName,
+		RecipientFirstName: pendingBooking.FirstName,
 		RecipientLastName:  "",
-		WeekDay:            warsawTime.Weekday().String(),
-		Hour:               warsawTime.Format(converter.HourLayout),
-		Date:               warsawTime.Format(converter.DateLayout),
+		WeekDay:            startTimeWarsawUTC.Weekday().String(),
+		Hour:               startTimeWarsawUTC.Format(converter.HourLayout),
+		Date:               startTimeWarsawUTC.Format(converter.DateLayout),
 	}
 
 	err = s.MessageSender.SendInfoAboutCancellationToOwner(msg)
 	if err != nil {
-		return models.Class{}, fmt.Errorf("error while sending info about cancellation to owner: %w", err)
+		return models.Class{}, fmt.Errorf("could not send info about cancellation to owner: %w", err)
 	}
 
 	return class, nil

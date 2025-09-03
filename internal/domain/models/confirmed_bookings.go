@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type ConfirmedBooking struct {
+type Booking struct {
 	ID        uuid.UUID `db:"id"`
 	ClassID   uuid.UUID `db:"class_id"`
 	FirstName string    `db:"first_name"`
@@ -15,7 +15,7 @@ type ConfirmedBooking struct {
 	CreatedAt time.Time `db:"created_at"`
 }
 
-type ConfirmationMessage struct {
+type ConfirmationMsg struct {
 	RecipientEmail     string
 	RecipientFirstName string
 	RecipientLastName  string

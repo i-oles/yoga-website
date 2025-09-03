@@ -18,8 +18,8 @@ import (
 
 type Service struct {
 	ClassesRepo           repositories.IClasses
-	PendingOperationsRepo repositories.IPendingOperations
-	ConfirmedBookingsRepo repositories.IConfirmedBookings
+	PendingOperationsRepo repositories.IPendingBookings
+	ConfirmedBookingsRepo repositories.IBookings
 	TokenGenerator        services.ITokenGenerator
 	MessageSender         services.ISender
 	DomainAddr            string
@@ -27,8 +27,8 @@ type Service struct {
 
 func New(
 	classesRepo repositories.IClasses,
-	pendingOperationsRepo repositories.IPendingOperations,
-	confirmedBookingsRepo repositories.IConfirmedBookings,
+	pendingOperationsRepo repositories.IPendingBookings,
+	confirmedBookingsRepo repositories.IBookings,
 	tokenGenerator services.ITokenGenerator,
 	messageSender services.ISender,
 	domainAddr string,
@@ -43,13 +43,13 @@ func New(
 	}
 }
 
-func (s *Service) CreateBooking(
+func (s *Service) CreatePendingBooking(
 	ctx context.Context,
-	createParams models.CreateParams,
+	createParams models.PendingBookingParams,
 ) (uuid.UUID, error) {
 	_, err := s.ConfirmedBookingsRepo.Get(ctx, createParams.ClassID, createParams.Email)
 	if err == nil {
-		return uuid.Nil, domainErrors.ErrConfirmedBookingAlreadyExists(createParams.ClassID, createParams.Email, err)
+		return uuid.Nil, domainErrors.ErrBookingAlreadyExists(createParams.ClassID, createParams.Email, err)
 	}
 
 	if !errors.Is(err, errs.ErrNotFound) {
@@ -74,7 +74,7 @@ func (s *Service) CreateBooking(
 	}
 
 	if class.StartTime.Before(time.Now()) {
-		return uuid.Nil, domainErrors.ErrExpiredClassBooking(
+		return uuid.Nil, domainErrors.ErrClassExpired(
 			createParams.ClassID,
 			fmt.Errorf("class %s has expired at %v", createParams.ClassID, class.StartTime),
 		)
@@ -85,7 +85,7 @@ func (s *Service) CreateBooking(
 		return uuid.Nil, fmt.Errorf("could not generate confirmation token: %w", err)
 	}
 
-	pendingBooking := models.PendingOperation{
+	pendingBooking := models.PendingBooking{
 		ID:                uuid.New(),
 		ClassID:           createParams.ClassID,
 		Operation:         models.CreateBooking,
@@ -115,14 +115,14 @@ func (s *Service) CreateBooking(
 	return class.ID, nil
 }
 
-func (s *Service) CancelBooking(
+func (s *Service) CancelPendingBooking(
 	ctx context.Context,
-	cancelParams models.CancelParams,
+	cancelParams models.CancelBookingParams,
 ) (uuid.UUID, error) {
 	confirmedBooking, err := s.ConfirmedBookingsRepo.Get(ctx, cancelParams.ClassID, cancelParams.Email)
 	if err != nil {
 		if errors.Is(err, errs.ErrNotFound) {
-			return uuid.Nil, domainErrors.ErrConfirmedBookingNotFound(
+			return uuid.Nil, domainErrors.ErrBookingNotFound(
 				cancelParams.ClassID, cancelParams.Email,
 				fmt.Errorf("no such booking with email %s for class %v",
 					cancelParams.Email, cancelParams.ClassID),
@@ -143,7 +143,7 @@ func (s *Service) CancelBooking(
 	}
 
 	if class.StartTime.Before(time.Now()) {
-		return uuid.Nil, domainErrors.ErrExpiredClassBooking(
+		return uuid.Nil, domainErrors.ErrClassExpired(
 			cancelParams.ClassID,
 			fmt.Errorf("class %s has expired at %v", cancelParams.ClassID, class.StartTime),
 		)
@@ -160,7 +160,7 @@ func (s *Service) CancelBooking(
 		return uuid.Nil, fmt.Errorf("could not generate confirmation token: %w", err)
 	}
 
-	cancelPendingOperation := models.PendingOperation{
+	cancelPendingOperation := models.PendingBooking{
 		ID:                uuid.New(),
 		ClassID:           class.ID,
 		Operation:         models.CancelBooking,
@@ -195,7 +195,7 @@ func (s *Service) validatePendingOperationNumberPerUser(
 	email string,
 	operation models.Operation,
 ) error {
-	count, err := s.PendingOperationsRepo.CountPendingOperationsPerUser(ctx, email, operation, classID)
+	count, err := s.PendingOperationsRepo.CountPendingBookingsPerUser(ctx, email, operation, classID)
 	if err != nil {
 		return fmt.Errorf("could not count pending operations for email: %s, error: %w", email, err)
 	}

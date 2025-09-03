@@ -13,7 +13,7 @@ const (
 	CancelBooking Operation = "cancel_booking"
 )
 
-type PendingOperation struct {
+type PendingBooking struct {
 	ID        uuid.UUID `db:"id"`
 	ClassID   uuid.UUID `db:"class_id"`
 	Operation Operation `db:"operation"`
@@ -25,14 +25,14 @@ type PendingOperation struct {
 	CreatedAt         time.Time `db:"created_at"`
 }
 
-type CreateParams struct {
+type PendingBookingParams struct {
 	ClassID   uuid.UUID `json:"class_id"`
 	FirstName string    `json:"first_name"`
 	LastName  string    `json:"last_name"`
 	Email     string    `json:"email"`
 }
 
-type CancelParams struct {
+type CancelBookingParams struct {
 	ClassID uuid.UUID `json:"class_id"`
 	Email   string    `json:"email"`
 }

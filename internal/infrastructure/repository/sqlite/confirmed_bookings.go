@@ -6,28 +6,28 @@ import (
 	"fmt"
 	"main/internal/domain/models"
 	"main/internal/infrastructure/errs"
-	"main/internal/infrastructure/models/db/confirmedbookings"
+	"main/internal/infrastructure/models/db/bookings"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
-type ConfirmedBookingsRepo struct {
+type BookingsRepo struct {
 	db *gorm.DB
 }
 
-func NewConfirmedBookingsRepo(db *gorm.DB) ConfirmedBookingsRepo {
-	return ConfirmedBookingsRepo{
+func NewBookingsRepo(db *gorm.DB) BookingsRepo {
+	return BookingsRepo{
 		db: db,
 	}
 }
 
-func (r ConfirmedBookingsRepo) Get(
+func (r BookingsRepo) Get(
 	ctx context.Context,
 	classID uuid.UUID,
 	email string,
-) (models.ConfirmedBooking, error) {
-	var sqlConfirmedBooking confirmedbookings.SQLConfirmedBooking
+) (models.Booking, error) {
+	var sqlConfirmedBooking bookings.SQLBooking
 
 	tx := r.db.WithContext(ctx).
 		Where("class_id = ? AND email = ?", classID, email).
@@ -35,23 +35,23 @@ func (r ConfirmedBookingsRepo) Get(
 
 	if tx.Error != nil {
 		if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
-			return models.ConfirmedBooking{}, errs.ErrNotFound
+			return models.Booking{}, errs.ErrNotFound
 		}
 
-		return models.ConfirmedBooking{}, fmt.Errorf("failed to get confirmed booking: %w", tx.Error)
+		return models.Booking{}, fmt.Errorf("failed to get confirmed booking: %w", tx.Error)
 	}
 
 	return sqlConfirmedBooking.ToDomain(), nil
 }
 
-func (r ConfirmedBookingsRepo) GetAll(ctx context.Context) ([]models.ConfirmedBooking, error) {
-	var SQLConfirmedBookings []confirmedbookings.SQLConfirmedBooking
+func (r BookingsRepo) GetAll(ctx context.Context) ([]models.Booking, error) {
+	var SQLConfirmedBookings []bookings.SQLBooking
 
 	if err := r.db.WithContext(ctx).Find(&SQLConfirmedBookings).Error; err != nil {
 		return nil, fmt.Errorf("failed to get all confirmed bookings: %w", err)
 	}
 
-	confirmedBookings := make([]models.ConfirmedBooking, len(SQLConfirmedBookings))
+	confirmedBookings := make([]models.Booking, len(SQLConfirmedBookings))
 
 	for i, SQLConfirmedBooking := range SQLConfirmedBookings {
 		confirmedBookings[i] = SQLConfirmedBooking.ToDomain()
@@ -60,11 +60,11 @@ func (r ConfirmedBookingsRepo) GetAll(ctx context.Context) ([]models.ConfirmedBo
 	return confirmedBookings, nil
 }
 
-func (r ConfirmedBookingsRepo) Insert(
+func (r BookingsRepo) Insert(
 	ctx context.Context,
-	confirmedBooking models.ConfirmedBooking,
+	confirmedBooking models.Booking,
 ) error {
-	sqlConfirmedBooking := confirmedbookings.FromDomain(confirmedBooking)
+	sqlConfirmedBooking := bookings.FromDomain(confirmedBooking)
 
 	if err := r.db.WithContext(ctx).Create(&sqlConfirmedBooking).Error; err != nil {
 		return fmt.Errorf("failed to insert confirmed booking: %w", err)
@@ -73,8 +73,8 @@ func (r ConfirmedBookingsRepo) Insert(
 	return nil
 }
 
-func (r ConfirmedBookingsRepo) Delete(ctx context.Context, classID uuid.UUID, email string) error {
-	var sqlConfirmedBooking confirmedbookings.SQLConfirmedBooking
+func (r BookingsRepo) Delete(ctx context.Context, classID uuid.UUID, email string) error {
+	var sqlConfirmedBooking bookings.SQLBooking
 
 	tx := r.db.WithContext(ctx).
 		Where("class_id = ? AND email = ?", classID, email).

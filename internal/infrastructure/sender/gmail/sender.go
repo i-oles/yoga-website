@@ -107,7 +107,7 @@ func (s Sender) SendConfirmationCancelLink(msg models.ConfirmationCancelMsg) err
 	return nil
 }
 
-func (s Sender) SendFinalConfirmations(msg models.ConfirmationMessage) error {
+func (s Sender) SendFinalConfirmations(msg models.ConfirmationMsg) error {
 	tmplData := infrastructureModels.FinalConfirmationTmplData{
 		SenderName:         s.SenderName,
 		RecipientFirstName: msg.RecipientFirstName,
