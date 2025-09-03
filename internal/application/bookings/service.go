@@ -1,4 +1,4 @@
-package confirmation
+package bookings
 
 import (
 	"context"
@@ -23,7 +23,7 @@ type Service struct {
 	MessageSender       services.ISender
 }
 
-func New(
+func NewService(
 	classesRepo repositories.IClasses,
 	bookingsRepo repositories.IBookings,
 	pendingBookingsRepo repositories.IPendingBookings,
@@ -88,12 +88,12 @@ func (s *Service) CreateBooking(
 
 	err = s.BookingsRepo.Insert(ctx, confirmedBooking)
 	if err != nil {
-		return models.Class{}, fmt.Errorf("could not insert pendingOperation: %w", err)
+		return models.Class{}, fmt.Errorf("could not insert booking: %w", err)
 	}
 
 	err = s.PendingBookingsRepo.Delete(ctx, pendingBooking.ID)
 	if err != nil {
-		return models.Class{}, fmt.Errorf("could not delete pending pendingOperation: %w", err)
+		return models.Class{}, fmt.Errorf("could not delete pending booking: %w", err)
 	}
 
 	//TODO: should this return class?
@@ -196,7 +196,7 @@ func (s *Service) CancelBooking(ctx context.Context, token string) (models.Class
 		return models.Class{}, fmt.Errorf("could not convert to warsaw time: %w", err)
 	}
 
-	//TODO: lastname should be added here when will not be a pending operation for cancel
+	//TODO: lastname should be added here when will not be a pending booking for cancel
 	msg := models.ConfirmationToOwnerMsg{
 		RecipientFirstName: pendingBooking.FirstName,
 		RecipientLastName:  "",

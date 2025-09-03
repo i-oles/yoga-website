@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type SQLPendingOperation struct {
+type SQLPendingBooking struct {
 	ID                uuid.UUID `gorm:"type:uuid;primaryKey"`
 	ClassID           uuid.UUID `gorm:"type:uuid;not null"`
 	Operation         string    `gorm:"type:text;not null;check:operation IN ('create_booking','cancel_booking')"`
@@ -18,11 +18,11 @@ type SQLPendingOperation struct {
 	CreatedAt         time.Time `gorm:"autoCreateTime"`
 }
 
-func (SQLPendingOperation) TableName() string {
+func (SQLPendingBooking) TableName() string {
 	return "pending_operations"
 }
 
-func (s SQLPendingOperation) ToDomain() models.PendingBooking {
+func (s SQLPendingBooking) ToDomain() models.PendingBooking {
 	return models.PendingBooking{
 		ID:                s.ID,
 		ClassID:           s.ClassID,
@@ -35,8 +35,8 @@ func (s SQLPendingOperation) ToDomain() models.PendingBooking {
 	}
 }
 
-func FromDomain(d models.PendingBooking) SQLPendingOperation {
-	return SQLPendingOperation{
+func FromDomain(d models.PendingBooking) SQLPendingBooking {
+	return SQLPendingBooking{
 		ID:                d.ID,
 		ClassID:           d.ClassID,
 		Operation:         string(d.Operation),

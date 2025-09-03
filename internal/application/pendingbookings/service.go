@@ -1,4 +1,4 @@
-package pending
+package pendingbookings
 
 import (
 	"context"
@@ -17,66 +17,66 @@ import (
 //TODO: refactor this methods - duplicated code
 
 type Service struct {
-	ClassesRepo           repositories.IClasses
-	PendingOperationsRepo repositories.IPendingBookings
-	ConfirmedBookingsRepo repositories.IBookings
-	TokenGenerator        services.ITokenGenerator
-	MessageSender         services.ISender
-	DomainAddr            string
+	ClassesRepo         repositories.IClasses
+	PendingBookingsRepo repositories.IPendingBookings
+	BookingsRepo        repositories.IBookings
+	TokenGenerator      services.ITokenGenerator
+	MessageSender       services.ISender
+	DomainAddr          string
 }
 
-func New(
+func NewService(
 	classesRepo repositories.IClasses,
-	pendingOperationsRepo repositories.IPendingBookings,
-	confirmedBookingsRepo repositories.IBookings,
+	pendingBookingsRepo repositories.IPendingBookings,
+	bookingsRepo repositories.IBookings,
 	tokenGenerator services.ITokenGenerator,
 	messageSender services.ISender,
 	domainAddr string,
 ) *Service {
 	return &Service{
-		ClassesRepo:           classesRepo,
-		PendingOperationsRepo: pendingOperationsRepo,
-		ConfirmedBookingsRepo: confirmedBookingsRepo,
-		TokenGenerator:        tokenGenerator,
-		MessageSender:         messageSender,
-		DomainAddr:            domainAddr,
+		ClassesRepo:         classesRepo,
+		PendingBookingsRepo: pendingBookingsRepo,
+		BookingsRepo:        bookingsRepo,
+		TokenGenerator:      tokenGenerator,
+		MessageSender:       messageSender,
+		DomainAddr:          domainAddr,
 	}
 }
 
 func (s *Service) CreatePendingBooking(
 	ctx context.Context,
-	createParams models.PendingBookingParams,
+	pendingBookingParams models.PendingBookingParams,
 ) (uuid.UUID, error) {
-	_, err := s.ConfirmedBookingsRepo.Get(ctx, createParams.ClassID, createParams.Email)
+	_, err := s.BookingsRepo.Get(ctx, pendingBookingParams.ClassID, pendingBookingParams.Email)
 	if err == nil {
-		return uuid.Nil, domainErrors.ErrBookingAlreadyExists(createParams.ClassID, createParams.Email, err)
+		return uuid.Nil, domainErrors.ErrBookingAlreadyExists(pendingBookingParams.ClassID, pendingBookingParams.Email, err)
 	}
 
 	if !errors.Is(err, errs.ErrNotFound) {
-		return uuid.Nil, fmt.Errorf("could not get confirmed booking: %w", err)
+		return uuid.Nil, fmt.Errorf("could not get booking: %w", err)
 	}
 
-	err = s.validatePendingOperationNumberPerUser(ctx, createParams.ClassID, createParams.Email, models.CreateBooking)
+	err = s.validatePendingBookingsPerUser(ctx, pendingBookingParams.ClassID, pendingBookingParams.Email, models.CreateBooking)
 	if err != nil {
-		return uuid.Nil, fmt.Errorf("validate pending operation number per user: %w", err)
+		return uuid.Nil, fmt.Errorf("validation failed for pending booking: %w", err)
 	}
 
-	class, err := s.ClassesRepo.Get(ctx, createParams.ClassID)
+	class, err := s.ClassesRepo.Get(ctx, pendingBookingParams.ClassID)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("could not get class: %w", err)
 	}
 
 	if class.CurrentCapacity == 0 {
 		return uuid.Nil, domainErrors.ErrClassFullyBooked(
-			createParams.ClassID,
-			fmt.Errorf("no spots left in class with id: %d", createParams.ClassID),
+			pendingBookingParams.ClassID,
+			fmt.Errorf("no spots left in class with id: %d", pendingBookingParams.ClassID),
 		)
 	}
 
 	if class.StartTime.Before(time.Now()) {
 		return uuid.Nil, domainErrors.ErrClassExpired(
-			createParams.ClassID,
-			fmt.Errorf("class %s has expired at %v", createParams.ClassID, class.StartTime),
+			pendingBookingParams.ClassID,
+			fmt.Errorf("class %s has expired at %v", pendingBookingParams.ClassID, class.StartTime),
 		)
 	}
 
@@ -87,24 +87,24 @@ func (s *Service) CreatePendingBooking(
 
 	pendingBooking := models.PendingBooking{
 		ID:                uuid.New(),
-		ClassID:           createParams.ClassID,
+		ClassID:           pendingBookingParams.ClassID,
 		Operation:         models.CreateBooking,
-		Email:             createParams.Email,
-		FirstName:         createParams.FirstName,
-		LastName:          &createParams.LastName,
+		Email:             pendingBookingParams.Email,
+		FirstName:         pendingBookingParams.FirstName,
+		LastName:          &pendingBookingParams.LastName,
 		ConfirmationToken: confirmationToken,
 		CreatedAt:         time.Now().UTC(),
 	}
 
-	err = s.PendingOperationsRepo.Insert(ctx, pendingBooking)
+	err = s.PendingBookingsRepo.Insert(ctx, pendingBooking)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("could not insert pending booking: %w", err)
 	}
 
 	msgParams := models.ConfirmationCreateMsg{
-		RecipientEmail:         createParams.Email,
-		RecipientFirstName:     createParams.FirstName,
-		ConfirmationCreateLink: fmt.Sprintf("%s/confirmation/create_booking?token=%s", s.DomainAddr, confirmationToken),
+		RecipientEmail:         pendingBookingParams.Email,
+		RecipientFirstName:     pendingBookingParams.FirstName,
+		ConfirmationCreateLink: fmt.Sprintf("%s/bookings/pending?token=%s", s.DomainAddr, confirmationToken),
 	}
 
 	err = s.MessageSender.SendConfirmationCreateLink(msgParams)
@@ -119,7 +119,7 @@ func (s *Service) CancelPendingBooking(
 	ctx context.Context,
 	cancelParams models.CancelBookingParams,
 ) (uuid.UUID, error) {
-	confirmedBooking, err := s.ConfirmedBookingsRepo.Get(ctx, cancelParams.ClassID, cancelParams.Email)
+	confirmedBooking, err := s.BookingsRepo.Get(ctx, cancelParams.ClassID, cancelParams.Email)
 	if err != nil {
 		if errors.Is(err, errs.ErrNotFound) {
 			return uuid.Nil, domainErrors.ErrBookingNotFound(
@@ -132,9 +132,9 @@ func (s *Service) CancelPendingBooking(
 		return uuid.Nil, fmt.Errorf("could not get confirmed booking: %w", err)
 	}
 
-	err = s.validatePendingOperationNumberPerUser(ctx, cancelParams.ClassID, cancelParams.Email, models.CancelBooking)
+	err = s.validatePendingBookingsPerUser(ctx, cancelParams.ClassID, cancelParams.Email, models.CancelBooking)
 	if err != nil {
-		return uuid.Nil, fmt.Errorf("validate pending operation number per user: %w", err)
+		return uuid.Nil, fmt.Errorf("validation failed for pending booking: %w", err)
 	}
 
 	class, err := s.ClassesRepo.Get(ctx, cancelParams.ClassID)
@@ -170,7 +170,7 @@ func (s *Service) CancelPendingBooking(
 		CreatedAt:         time.Now().UTC(),
 	}
 
-	err = s.PendingOperationsRepo.Insert(ctx, cancelPendingOperation)
+	err = s.PendingBookingsRepo.Insert(ctx, cancelPendingOperation)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("could not insert pending booking: %w", err)
 	}
@@ -189,15 +189,15 @@ func (s *Service) CancelPendingBooking(
 	return class.ID, nil
 }
 
-func (s *Service) validatePendingOperationNumberPerUser(
+func (s *Service) validatePendingBookingsPerUser(
 	ctx context.Context,
 	classID uuid.UUID,
 	email string,
 	operation models.Operation,
 ) error {
-	count, err := s.PendingOperationsRepo.CountPendingBookingsPerUser(ctx, email, operation, classID)
+	count, err := s.PendingBookingsRepo.CountPendingBookingsPerUser(ctx, email, operation, classID)
 	if err != nil {
-		return fmt.Errorf("could not count pending operations for email: %s, error: %w", email, err)
+		return fmt.Errorf("could not count pending bookings for email: %s, error: %w", email, err)
 	}
 
 	if count >= 2 {

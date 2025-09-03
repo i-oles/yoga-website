@@ -5,6 +5,7 @@ import (
 	"main/internal/domain/services"
 	"main/internal/interfaces/http/api/dto"
 	"main/internal/interfaces/http/err/handler"
+	sharedDTO "main/internal/interfaces/http/shared/dto"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -61,7 +62,7 @@ func (h *Handler) Handle(c *gin.Context) {
 		return
 	}
 
-	classesResp, err := dto.ToClassesListResponse(createdClasses)
+	classesResp, err := sharedDTO.ToClassesListDTO(createdClasses)
 	if err != nil {
 		h.errorHandler.HandleJSONError(c, err)
 

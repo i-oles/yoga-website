@@ -6,24 +6,25 @@ import (
 	"fmt"
 	"log"
 	"log/slog"
-	classesService "main/internal/application/classes"
-	"main/internal/application/confirmation"
-	"main/internal/application/pending"
+	"main/internal/application/bookings"
+	"main/internal/application/classes"
+	"main/internal/application/pendingbookings"
 	"main/internal/infrastructure/configuration"
 	"main/internal/infrastructure/generator/token"
-	dbModels "main/internal/infrastructure/models/db/classes"
-	"main/internal/infrastructure/models/db/bookings"
-	"main/internal/infrastructure/models/db/pendingbookings"
+	bookingsDBModels "main/internal/infrastructure/models/db/bookings"
+	classesDBModels "main/internal/infrastructure/models/db/classes"
+	pendingBookingsDBModels "main/internal/infrastructure/models/db/pendingbookings"
 	sqliteRepo "main/internal/infrastructure/repository/sqlite"
 	"main/internal/infrastructure/sender/gmail"
-	allConfirmedBooking "main/internal/interfaces/http/api/getallbookings"
 	"main/internal/interfaces/http/api/createclasses"
-	"main/internal/interfaces/http/endpoints/cancel"
-	pendingCancel "main/internal/interfaces/http/endpoints/pendingoperation/cancelbooking"
+	allConfirmedBooking "main/internal/interfaces/http/api/getallbookings"
 	"main/internal/interfaces/http/err/handler"
 	logWrapper "main/internal/interfaces/http/err/wrapper"
-	confirmationCancel "main/internal/interfaces/http/html/cancelbooking"
+	"main/internal/interfaces/http/html/cancelbooking"
+	"main/internal/interfaces/http/html/createbooking"
 	"main/internal/interfaces/http/html/home"
+	"main/internal/interfaces/http/html/pendingbooking"
+	"main/internal/interfaces/http/html/pendingbookingform"
 	"main/internal/interfaces/http/middleware"
 	"net/http"
 	"os"
@@ -55,9 +56,9 @@ func main() {
 	slog.Info("Successfully connected to database")
 
 	err = db.AutoMigrate(
-		&dbModels.SQLClass{},
-		&pendingbookings.SQLPendingOperation{},
-		&bookings.SQLBooking{},
+		&classesDBModels.SQLClass{},
+		&pendingBookingsDBModels.SQLPendingBooking{},
+		&bookingsDBModels.SQLBooking{},
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -94,9 +95,13 @@ func loadConfig() (*configuration.Configuration, error) {
 func setupRouter(db *gorm.DB, cfg *configuration.Configuration) *gin.Engine {
 	router := gin.Default()
 
+	router.Static("web/static", "./web/static")
+	router.LoadHTMLGlob("web/templates/*")
+	api := router.Group("/")
+
 	classesRepo := sqliteRepo.NewClassesRepo(db)
-	confirmedBookingsRepo := sqliteRepo.NewBookingsRepo(db)
-	pendingOperationsRepo := sqliteRepo.NewPendingOperationsRepo(db)
+	bookingsRepo := sqliteRepo.NewBookingsRepo(db)
+	pendingBookingsRepo := sqliteRepo.NewPendingBookingsRepo(db)
 
 	tokenGenerator := token.NewGenerator()
 	emailSender := gmail.NewSender(
@@ -110,12 +115,12 @@ func setupRouter(db *gorm.DB, cfg *configuration.Configuration) *gin.Engine {
 		cfg.ConfirmationFinalEmailTmplPath,
 	)
 
-	classesService := classesService.New(classesRepo)
-	confirmationService := confirmation.New(classesRepo, confirmedBookingsRepo, pendingOperationsRepo, emailSender)
-	pendingOperationsService := pending.New(
+	classesService := classes.NewService(classesRepo)
+	bookingsService := bookings.NewService(classesRepo, bookingsRepo, pendingBookingsRepo, emailSender)
+	pendingBookingsService := pendingbookings.NewService(
 		classesRepo,
-		pendingOperationsRepo,
-		confirmedBookingsRepo,
+		pendingBookingsRepo,
+		bookingsRepo,
 		tokenGenerator,
 		emailSender,
 		cfg.DomainAddr,
@@ -126,53 +131,33 @@ func setupRouter(db *gorm.DB, cfg *configuration.Configuration) *gin.Engine {
 	errorHandler = handler.NewErrorHandler()
 	errorHandler = logWrapper.NewErrorHandler(errorHandler, cfg.LogBusinessErrors)
 
-	homeHandler := home.NewHandler(classesService)
-	pendingBookingFormHandler := confirmationCancel.NewHandler()
-	cancelHandler := cancel.NewHandler()
-	pendingBookingHandler := confirmationCancel.NewHandler(
-		pendingOperationsService,
-		errorHandler,
-	)
-	pendingOperationCancelHandler := pendingCancel.NewHandler(
-		pendingOperationsService,
-		errorHandler,
-	)
-
-	createBookingHandler := confirmationCancel.NewHandler(
-		confirmationService,
-		errorHandler,
-	)
-
-	cancelBookingHandler := confirmationCancel.NewHandler(
-		confirmationService,
-		errorHandler,
-	)
-
-	authMiddleware := middleware.Auth(cfg.AuthSecret)
-
-	createClassHandler := createclasses.NewHandler(classesService, errorHandler)
-	getAllBookingsHandler := allConfirmedBooking.NewHandler(confirmedBookingsRepo, errorHandler)
-	deleteBookingHandler := deleteconfirmedbooking.NewHandler(confirmedBookingsRepo, errorHandler)
-
-	router.Static("web/static", "./web/static")
-	router.LoadHTMLGlob("web/templates/*")
-	api := router.Group("/")
-
 	// HTML
+	homeHandler := home.NewHandler(classesService)
+	createBookingHandler := createbooking.NewHandler(bookingsService, errorHandler)
+	cancelBookingHandler := cancelbooking.NewHandler(bookingsService, errorHandler)
+	pendingBookingHandler := pendingbooking.NewHandler(pendingBookingsService, errorHandler)
+	pendingBookingFormHandler := pendingbookingform.NewHandler()
+
 	{
-		api.GET("/", homeHandler.Handle) // home site
-		api.POST("/bookings", createBookingHandler.Handle) // creates booking
-		api.DELETE("/bookings/:id", cancelBookingHandler.Handle) // deletes booking
-		api.POST("/bookings/pending", pendingBookingHandler.Handle) // creates pending booking
-		api.GET("/bookings/pending/new", pendingBookingFormHandler.Handle) // opens a form to pending booking
+		api.GET("/", homeHandler.Handle)                                    // home site
+		api.POST("/bookings", createBookingHandler.Handle)                  // creates booking
+		api.DELETE("/bookings/:id", cancelBookingHandler.Handle)            // deletes booking
+		api.POST("/bookings/pending", pendingBookingHandler.Handle)         // creates pending booking
+		api.GET("/bookings/pending/form", pendingBookingFormHandler.Handle) // renders a form to pending booking
 	}
+
 	// API
+	authMiddleware := middleware.Auth(cfg.AuthSecret)
+	createClassHandler := createclasses.NewHandler(classesService, errorHandler)
+	getAllBookingsHandler := allConfirmedBooking.NewHandler(bookingsRepo, errorHandler)
+	//deleteBookingHandler := deleteconfirmedbooking.NewHandler(bookingsRepo, errorHandler)
+
 	{
 		api.GET("/api/v1/bookings", authMiddleware, getAllBookingsHandler.Handle) // gets all bookings
-		api.DELETE("/api/v1/bookings/:id", authMiddleware, deleteBookingHandler.Handle) // deletes booking
+		//api.DELETE("/api/v1/bookings/:id", authMiddleware, deleteBookingHandler.Handle) // deletes booking
 		api.POST("/api/v1/classes", authMiddleware, createClassHandler.Handle) // creates classes
-		api.PATCH("/api/v1/classes/:id"), authMiddleware, updateClassHandler.Handle) // updates class
-		api.DELETE("/api/v1/classes/:id"), authMiddleware, deleteClassHandler.Handle) // deletes class
+		//api.PATCH("/api/v1/classes/:id"), authMiddleware, updateClassHandler.Handle)    // updates class
+		//api.DELETE("/api/v1/classes/:id"), authMiddleware, deleteClassHandler.Handle)   // deletes class
 	}
 
 	return router

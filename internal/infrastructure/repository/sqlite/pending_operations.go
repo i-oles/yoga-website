@@ -12,46 +12,46 @@ import (
 	"gorm.io/gorm"
 )
 
-type PendingOperationsRepo struct {
+type PendingBookingsRepo struct {
 	db *gorm.DB
 }
 
-func NewPendingOperationsRepo(db *gorm.DB) *PendingOperationsRepo {
-	return &PendingOperationsRepo{
+func NewPendingBookingsRepo(db *gorm.DB) *PendingBookingsRepo {
+	return &PendingBookingsRepo{
 		db: db,
 	}
 }
 
-func (r PendingOperationsRepo) Insert(
+func (r PendingBookingsRepo) Insert(
 	ctx context.Context,
-	pendingOperation models.PendingBooking,
+	pendingBooking models.PendingBooking,
 ) error {
-	sqlPendingOperation := pendingbookings.FromDomain(pendingOperation)
+	sqlPendingBooking := pendingbookings.FromDomain(pendingBooking)
 
-	if err := r.db.WithContext(ctx).Create(&sqlPendingOperation).Error; err != nil {
-		return fmt.Errorf("failed to insert pending operation: %w", err)
+	if err := r.db.WithContext(ctx).Create(&sqlPendingBooking).Error; err != nil {
+		return fmt.Errorf("could not insert pending booking: %w", err)
 	}
 
 	return nil
 }
 
-func (r PendingOperationsRepo) Get(ctx context.Context, token string) (models.PendingBooking, error) {
-	var sqlPendingOperation pendingbookings.SQLPendingOperation
+func (r PendingBookingsRepo) Get(ctx context.Context, token string) (models.PendingBooking, error) {
+	var sqlPendingBooking pendingbookings.SQLPendingBooking
 
 	if err := r.db.WithContext(ctx).
 		Where("confirmation_token = ?", token).
-		First(&sqlPendingOperation).Error; err != nil {
+		First(&sqlPendingBooking).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return models.PendingBooking{}, errs.ErrNotFound
 		}
 
-		return models.PendingBooking{}, fmt.Errorf("failed to get pending operation: %w", err)
+		return models.PendingBooking{}, fmt.Errorf("could not get pending booking: %w", err)
 	}
 
-	return sqlPendingOperation.ToDomain(), nil
+	return sqlPendingBooking.ToDomain(), nil
 }
 
-func (r PendingOperationsRepo) CountPendingBookingsPerUser(
+func (r PendingBookingsRepo) CountPendingBookingsPerUser(
 	ctx context.Context,
 	email string,
 	operation models.Operation,
@@ -60,21 +60,21 @@ func (r PendingOperationsRepo) CountPendingBookingsPerUser(
 	var count int64
 
 	if err := r.db.WithContext(ctx).
-		Model(&pendingbookings.SQLPendingOperation{}).
+		Model(&pendingbookings.SQLPendingBooking{}).
 		Where("email = ? AND class_id = ? AND operation = ?", email, classID, operation).
 		Count(&count).Error; err != nil {
-		return 0, fmt.Errorf("failed to count pending operations: %w", err)
+		return 0, fmt.Errorf("could not count pending bookings: %w", err)
 	}
 
 	return int8(count), nil
 }
 
-func (r PendingOperationsRepo) Delete(ctx context.Context, id uuid.UUID) error {
-	var sqlPendingOperation pendingbookings.SQLPendingOperation
+func (r PendingBookingsRepo) Delete(ctx context.Context, id uuid.UUID) error {
+	var sqlPendingBooking pendingbookings.SQLPendingBooking
 
-	tx := r.db.WithContext(ctx).Where("id = ?", id).Delete(&sqlPendingOperation)
+	tx := r.db.WithContext(ctx).Where("id = ?", id).Delete(&sqlPendingBooking)
 	if tx.Error != nil {
-		return fmt.Errorf("failed to delete pending operation: %w", tx.Error)
+		return fmt.Errorf("could not delete pending booking: %w", tx.Error)
 	}
 
 	if tx.RowsAffected == 0 {

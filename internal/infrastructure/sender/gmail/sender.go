@@ -14,7 +14,7 @@ import (
 type Sender struct {
 	SenderName                      string
 	SenderEmail                     string
-	ConfirmationCreateEmailTmplPath string
+	ConfirmationRequestTmplPath     string
 	ConfirmationCancelEmailTmplPath string
 	ConfirmationFinalEmailTmplPath  string
 	Dialer                          *gomail.Dialer
@@ -36,7 +36,7 @@ func NewSender(
 	return &Sender{
 		SenderName:                      senderName,
 		SenderEmail:                     senderEmail,
-		ConfirmationCreateEmailTmplPath: confirmationCreateEmailTmplPath,
+		ConfirmationRequestTmplPath:     confirmationCreateEmailTmplPath,
 		ConfirmationCancelEmailTmplPath: confirmationCancelEmailTmplPath,
 		ConfirmationFinalEmailTmplPath:  confirmationFinalEmailTmplPath,
 		Dialer:                          d,
@@ -46,13 +46,13 @@ func NewSender(
 //TODO: refactor - one common function
 
 func (s Sender) SendConfirmationCreateLink(msg models.ConfirmationCreateMsg) error {
-	tmplData := infrastructureModels.PendingConfirmationTmplData{
+	tmplData := infrastructureModels.ConfirmationRequestTmplData{
 		SenderName:         s.SenderName,
 		RecipientFirstName: msg.RecipientFirstName,
 		ConfirmationLink:   msg.ConfirmationCreateLink,
 	}
 
-	tmpl, err := template.ParseFiles(s.ConfirmationCreateEmailTmplPath)
+	tmpl, err := template.ParseFiles(s.ConfirmationRequestTmplPath)
 	if err != nil {
 		return fmt.Errorf("could not parse template: %w", err)
 	}
@@ -77,7 +77,7 @@ func (s Sender) SendConfirmationCreateLink(msg models.ConfirmationCreateMsg) err
 }
 
 func (s Sender) SendConfirmationCancelLink(msg models.ConfirmationCancelMsg) error {
-	tmplData := infrastructureModels.PendingConfirmationTmplData{
+	tmplData := infrastructureModels.ConfirmationRequestTmplData{
 		SenderName:         s.SenderName,
 		RecipientFirstName: msg.RecipientFirstName,
 		ConfirmationLink:   msg.ConfirmationCancelLink,
@@ -108,7 +108,7 @@ func (s Sender) SendConfirmationCancelLink(msg models.ConfirmationCancelMsg) err
 }
 
 func (s Sender) SendFinalConfirmations(msg models.ConfirmationMsg) error {
-	tmplData := infrastructureModels.FinalConfirmationTmplData{
+	tmplData := infrastructureModels.ConfirmationTmplData{
 		SenderName:         s.SenderName,
 		RecipientFirstName: msg.RecipientFirstName,
 		ClassName:          msg.ClassName,

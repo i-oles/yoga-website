@@ -2,7 +2,7 @@ package home
 
 import (
 	"main/internal/domain/services"
-	"main/internal/interfaces/http/api/dto"
+	sharedDTO "main/internal/interfaces/http/shared/dto"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -26,7 +26,7 @@ func (h *Handler) Handle(c *gin.Context) {
 		return
 	}
 
-	classesResp, err := dto.models.ToClassesListResponse(classes)
+	classesView, err := sharedDTO.ToClassesListDTO(classes)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 
@@ -34,6 +34,6 @@ func (h *Handler) Handle(c *gin.Context) {
 	}
 
 	c.HTML(http.StatusOK, "classes.html", gin.H{
-		"Classes": classesResp,
+		"Classes": classesView,
 	})
 }

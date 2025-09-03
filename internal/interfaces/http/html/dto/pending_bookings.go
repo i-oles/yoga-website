@@ -14,11 +14,13 @@ type PendingBookingView struct {
 	ClassID uuid.UUID
 }
 
+// TODO: to delete
 type PendingOperationCancelRequest struct {
 	ClassID string `form:"class_id" binding:"required,uuid"`
 	Email   string `form:"email" binding:"required,email"`
 }
 
+// TODO: to delete
 type PendingOperationCancelResponse struct {
 	ClassID uuid.UUID `json:"class_id"`
 }

@@ -15,7 +15,7 @@ type Service struct {
 	classesRepo repositories.IClasses
 }
 
-func New(classesRepo repositories.IClasses) *Service {
+func NewService(classesRepo repositories.IClasses) *Service {
 	return &Service{classesRepo: classesRepo}
 }
 

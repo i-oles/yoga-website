@@ -27,60 +27,60 @@ func (r BookingsRepo) Get(
 	classID uuid.UUID,
 	email string,
 ) (models.Booking, error) {
-	var sqlConfirmedBooking bookings.SQLBooking
+	var sqlBooking bookings.SQLBooking
 
 	tx := r.db.WithContext(ctx).
 		Where("class_id = ? AND email = ?", classID, email).
-		First(&sqlConfirmedBooking)
+		First(&sqlBooking)
 
 	if tx.Error != nil {
 		if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
 			return models.Booking{}, errs.ErrNotFound
 		}
 
-		return models.Booking{}, fmt.Errorf("failed to get confirmed booking: %w", tx.Error)
+		return models.Booking{}, fmt.Errorf("could not get booking: %w", tx.Error)
 	}
 
-	return sqlConfirmedBooking.ToDomain(), nil
+	return sqlBooking.ToDomain(), nil
 }
 
 func (r BookingsRepo) GetAll(ctx context.Context) ([]models.Booking, error) {
-	var SQLConfirmedBookings []bookings.SQLBooking
+	var SQLBookings []bookings.SQLBooking
 
-	if err := r.db.WithContext(ctx).Find(&SQLConfirmedBookings).Error; err != nil {
-		return nil, fmt.Errorf("failed to get all confirmed bookings: %w", err)
+	if err := r.db.WithContext(ctx).Find(&SQLBookings).Error; err != nil {
+		return nil, fmt.Errorf("could not get all bookings: %w", err)
 	}
 
-	confirmedBookings := make([]models.Booking, len(SQLConfirmedBookings))
+	bookings := make([]models.Booking, len(SQLBookings))
 
-	for i, SQLConfirmedBooking := range SQLConfirmedBookings {
-		confirmedBookings[i] = SQLConfirmedBooking.ToDomain()
+	for i, SQLBooking := range SQLBookings {
+		bookings[i] = SQLBooking.ToDomain()
 	}
 
-	return confirmedBookings, nil
+	return bookings, nil
 }
 
 func (r BookingsRepo) Insert(
 	ctx context.Context,
-	confirmedBooking models.Booking,
+	booking models.Booking,
 ) error {
-	sqlConfirmedBooking := bookings.FromDomain(confirmedBooking)
+	sqlBooking := bookings.FromDomain(booking)
 
-	if err := r.db.WithContext(ctx).Create(&sqlConfirmedBooking).Error; err != nil {
-		return fmt.Errorf("failed to insert confirmed booking: %w", err)
+	if err := r.db.WithContext(ctx).Create(&sqlBooking).Error; err != nil {
+		return fmt.Errorf("could not insert booking: %w", err)
 	}
 
 	return nil
 }
 
 func (r BookingsRepo) Delete(ctx context.Context, classID uuid.UUID, email string) error {
-	var sqlConfirmedBooking bookings.SQLBooking
+	var sqlBooking bookings.SQLBooking
 
 	tx := r.db.WithContext(ctx).
 		Where("class_id = ? AND email = ?", classID, email).
-		Delete(&sqlConfirmedBooking)
+		Delete(&sqlBooking)
 	if tx.Error != nil {
-		return fmt.Errorf("failed to delete confirmed booking: %w", tx.Error)
+		return fmt.Errorf("could not delete booking: %w", tx.Error)
 	}
 
 	if tx.RowsAffected == 0 {

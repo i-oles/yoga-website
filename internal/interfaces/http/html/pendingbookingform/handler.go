@@ -14,8 +14,5 @@ func NewHandler() *Handler {
 }
 
 func (h *Handler) Handle(c *gin.Context) {
-	//TODO: /pending endpoints do not need this - they should take id from url
-	id := c.PostForm("id")
-
-	c.HTML(http.StatusOK, "book.tmpl", gin.H{"ID": id})
+	c.HTML(http.StatusOK, "book.tmpl", gin.H{"ID": c.PostForm("id")})
 }

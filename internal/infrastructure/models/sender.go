@@ -1,12 +1,12 @@
 package models
 
-type PendingConfirmationTmplData struct {
+type ConfirmationRequestTmplData struct {
 	SenderName         string
 	RecipientFirstName string
 	ConfirmationLink   string
 }
 
-type FinalConfirmationTmplData struct {
+type ConfirmationTmplData struct {
 	SenderName         string
 	RecipientFirstName string
 	ClassName          string
@@ -17,7 +17,7 @@ type FinalConfirmationTmplData struct {
 	Location           string
 }
 
-type ConfirmationToOwnerData struct {
+type ConfirmationToOwnerTmplData struct {
 	SenderName         string
 	RecipientFirstName string
 	RecipientLastName  string
