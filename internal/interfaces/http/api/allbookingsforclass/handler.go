@@ -38,19 +38,19 @@ func (h *Handler) Handle(c *gin.Context) {
 
 	ctx := c.Request.Context()
 
-	allBookings, err := h.bookingsRepo.GetAllByClassID(ctx, classID)
+	allBookingsForClass, err := h.bookingsRepo.GetAllByClassID(ctx, classID)
 	if err != nil {
 		h.errorHandler.HandleJSONError(c, err)
 
 		return
 	}
 
-	bookingsListResponse, err := dto.ToBookingsListResponse(allBookings)
+	response, err := dto.ToBookingsListResponse(allBookingsForClass)
 	if err != nil {
 		h.errorHandler.HandleJSONError(c, err)
 
 		return
 	}
 
-	c.JSON(http.StatusOK, bookingsListResponse)
+	c.JSON(http.StatusOK, response)
 }
