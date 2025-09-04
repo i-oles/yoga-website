@@ -14,5 +14,5 @@ func NewHandler() *Handler {
 }
 
 func (h *Handler) Handle(c *gin.Context) {
-	c.HTML(http.StatusOK, "pending_booking_form.tmpl", gin.H{"ID": c.PostForm("id")})
+	c.HTML(http.StatusOK, "bookings_pending_form.tmpl", gin.H{"ID": c.PostForm("id")})
 }

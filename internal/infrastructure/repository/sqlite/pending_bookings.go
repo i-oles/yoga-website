@@ -35,7 +35,7 @@ func (r PendingBookingsRepo) Insert(
 	return nil
 }
 
-func (r PendingBookingsRepo) Get(ctx context.Context, token string) (models.PendingBooking, error) {
+func (r PendingBookingsRepo) GetByConfirmationToken(ctx context.Context, token string) (models.PendingBooking, error) {
 	var sqlPendingBooking pendingbookings.SQLPendingBooking
 
 	if err := r.db.WithContext(ctx).

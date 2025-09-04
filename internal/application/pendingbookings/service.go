@@ -47,7 +47,7 @@ func (s *Service) CreatePendingBooking(
 	ctx context.Context,
 	pendingBookingParams models.PendingBookingParams,
 ) (uuid.UUID, error) {
-	_, err := s.BookingsRepo.Get(ctx, pendingBookingParams.ClassID, pendingBookingParams.Email)
+	_, err := s.BookingsRepo.GetByEmailAndClassID(ctx, pendingBookingParams.ClassID, pendingBookingParams.Email)
 	if err == nil {
 		return uuid.Nil, domainErrors.ErrBookingAlreadyExists(pendingBookingParams.ClassID, pendingBookingParams.Email, err)
 	}
@@ -101,13 +101,13 @@ func (s *Service) CreatePendingBooking(
 		return uuid.Nil, fmt.Errorf("could not insert pending booking: %w", err)
 	}
 
-	msgParams := models.ConfirmationCreateMsg{
+	msg := models.ConfirmationCreateMsg{
 		RecipientEmail:         pendingBookingParams.Email,
 		RecipientFirstName:     pendingBookingParams.FirstName,
-		ConfirmationCreateLink: fmt.Sprintf("%s/bookings/pending?token=%s", s.DomainAddr, confirmationToken),
+		ConfirmationCreateLink: fmt.Sprintf("%s/bookings?token=%s", s.DomainAddr, confirmationToken),
 	}
 
-	err = s.MessageSender.SendConfirmationCreateLink(msgParams)
+	err = s.MessageSender.SendConfirmationCreateLink(msg)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("could not send confirmation create link: %w", err)
 	}
@@ -119,7 +119,7 @@ func (s *Service) CancelPendingBooking(
 	ctx context.Context,
 	cancelParams models.CancelBookingParams,
 ) (uuid.UUID, error) {
-	confirmedBooking, err := s.BookingsRepo.Get(ctx, cancelParams.ClassID, cancelParams.Email)
+	confirmedBooking, err := s.BookingsRepo.GetByEmailAndClassID(ctx, cancelParams.ClassID, cancelParams.Email)
 	if err != nil {
 		if errors.Is(err, errs.ErrNotFound) {
 			return uuid.Nil, domainErrors.ErrBookingNotFound(

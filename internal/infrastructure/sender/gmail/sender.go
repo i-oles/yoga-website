@@ -117,6 +117,7 @@ func (s Sender) SendFinalConfirmations(msg models.ConfirmationMsg) error {
 		Hour:               msg.Hour,
 		Date:               msg.Date,
 		Location:           msg.Location,
+		CancellationLink:   msg.CancellationLink,
 	}
 
 	tmpl, err := template.ParseFiles(s.ConfirmationFinalEmailTmplPath)

@@ -1,4 +1,4 @@
-package getallbookings
+package allbookings
 
 import (
 	"main/internal/domain/repositories"

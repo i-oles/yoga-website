@@ -16,8 +16,9 @@ import (
 	pendingBookingsDBModels "main/internal/infrastructure/models/db/pendingbookings"
 	sqliteRepo "main/internal/infrastructure/repository/sqlite"
 	"main/internal/infrastructure/sender/gmail"
+	"main/internal/interfaces/http/api/allbookings"
+	"main/internal/interfaces/http/api/allbookingsforclass"
 	"main/internal/interfaces/http/api/createclasses"
-	allConfirmedBooking "main/internal/interfaces/http/api/getallbookings"
 	"main/internal/interfaces/http/err/handler"
 	logWrapper "main/internal/interfaces/http/err/wrapper"
 	"main/internal/interfaces/http/html/cancelbooking"
@@ -116,7 +117,7 @@ func setupRouter(db *gorm.DB, cfg *configuration.Configuration) *gin.Engine {
 	)
 
 	classesService := classes.NewService(classesRepo)
-	bookingsService := bookings.NewService(classesRepo, bookingsRepo, pendingBookingsRepo, emailSender)
+	bookingsService := bookings.NewService(classesRepo, bookingsRepo, pendingBookingsRepo, emailSender, cfg.DomainAddr)
 	pendingBookingsService := pendingbookings.NewService(
 		classesRepo,
 		pendingBookingsRepo,
@@ -139,25 +140,31 @@ func setupRouter(db *gorm.DB, cfg *configuration.Configuration) *gin.Engine {
 	pendingBookingFormHandler := pendingbookingform.NewHandler()
 
 	{
-		api.GET("/", homeHandler.Handle)                                    // home site
-		api.POST("/bookings", createBookingHandler.Handle)                  // creates booking
-		api.DELETE("/bookings/:id", cancelBookingHandler.Handle)            // deletes booking
-		api.POST("/bookings/pending", pendingBookingHandler.Handle)         // creates pending booking
-		api.GET("/bookings/pending/form", pendingBookingFormHandler.Handle) // renders a form to pending booking
+		api.GET("/", homeHandler.Handle)                                     // home site
+		api.GET("/bookings", createBookingHandler.Handle)                    // creates booking
+		api.DELETE("/bookings/:id", cancelBookingHandler.Handle)             // deletes booking
+		api.POST("/bookings/pending", pendingBookingHandler.Handle)          // creates pending booking
+		api.POST("/bookings/pending/form", pendingBookingFormHandler.Handle) // renders a form to pending booking
 	}
 
 	// API
 	authMiddleware := middleware.Auth(cfg.AuthSecret)
 	createClassHandler := createclasses.NewHandler(classesService, errorHandler)
-	getAllBookingsHandler := allConfirmedBooking.NewHandler(bookingsRepo, errorHandler)
-	//deleteBookingHandler := deleteconfirmedbooking.NewHandler(bookingsRepo, errorHandler)
+	//updateClassHandler := updateclass.NewHandler(classesService, errorHandler)
+	//deleteClassHandler := deleteclass.NewHandler(classesService, errorHandler)
+	getAllBookingsHandler := allbookings.NewHandler(bookingsRepo, errorHandler)
+	getAllBookingsForClassHandler := allbookingsforclass.NewHandler(bookingsRepo, errorHandler)
+	//deleteBookingHandler := deletebooking.NewHandler(bookingsRepo, errorHandler)
+	//getAllPendingBookingsHandler := allpendingbookings.NewHandler(bookingsRepo, errorHandler)
 
 	{
 		api.GET("/api/v1/bookings", authMiddleware, getAllBookingsHandler.Handle) // gets all bookings
-		//api.DELETE("/api/v1/bookings/:id", authMiddleware, deleteBookingHandler.Handle) // deletes booking
+		//api.DELETE("/api/v1/bookings/:id", authMiddleware, deleteBookingHandler.Handle)         // deletes booking
+		//api.GET("api/v1/bookings/pending", authMiddleware, getAllPendingBookingsHandler.Handle) //gets all
 		api.POST("/api/v1/classes", authMiddleware, createClassHandler.Handle) // creates classes
-		//api.PATCH("/api/v1/classes/:id"), authMiddleware, updateClassHandler.Handle)    // updates class
-		//api.DELETE("/api/v1/classes/:id"), authMiddleware, deleteClassHandler.Handle)   // deletes class
+		//api.PATCH("/api/v1/classes/:id"), authMiddleware, updateClassHandler.Handle)            // updates class
+		//api.DELETE("/api/v1/classes/:id"), authMiddleware, deleteClassHandler.Handle)           // deletes class
+		api.GET("/api/v1/classes/:class_id/bookings", authMiddleware, getAllBookingsForClassHandler.Handle)
 	}
 
 	return router

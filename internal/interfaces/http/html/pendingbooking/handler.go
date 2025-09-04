@@ -53,7 +53,7 @@ func (h *Handler) Handle(c *gin.Context) {
 
 	classID, err := h.PendingBookingsService.CreatePendingBooking(ctx, pendingBookingParams)
 	if err != nil {
-		h.ErrorHandler.HandleHTMLError(c, "pending_booking_form.tmpl", err)
+		h.ErrorHandler.HandleHTMLError(c, "bookings_pending_form.tmpl", err)
 
 		return
 	}

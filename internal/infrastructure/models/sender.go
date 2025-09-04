@@ -15,6 +15,7 @@ type ConfirmationTmplData struct {
 	Hour               string
 	Date               string
 	Location           string
+	CancellationLink   string
 }
 
 type ConfirmationToOwnerTmplData struct {

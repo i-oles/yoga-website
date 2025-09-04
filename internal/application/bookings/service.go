@@ -21,6 +21,7 @@ type Service struct {
 	BookingsRepo        repositories.IBookings
 	PendingBookingsRepo repositories.IPendingBookings
 	MessageSender       services.ISender
+	DomainAddr          string
 }
 
 func NewService(
@@ -28,12 +29,14 @@ func NewService(
 	bookingsRepo repositories.IBookings,
 	pendingBookingsRepo repositories.IPendingBookings,
 	messageSender services.ISender,
+	domainAddr string,
 ) *Service {
 	return &Service{
 		ClassesRepo:         classesRepo,
 		BookingsRepo:        bookingsRepo,
 		PendingBookingsRepo: pendingBookingsRepo,
 		MessageSender:       messageSender,
+		DomainAddr:          domainAddr,
 	}
 }
 
@@ -44,7 +47,7 @@ const (
 func (s *Service) CreateBooking(
 	ctx context.Context, token string,
 ) (models.Class, error) {
-	pendingBooking, err := s.PendingBookingsRepo.Get(ctx, token)
+	pendingBooking, err := s.PendingBookingsRepo.GetByConfirmationToken(ctx, token)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return models.Class{}, domainErrors.ErrPendingBookingNotFound(
@@ -78,15 +81,16 @@ func (s *Service) CreateBooking(
 	}
 
 	confirmedBooking := models.Booking{
-		ID:        uuid.New(),
-		ClassID:   pendingBooking.ClassID,
-		FirstName: pendingBooking.FirstName,
-		LastName:  *pendingBooking.LastName,
-		Email:     pendingBooking.Email,
-		CreatedAt: time.Now().UTC(),
+		ID:                uuid.New(),
+		ClassID:           pendingBooking.ClassID,
+		FirstName:         pendingBooking.FirstName,
+		LastName:          *pendingBooking.LastName,
+		Email:             pendingBooking.Email,
+		CreatedAt:         time.Now().UTC(),
+		ConfirmationToken: "test",
 	}
 
-	err = s.BookingsRepo.Insert(ctx, confirmedBooking)
+	bookingID, err := s.BookingsRepo.Insert(ctx, confirmedBooking)
 	if err != nil {
 		return models.Class{}, fmt.Errorf("could not insert booking: %w", err)
 	}
@@ -122,6 +126,7 @@ func (s *Service) CreateBooking(
 		Hour:               startTimeWarsawUTC.Format(converter.HourLayout),
 		Date:               startTimeWarsawUTC.Format(converter.DateLayout),
 		Location:           class.Location,
+		CancellationLink:   fmt.Sprintf("%s/bookings/%s?token=%s", s.DomainAddr, bookingID, token),
 	}
 
 	err = s.MessageSender.SendFinalConfirmations(msg)
@@ -133,7 +138,7 @@ func (s *Service) CreateBooking(
 }
 
 func (s *Service) CancelBooking(ctx context.Context, token string) (models.Class, error) {
-	pendingBooking, err := s.PendingBookingsRepo.Get(ctx, token)
+	pendingBooking, err := s.PendingBookingsRepo.GetByConfirmationToken(ctx, token)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return models.Class{}, domainErrors.ErrPendingBookingNotFound(
