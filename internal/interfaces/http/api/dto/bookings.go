@@ -10,7 +10,7 @@ import (
 )
 
 //type GetAllBookingsForClassRequest struct {
-//	ClassID string `uri:"class_id" binding:"required"`
+//	BookingID string `uri:"class_id" binding:"required"`
 //}
 
 type BookingResponse struct {

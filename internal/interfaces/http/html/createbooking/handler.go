@@ -25,7 +25,7 @@ func NewHandler(
 }
 
 func (h *Handler) Handle(c *gin.Context) {
-	var form dto.BookingForm
+	var form dto.BookingCreateForm
 	if err := c.ShouldBindQuery(&form); err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 

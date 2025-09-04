@@ -14,7 +14,8 @@ type IClassesService interface {
 
 type IBookingsService interface {
 	CreateBooking(ctx context.Context, token string) (models.Class, error)
-	CancelBooking(ctx context.Context, token string) (models.Class, error)
+	CancelBooking(ctx context.Context, id uuid.UUID, token string) error
+	CancelBookingForm(ctx context.Context, id uuid.UUID, token string) (models.Booking, error)
 }
 
 type IPendingBookingsService interface {

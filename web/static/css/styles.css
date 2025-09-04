@@ -30,6 +30,7 @@ div#main-container {
 }
 
 /* Karty zajęć - minimalistyczny design z cieniami */
+.cancel-booking-container,
 .class-container {
     background-color: #fff;
     border: 1px solid #e0e0e0;
@@ -40,6 +41,7 @@ div#main-container {
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
 }
 
+.cancel-booking-container:hover,
 .class-container:hover {
     background-color: #f5f5f5;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);

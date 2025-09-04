@@ -1,6 +1,7 @@
-package cancelbooking
+package cancelbookingform
 
 import (
+	"main/internal/domain/models"
 	"main/internal/domain/services"
 	"main/internal/interfaces/http/err/handler"
 	"main/internal/interfaces/http/html/dto"
@@ -11,8 +12,8 @@ import (
 )
 
 type Handler struct {
-	bookingService services.IBookingsService
-	errorHandler   handler.IErrorHandler
+	BookingService services.IBookingsService
+	ErrorHandler   handler.IErrorHandler
 }
 
 func NewHandler(
@@ -20,8 +21,8 @@ func NewHandler(
 	errorHandler handler.IErrorHandler,
 ) *Handler {
 	return &Handler{
-		bookingService: bookingService,
-		errorHandler:   errorHandler,
+		BookingService: bookingService,
+		ErrorHandler:   errorHandler,
 	}
 }
 
@@ -43,12 +44,15 @@ func (h *Handler) Handle(c *gin.Context) {
 
 	ctx := c.Request.Context()
 
-	err = h.bookingService.CancelBooking(ctx, bookingID, form.Token)
+	//TODO: could I return here class? would it be restful?
+	cancelledBooking, err := h.BookingService.CancelBookingForm(ctx, bookingID, form.Token)
 	if err != nil {
-		h.errorHandler.HandleHTMLError(c, "err.tmpl", err)
+		h.ErrorHandler.HandleHTMLError(c, "cancel_booking_form.tmpl", err)
 
 		return
 	}
 
-	c.HTML(http.StatusOK, "confirmation_cancel_booking.tmpl", gin.H{})
+	resp := dto.CancelBookingView{}
+
+	c.HTML(http.StatusOK, "cancel_booking_form.tmpl", resp)
 }

@@ -40,10 +40,7 @@ func NewService(
 	}
 }
 
-const (
-	recordExistsCode = "23505"
-)
-
+//TODO: this should return models.Booking with class field taken from relation
 func (s *Service) CreateBooking(
 	ctx context.Context, token string,
 ) (models.Class, error) {
@@ -133,19 +130,19 @@ func (s *Service) CreateBooking(
 	return class, nil
 }
 
-func (s *Service) CancelBooking(ctx context.Context, bookingID uuid.UUID, token string) (models.Class, error) {
+func (s *Service) CancelBooking(ctx context.Context, bookingID uuid.UUID, token string) error {
 	booking, err := s.BookingsRepo.Get(ctx, bookingID)
 	if err != nil {
-		return models.Class{}, fmt.Errorf("could not get booking for id %s: %w", bookingID, err)
+		return fmt.Errorf("could not get booking for id %s: %w", bookingID, err)
 	}
 
 	class, err := s.ClassesRepo.Get(ctx, booking.ClassID)
 	if err != nil {
-		return models.Class{}, fmt.Errorf("could not get class with id: %s, %w", booking.ClassID, err)
+		return fmt.Errorf("could not get class with id: %s, %w", booking.ClassID, err)
 	}
 
 	if class.StartTime.Before(time.Now()) {
-		return models.Class{}, domainErrors.ErrClassExpired(
+		return domainErrors.ErrClassExpired(
 			class.ID,
 			fmt.Errorf("class %s has expired at %v", booking.ClassID, class.StartTime),
 		)
@@ -164,22 +161,22 @@ func (s *Service) CancelBooking(ctx context.Context, bookingID uuid.UUID, token 
 			)
 		}
 
-		return models.Class{}, fmt.Errorf("could not delete booking: %w", err)
+		return fmt.Errorf("could not delete booking: %w", err)
 	}
 
 	err = s.ClassesRepo.IncrementCurrentCapacity(ctx, booking.ClassID)
 	if err != nil {
-		return models.Class{}, fmt.Errorf("could not increment class max capacity: %w", err)
+		return fmt.Errorf("could not increment class current capacity: %w", err)
 	}
 
 	class, err = s.ClassesRepo.Get(ctx, booking.ClassID)
 	if err != nil {
-		return models.Class{}, fmt.Errorf("could not get class: %w", err)
+		return fmt.Errorf("could not get class: %w", err)
 	}
 
 	startTimeWarsawUTC, err := converter.ConvertToWarsawTime(class.StartTime)
 	if err != nil {
-		return models.Class{}, fmt.Errorf("could not convert to warsaw time: %w", err)
+		return fmt.Errorf("could not convert to warsaw time: %w", err)
 	}
 
 	msg := models.ConfirmationToOwnerMsg{
@@ -192,8 +189,23 @@ func (s *Service) CancelBooking(ctx context.Context, bookingID uuid.UUID, token 
 
 	err = s.MessageSender.SendInfoAboutCancellationToOwner(msg)
 	if err != nil {
-		return models.Class{}, fmt.Errorf("could not send info about cancellation to owner: %w", err)
+		return fmt.Errorf("could not send info about cancellation to owner: %w", err)
 	}
 
-	return class, nil
+	return nil
+}
+
+func (s *Service) CancelBookingForm(ctx context.Context, id uuid.UUID, token string) (models.Booking, error) {
+	// TODO: does booking should have field with whole class as a relation?
+	booking, err := s.BookingsRepo.Get(ctx, id)
+	if err != nil {
+		return models.Booking{}, fmt.Errorf("could not get booking for id %s: %w", id, err)
+	}
+
+	if booking.ConfirmationToken != token {
+		//TODO
+		return ????
+	}
+
+	return booking, nil
 }

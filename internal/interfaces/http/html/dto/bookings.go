@@ -6,7 +6,12 @@ import (
 	"main/pkg/converter"
 )
 
-type BookingForm struct {
+type BookingCancelForm struct {
+	Token     string `form:"token" binding:"required,len=44"`
+	BookingID string `uri:"booking_id" binding:"required"`
+}
+
+type BookingCreateForm struct {
 	Token string `form:"token" binding:"required,len=44"`
 }
 type BookingView struct {

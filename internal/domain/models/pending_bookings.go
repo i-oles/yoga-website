@@ -25,11 +25,6 @@ type PendingBookingParams struct {
 	Email     string    `json:"email"`
 }
 
-type CancelBookingParams struct {
-	ClassID uuid.UUID `json:"class_id"`
-	Email   string    `json:"email"`
-}
-
 type ConfirmationCreateMsg struct {
 	RecipientEmail         string
 	RecipientFirstName     string

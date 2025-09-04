@@ -14,13 +14,14 @@ type PendingBookingView struct {
 	ClassID uuid.UUID
 }
 
-// TODO: to delete
-type PendingOperationCancelRequest struct {
-	ClassID string `form:"class_id" binding:"required,uuid"`
-	Email   string `form:"email" binding:"required,email"`
-}
-
-// TODO: to delete
-type PendingOperationCancelResponse struct {
-	ClassID uuid.UUID `json:"class_id"`
+// TODO: chce tu zwracac nazwisko i imie?
+type CancelBookingView struct {
+	WeekDay         string
+	StartDate       string
+	StartHour       string
+	ClassLevel      string
+	ClassName       string
+	CurrentCapacity int
+	MaxCapacity     int
+	Location        string
 }

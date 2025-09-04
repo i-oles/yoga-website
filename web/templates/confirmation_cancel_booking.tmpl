@@ -19,26 +19,6 @@
             Twoja rezerwacja została odwołana.
         </p>
 
-        <div class="booking-info">
-            <table style="border-collapse: collapse;">
-                    <tr>
-                        <td style="font-weight:300;">zajęcia:</td>
-                        <td style="font-weight:500;">{{ .ClassName }}</td>
-                    </tr>
-                    <tr>
-                        <td style="font-weight:300;">data:</td>
-                        <td style="font-weight:500;">{{ .Date }}</td>
-                    </tr>
-                    <tr>
-                        <td style="font-weight:300;">godzina:</td>
-                        <td style="font-weight:500;">{{ .Hour }}</td>
-                    </tr>
-                    <tr>
-                        <td style="font-weight:300;">miejsce:</td>
-                        <td style="font-weight:500;">{{ .Location }}</td>
-                    </tr>
-                </table>
-        </div>
         <button onclick="window.location.href='/'" class="btn-return">
             Powrót do listy zajęć
         </button>

@@ -1,0 +1,57 @@
+<div class="cancel-booking-container">
+    <form id="form-{{ .ID }}">
+        <div class="class-info">
+            <table style="border-collapse: collapse; margin-top: 15px;">
+                <tr>
+                    <td style="font-weight:300;">zajęcia:</td>
+                    <td style="font-weight:500;">{{ .ClassName }}</td>
+                </tr>
+                <tr>
+                    <td style="font-weight:300;">poziom:</td>
+                    <td style="font-weight:500;">{{ .ClassLevel }}</td>
+                </tr>
+                <tr>
+                    <td style="font-weight:300;">dzień:</td>
+                    <td style="font-weight:500;">{{ .WeekDay }}</td>
+                </tr>
+                <tr>
+                    <td style="font-weight:300;">data:</td>
+                    <td style="font-weight:500;">{{ .StartDate }}</td>
+                </tr>
+                <tr>
+                    <td style="font-weight:300;">godzina:</td>
+                    <td style="font-weight:500;">{{ .StartHour }}</td>
+                </tr>
+                <tr>
+                    <td style="font-weight:300;">gdzie:</td>
+                    <td style="font-weight:500;">{{ .Location }}</td>
+                </tr>
+                <tr>
+                    <td style="font-weight:300;">ilość miejsc:</td>
+                    <td style="font-weight:500;">{{ .CurrentCapacity }} / {{ .MaxCapacity }}</td>
+                </tr>
+            </table>
+        </div>
+        <div id="book-button-{{ .ID }}">
+            <button class="btn-cancel"
+                    hx-delete="/bookings/{{ .ID }}"
+                    hx-swap="outerHTML"
+                    hx-target="#cancel-booking-container"
+                    hx-vals='{"id": "{{ .ID }}"}'
+                    hx-trigger="click">
+                odwołuję
+            </button>
+        </div>
+        {{ end }}
+        </div>
+    </form>
+</div>
+<script>
+    document.addEventListener('htmx:beforeSwap', function(event) {
+        // handle status 409 (Conflict), 400 (Bad Request), 404 (Not Found)
+        if ([409, 404, 400].includes(event.detail.xhr.status)) {
+            event.detail.shouldSwap = true;  // force swap
+            event.detail.isError = false;    // treat as proper resp
+        }
+    });
+</script>
