@@ -76,21 +76,17 @@ func (s *Service) CreateBooking(
 		)
 	}
 
-	if pendingBooking.Operation != models.CreateBooking {
-		return models.Class{}, fmt.Errorf("invalid operation type: %s", pendingBooking.Operation)
-	}
-
-	confirmedBooking := models.Booking{
+	booking := models.Booking{
 		ID:                uuid.New(),
 		ClassID:           pendingBooking.ClassID,
 		FirstName:         pendingBooking.FirstName,
-		LastName:          *pendingBooking.LastName,
+		LastName:          pendingBooking.LastName,
 		Email:             pendingBooking.Email,
 		CreatedAt:         time.Now().UTC(),
-		ConfirmationToken: "test",
+		ConfirmationToken: pendingBooking.ConfirmationToken,
 	}
 
-	bookingID, err := s.BookingsRepo.Insert(ctx, confirmedBooking)
+	bookingID, err := s.BookingsRepo.Insert(ctx, booking)
 	if err != nil {
 		return models.Class{}, fmt.Errorf("could not insert booking: %w", err)
 	}
@@ -119,7 +115,7 @@ func (s *Service) CreateBooking(
 	msg := models.ConfirmationMsg{
 		RecipientEmail:     pendingBooking.Email,
 		RecipientFirstName: pendingBooking.FirstName,
-		RecipientLastName:  *pendingBooking.LastName,
+		RecipientLastName:  pendingBooking.LastName,
 		ClassName:          class.ClassName,
 		ClassLevel:         class.ClassLevel,
 		WeekDay:            startTimeWarsawUTC.Weekday().String(),
@@ -137,35 +133,25 @@ func (s *Service) CreateBooking(
 	return class, nil
 }
 
-func (s *Service) CancelBooking(ctx context.Context, token string) (models.Class, error) {
-	pendingBooking, err := s.PendingBookingsRepo.GetByConfirmationToken(ctx, token)
+func (s *Service) CancelBooking(ctx context.Context, bookingID uuid.UUID, token string) (models.Class, error) {
+	booking, err := s.BookingsRepo.Get(ctx, bookingID)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return models.Class{}, domainErrors.ErrPendingBookingNotFound(
-				fmt.Errorf("pending booking for token: %s not found", token),
-			)
-		}
-
-		return models.Class{}, fmt.Errorf("could not get pending booking: %w", err)
+		return models.Class{}, fmt.Errorf("could not get booking for id %s: %w", bookingID, err)
 	}
 
-	class, err := s.ClassesRepo.Get(ctx, pendingBooking.ClassID)
+	class, err := s.ClassesRepo.Get(ctx, booking.ClassID)
 	if err != nil {
-		return models.Class{}, fmt.Errorf("could not get class with id: %s, %w", pendingBooking.ClassID, err)
+		return models.Class{}, fmt.Errorf("could not get class with id: %s, %w", booking.ClassID, err)
 	}
 
 	if class.StartTime.Before(time.Now()) {
 		return models.Class{}, domainErrors.ErrClassExpired(
 			class.ID,
-			fmt.Errorf("class %s has expired at %v", pendingBooking.ClassID, class.StartTime),
+			fmt.Errorf("class %s has expired at %v", booking.ClassID, class.StartTime),
 		)
 	}
 
-	if pendingBooking.Operation != models.CancelBooking {
-		return models.Class{}, fmt.Errorf("invalid operation type: %s", pendingBooking.Operation)
-	}
-
-	err = s.BookingsRepo.Delete(ctx, pendingBooking.ClassID, pendingBooking.Email)
+	err = s.BookingsRepo.Delete(ctx, booking.ID)
 	if err != nil {
 		if errors.Is(err, errs.ErrNoRowsAffected) {
 			return models.Class{}, domainErrors.ErrBookingNotFound(
@@ -181,17 +167,12 @@ func (s *Service) CancelBooking(ctx context.Context, token string) (models.Class
 		return models.Class{}, fmt.Errorf("could not delete booking: %w", err)
 	}
 
-	err = s.PendingBookingsRepo.Delete(ctx, pendingBooking.ID)
-	if err != nil {
-		return models.Class{}, fmt.Errorf("could not delete pending booking: %w", err)
-	}
-
-	err = s.ClassesRepo.IncrementCurrentCapacity(ctx, pendingBooking.ClassID)
+	err = s.ClassesRepo.IncrementCurrentCapacity(ctx, booking.ClassID)
 	if err != nil {
 		return models.Class{}, fmt.Errorf("could not increment class max capacity: %w", err)
 	}
 
-	class, err = s.ClassesRepo.Get(ctx, pendingBooking.ClassID)
+	class, err = s.ClassesRepo.Get(ctx, booking.ClassID)
 	if err != nil {
 		return models.Class{}, fmt.Errorf("could not get class: %w", err)
 	}
@@ -201,10 +182,9 @@ func (s *Service) CancelBooking(ctx context.Context, token string) (models.Class
 		return models.Class{}, fmt.Errorf("could not convert to warsaw time: %w", err)
 	}
 
-	//TODO: lastname should be added here when will not be a pending booking for cancel
 	msg := models.ConfirmationToOwnerMsg{
-		RecipientFirstName: pendingBooking.FirstName,
-		RecipientLastName:  "",
+		RecipientFirstName: booking.FirstName,
+		RecipientLastName:  booking.LastName,
 		WeekDay:            startTimeWarsawUTC.Weekday().String(),
 		Hour:               startTimeWarsawUTC.Format(converter.HourLayout),
 		Date:               startTimeWarsawUTC.Format(converter.DateLayout),

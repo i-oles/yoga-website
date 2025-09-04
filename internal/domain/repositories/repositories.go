@@ -19,18 +19,14 @@ type IBookings interface {
 	GetByEmailAndClassID(ctx context.Context, classID uuid.UUID, email string) (models.Booking, error)
 	GetAll(ctx context.Context) ([]models.Booking, error)
 	GetAllByClassID(ctx context.Context, classID uuid.UUID) ([]models.Booking, error)
+	Get(ctx context.Context, id uuid.UUID) (models.Booking, error)
 	Insert(ctx context.Context, confirmedBooking models.Booking) (uuid.UUID, error)
-	Delete(ctx context.Context, classID uuid.UUID, email string) error
+	Delete(ctx context.Context, id uuid.UUID) error
 }
 
 type IPendingBookings interface {
 	GetByConfirmationToken(ctx context.Context, token string) (models.PendingBooking, error)
 	Insert(ctx context.Context, booking models.PendingBooking) error
 	Delete(ctx context.Context, id uuid.UUID) error
-	CountPendingBookingsPerUser(
-		ctx context.Context,
-		email string,
-		operation models.Operation,
-		classID uuid.UUID,
-	) (int8, error)
+	CountPendingBookingsPerUser(ctx context.Context, email string, classID uuid.UUID) (int8, error)
 }

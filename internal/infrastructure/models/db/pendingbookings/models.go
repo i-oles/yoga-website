@@ -10,23 +10,21 @@ import (
 type SQLPendingBooking struct {
 	ID                uuid.UUID `gorm:"type:uuid;primaryKey"`
 	ClassID           uuid.UUID `gorm:"type:uuid;not null"`
-	Operation         string    `gorm:"type:text;not null;check:operation IN ('create_booking','cancel_booking')"`
 	Email             string    `gorm:"not null"`
 	FirstName         string    `gorm:"not null"`
-	LastName          *string
+	LastName          string    `gorm:"not null"`
 	ConfirmationToken string    `gorm:"unique;not null"`
 	CreatedAt         time.Time `gorm:"autoCreateTime"`
 }
 
 func (SQLPendingBooking) TableName() string {
-	return "pending_operations"
+	return "pending_bookings"
 }
 
 func (s SQLPendingBooking) ToDomain() models.PendingBooking {
 	return models.PendingBooking{
 		ID:                s.ID,
 		ClassID:           s.ClassID,
-		Operation:         models.Operation(s.Operation),
 		Email:             s.Email,
 		FirstName:         s.FirstName,
 		LastName:          s.LastName,
@@ -39,7 +37,6 @@ func FromDomain(d models.PendingBooking) SQLPendingBooking {
 	return SQLPendingBooking{
 		ID:                d.ID,
 		ClassID:           d.ClassID,
-		Operation:         string(d.Operation),
 		Email:             d.Email,
 		FirstName:         d.FirstName,
 		LastName:          d.LastName,

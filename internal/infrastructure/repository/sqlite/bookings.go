@@ -22,6 +22,23 @@ func NewBookingsRepo(db *gorm.DB) BookingsRepo {
 	}
 }
 
+func (r BookingsRepo) Get(ctx context.Context, id uuid.UUID) (models.Booking, error) {
+	var sqlBooking bookings.SQLBooking
+
+	tx := r.db.WithContext(ctx).Where("id = ?", id).First(&sqlBooking)
+
+	if tx.Error != nil {
+		if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
+			return models.Booking{}, errs.ErrNotFound
+		}
+
+		return models.Booking{},
+			fmt.Errorf("could not get booking for id %s: %w", id, tx.Error)
+	}
+
+	return sqlBooking.ToDomain(), nil
+}
+
 func (r BookingsRepo) GetByEmailAndClassID(
 	ctx context.Context,
 	classID uuid.UUID,
@@ -38,7 +55,8 @@ func (r BookingsRepo) GetByEmailAndClassID(
 			return models.Booking{}, errs.ErrNotFound
 		}
 
-		return models.Booking{}, fmt.Errorf("could not get booking: %w", tx.Error)
+		return models.Booking{},
+			fmt.Errorf("could not get booking for email %s and classID %s: %w", email, classID, tx.Error)
 	}
 
 	return sqlBooking.ToDomain(), nil
@@ -89,11 +107,11 @@ func (r BookingsRepo) Insert(
 	return booking.ID, nil
 }
 
-func (r BookingsRepo) Delete(ctx context.Context, classID uuid.UUID, email string) error {
+func (r BookingsRepo) Delete(ctx context.Context, id uuid.UUID) error {
 	var sqlBooking bookings.SQLBooking
 
 	tx := r.db.WithContext(ctx).
-		Where("class_id = ? AND email = ?", classID, email).
+		Where("id = ?", id).
 		Delete(&sqlBooking)
 	if tx.Error != nil {
 		return fmt.Errorf("could not delete booking: %w", tx.Error)

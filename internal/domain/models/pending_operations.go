@@ -8,19 +8,12 @@ import (
 
 type Operation string
 
-const (
-	CreateBooking Operation = "create_booking"
-	CancelBooking Operation = "cancel_booking"
-)
-
 type PendingBooking struct {
-	ID        uuid.UUID `db:"id"`
-	ClassID   uuid.UUID `db:"class_id"`
-	Operation Operation `db:"operation"`
-	Email     string    `db:"email"`
-	FirstName string    `db:"first_name"`
-	//TODO: remove pointer when will be no pending operation for cancel
-	LastName          *string   `db:"last_name"`
+	ID                uuid.UUID `db:"id"`
+	ClassID           uuid.UUID `db:"class_id"`
+	Email             string    `db:"email"`
+	FirstName         string    `db:"first_name"`
+	LastName          string    `db:"last_name"`
 	ConfirmationToken string    `db:"confirmation_token"`
 	CreatedAt         time.Time `db:"created_at"`
 }

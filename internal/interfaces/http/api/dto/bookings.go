@@ -9,9 +9,9 @@ import (
 	"github.com/google/uuid"
 )
 
-type GetAllBookingsForClassRequest struct {
-	ClassID string `uri:"class_id" binding:"required"`
-}
+//type GetAllBookingsForClassRequest struct {
+//	ClassID string `uri:"class_id" binding:"required"`
+//}
 
 type BookingResponse struct {
 	ID        uuid.UUID `json:"id"`

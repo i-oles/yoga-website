@@ -54,14 +54,13 @@ func (r PendingBookingsRepo) GetByConfirmationToken(ctx context.Context, token s
 func (r PendingBookingsRepo) CountPendingBookingsPerUser(
 	ctx context.Context,
 	email string,
-	operation models.Operation,
 	classID uuid.UUID,
 ) (int8, error) {
 	var count int64
 
 	if err := r.db.WithContext(ctx).
 		Model(&pendingbookings.SQLPendingBooking{}).
-		Where("email = ? AND class_id = ? AND operation = ?", email, classID, operation).
+		Where("email = ? AND class_id = ?", email, classID).
 		Count(&count).Error; err != nil {
 		return 0, fmt.Errorf("could not count pending bookings: %w", err)
 	}

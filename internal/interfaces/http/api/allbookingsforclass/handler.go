@@ -26,12 +26,9 @@ func NewHandler(
 }
 
 func (h *Handler) Handle(c *gin.Context) {
-	var req dto.GetAllBookingsForClassRequest
-	if err := c.ShouldBindUri(&req); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-	}
+	classIDStr := c.Param("class_id")
 
-	classID, err := uuid.Parse(req.ClassID)
+	classID, err := uuid.Parse(classIDStr)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	}

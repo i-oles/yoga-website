@@ -14,8 +14,6 @@ import (
 	"github.com/google/uuid"
 )
 
-//TODO: refactor this methods - duplicated code
-
 type Service struct {
 	ClassesRepo         repositories.IClasses
 	PendingBookingsRepo repositories.IPendingBookings
@@ -56,7 +54,7 @@ func (s *Service) CreatePendingBooking(
 		return uuid.Nil, fmt.Errorf("could not get booking: %w", err)
 	}
 
-	err = s.validatePendingBookingsPerUser(ctx, pendingBookingParams.ClassID, pendingBookingParams.Email, models.CreateBooking)
+	err = s.validatePendingBookingsPerUser(ctx, pendingBookingParams.ClassID, pendingBookingParams.Email)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("validation failed for pending booking: %w", err)
 	}
@@ -88,10 +86,9 @@ func (s *Service) CreatePendingBooking(
 	pendingBooking := models.PendingBooking{
 		ID:                uuid.New(),
 		ClassID:           pendingBookingParams.ClassID,
-		Operation:         models.CreateBooking,
 		Email:             pendingBookingParams.Email,
 		FirstName:         pendingBookingParams.FirstName,
-		LastName:          &pendingBookingParams.LastName,
+		LastName:          pendingBookingParams.LastName,
 		ConfirmationToken: confirmationToken,
 		CreatedAt:         time.Now().UTC(),
 	}
@@ -115,87 +112,12 @@ func (s *Service) CreatePendingBooking(
 	return class.ID, nil
 }
 
-func (s *Service) CancelPendingBooking(
-	ctx context.Context,
-	cancelParams models.CancelBookingParams,
-) (uuid.UUID, error) {
-	confirmedBooking, err := s.BookingsRepo.GetByEmailAndClassID(ctx, cancelParams.ClassID, cancelParams.Email)
-	if err != nil {
-		if errors.Is(err, errs.ErrNotFound) {
-			return uuid.Nil, domainErrors.ErrBookingNotFound(
-				cancelParams.ClassID, cancelParams.Email,
-				fmt.Errorf("no such booking with email %s for class %v",
-					cancelParams.Email, cancelParams.ClassID),
-			)
-		}
-
-		return uuid.Nil, fmt.Errorf("could not get confirmed booking: %w", err)
-	}
-
-	err = s.validatePendingBookingsPerUser(ctx, cancelParams.ClassID, cancelParams.Email, models.CancelBooking)
-	if err != nil {
-		return uuid.Nil, fmt.Errorf("validation failed for pending booking: %w", err)
-	}
-
-	class, err := s.ClassesRepo.Get(ctx, cancelParams.ClassID)
-	if err != nil {
-		return uuid.Nil, fmt.Errorf("could not get class: %w", err)
-	}
-
-	if class.StartTime.Before(time.Now()) {
-		return uuid.Nil, domainErrors.ErrClassExpired(
-			cancelParams.ClassID,
-			fmt.Errorf("class %s has expired at %v", cancelParams.ClassID, class.StartTime),
-		)
-	}
-
-	if class.CurrentCapacity == class.MaxCapacity {
-		return uuid.Nil, domainErrors.ErrClassEmpty(
-			cancelParams.ClassID,
-			fmt.Errorf("class max capacity: %d exceeded", class.MaxCapacity))
-	}
-
-	confirmationToken, err := s.TokenGenerator.Generate(32)
-	if err != nil {
-		return uuid.Nil, fmt.Errorf("could not generate confirmation token: %w", err)
-	}
-
-	cancelPendingOperation := models.PendingBooking{
-		ID:                uuid.New(),
-		ClassID:           class.ID,
-		Operation:         models.CancelBooking,
-		Email:             cancelParams.Email,
-		FirstName:         confirmedBooking.FirstName,
-		ConfirmationToken: confirmationToken,
-		CreatedAt:         time.Now().UTC(),
-	}
-
-	err = s.PendingBookingsRepo.Insert(ctx, cancelPendingOperation)
-	if err != nil {
-		return uuid.Nil, fmt.Errorf("could not insert pending booking: %w", err)
-	}
-
-	msg := models.ConfirmationCancelMsg{
-		RecipientEmail:         cancelParams.Email,
-		RecipientFirstName:     confirmedBooking.FirstName,
-		ConfirmationCancelLink: fmt.Sprintf("%s/confirmation/cancel_booking?token=%s", s.DomainAddr, confirmationToken),
-	}
-
-	err = s.MessageSender.SendConfirmationCancelLink(msg)
-	if err != nil {
-		return uuid.Nil, fmt.Errorf("could not send confirmation cancel link: %w", err)
-	}
-
-	return class.ID, nil
-}
-
 func (s *Service) validatePendingBookingsPerUser(
 	ctx context.Context,
 	classID uuid.UUID,
 	email string,
-	operation models.Operation,
 ) error {
-	count, err := s.PendingBookingsRepo.CountPendingBookingsPerUser(ctx, email, operation, classID)
+	count, err := s.PendingBookingsRepo.CountPendingBookingsPerUser(ctx, email, classID)
 	if err != nil {
 		return fmt.Errorf("could not count pending bookings for email: %s, error: %w", email, err)
 	}
