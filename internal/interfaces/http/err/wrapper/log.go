@@ -34,6 +34,12 @@ func (e ErrorHandler) HandleHTMLError(c *gin.Context, tmplName string, err error
 		)
 	}
 
+	slog.Error("UnknownError",
+		slog.String("error", err.Error()),
+		slog.Any("params", c.Request.URL.Query()),
+		slog.String("endpoint", c.FullPath()),
+	)
+
 	e.errorHandler.HandleHTMLError(c, tmplName, err)
 }
 

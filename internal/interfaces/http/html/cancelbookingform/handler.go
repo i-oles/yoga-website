@@ -11,8 +11,8 @@ import (
 )
 
 type Handler struct {
-	BookingService services.IBookingsService
-	ErrorHandler   handler.IErrorHandler
+	bookingService services.IBookingsService
+	errorHandler   handler.IErrorHandler
 }
 
 func NewHandler(
@@ -20,40 +20,43 @@ func NewHandler(
 	errorHandler handler.IErrorHandler,
 ) *Handler {
 	return &Handler{
-		BookingService: bookingService,
-		ErrorHandler:   errorHandler,
+		bookingService: bookingService,
+		errorHandler:   errorHandler,
 	}
 }
 
 func (h *Handler) Handle(c *gin.Context) {
+	var uri dto.BookingCancelURI
+
+	if err := c.ShouldBindUri(&uri); err != nil {
+		h.errorHandler.HandleHTMLError(c, "cancel_booking_form.tmpl", err)
+		return
+	}
+
 	var form dto.BookingCancelForm
 
 	if err := c.ShouldBindQuery(&form); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		h.errorHandler.HandleHTMLError(c, "cancel_booking_form.tmpl", err)
+		return
 	}
 
-	if err := c.ShouldBindUri(&form); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-	}
-
-	bookingID, err := uuid.Parse(form.BookingID)
+	bookingID, err := uuid.Parse(uri.BookingID)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		h.errorHandler.HandleHTMLError(c, "cancel_booking_form.tmpl", err)
+		return
 	}
 
 	ctx := c.Request.Context()
 
-	cancelledBooking, err := h.BookingService.CancelBookingForm(ctx, bookingID, form.Token)
+	cancelledBooking, err := h.bookingService.CancelBookingForm(ctx, bookingID, form.Token)
 	if err != nil {
-		h.ErrorHandler.HandleHTMLError(c, "cancel_booking_form.tmpl", err)
-
+		h.errorHandler.HandleHTMLError(c, "cancel_booking_form.tmpl", err)
 		return
 	}
 
 	view, err := dto.ToBookingCancelView(cancelledBooking)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-
+		h.errorHandler.HandleJSONError(c, err)
 		return
 	}
 

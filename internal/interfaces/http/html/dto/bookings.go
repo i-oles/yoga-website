@@ -10,7 +10,10 @@ import (
 )
 
 type BookingCancelForm struct {
-	Token     string `form:"token" binding:"required,len=44"`
+	Token string `form:"token" binding:"required,len=44"`
+}
+
+type BookingCancelURI struct {
 	BookingID string `uri:"id" binding:"required"`
 }
 
@@ -38,7 +41,6 @@ func ToBookingView(class models.Class) (BookingView, error) {
 	}, nil
 }
 
-// TODO: chce tu zwracac nazwisko i imie?
 type BookingCancelView struct {
 	BookingID         uuid.UUID
 	WeekDay           string

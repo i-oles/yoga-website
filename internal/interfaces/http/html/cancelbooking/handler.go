@@ -26,19 +26,24 @@ func NewHandler(
 }
 
 func (h *Handler) Handle(c *gin.Context) {
+	var uri dto.BookingCancelURI
+
+	if err := c.ShouldBindUri(&uri); err != nil {
+		h.errorHandler.HandleHTMLError(c, "cancel_booking_form.tmpl", err)
+		return
+	}
+
 	var form dto.BookingCancelForm
 
-	if err := c.ShouldBindUri(&form); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-	}
-
 	if err := c.ShouldBindQuery(&form); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		h.errorHandler.HandleHTMLError(c, "cancel_booking_form.tmpl", err)
+		return
 	}
 
-	bookingID, err := uuid.Parse(form.BookingID)
+	bookingID, err := uuid.Parse(uri.BookingID)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		h.errorHandler.HandleHTMLError(c, "cancel_booking_form.tmpl", err)
+		return
 	}
 
 	ctx := c.Request.Context()
@@ -46,7 +51,6 @@ func (h *Handler) Handle(c *gin.Context) {
 	err = h.bookingService.CancelBooking(ctx, bookingID, form.Token)
 	if err != nil {
 		h.errorHandler.HandleHTMLError(c, "cancel_booking_form.tmpl", err)
-
 		return
 	}
 

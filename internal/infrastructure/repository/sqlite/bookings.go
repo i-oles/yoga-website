@@ -25,8 +25,6 @@ func NewBookingsRepo(db *gorm.DB) BookingsRepo {
 func (r BookingsRepo) Get(ctx context.Context, id uuid.UUID) (models.Booking, error) {
 	var sqlBooking db.SQLBooking
 
-	fmt.Println(id)
-
 	tx := r.db.WithContext(ctx).Where("id = ?", id).Preload("Class").First(&sqlBooking)
 
 	if tx.Error != nil {
