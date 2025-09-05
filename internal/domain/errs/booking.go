@@ -17,6 +17,21 @@ const (
 	SomeoneBookedClassFasterCode
 )
 
+type BookingError struct {
+	ClassID *uuid.UUID
+	Code    int
+	Message string
+	Err     error
+}
+
+func (e *BookingError) Error() string {
+	if e.Err != nil {
+		return fmt.Sprintf("%s: %v", e.Message, e.Err)
+	}
+
+	return e.Message
+}
+
 func ErrBookingAlreadyExists(classID uuid.UUID, email string, err error) *BookingError {
 	return &BookingError{
 		ClassID: &classID,
@@ -78,28 +93,4 @@ func ErrSomeoneBookedClassFaster(err error) *BookingError {
 		Message: "Ktoś Cię uprzedził... :( Brak wolnych miejsc na te zajęcia.",
 		Err:     err,
 	}
-}
-
-func ErrClassEmpty(classID uuid.UUID, err error) *BookingError {
-	return &BookingError{
-		Code:    ClassEmptyCode,
-		ClassID: &classID,
-		Message: "Nie możesz odwołać zajęć, ponieważ nikt jeszcze nie zrobił rezerwacji.",
-		Err:     err,
-	}
-}
-
-type BookingError struct {
-	ClassID *uuid.UUID
-	Code    int
-	Message string
-	Err     error
-}
-
-func (e *BookingError) Error() string {
-	if e.Err != nil {
-		return fmt.Sprintf("%s: %v", e.Message, e.Err)
-	}
-
-	return e.Message
 }

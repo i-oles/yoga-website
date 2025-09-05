@@ -2,11 +2,29 @@ package handler
 
 import (
 	"errors"
+	"log/slog"
 	domainErrs "main/internal/domain/errs"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
+
+type HandlerError struct {
+	StatusCode int
+	Message    string
+	Err        error
+}
+
+func (e *HandlerError) Error() string {
+	return e.Err.Error()
+}
+
+func ErrStatusBadRequest(c *gin.Context, tmplName string, err error) {
+	slog.Error("handlerError", slog.String("error", err.Error()))
+	c.HTML(http.StatusBadRequest, tmplName, gin.H{
+		"Error": "Coś poszło nie tak, skontaktuj się ze mną.",
+	})
+}
 
 type IErrorHandler interface {
 	HandleHTMLError(ctx *gin.Context, tmplName string, err error)

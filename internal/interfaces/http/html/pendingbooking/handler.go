@@ -30,15 +30,13 @@ func NewHandler(
 func (h *Handler) Handle(c *gin.Context) {
 	var form dto.PendingBookingForm
 	if err := c.ShouldBind(&form); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-
+		handler.ErrStatusBadRequest(c, "bookings_pending_form.tmpl", err)
 		return
 	}
 
 	parsedUUID, err := uuid.Parse(form.ClassID)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-
+		handler.ErrStatusBadRequest(c, "bookings_pending_form.tmpl", err)
 		return
 	}
 

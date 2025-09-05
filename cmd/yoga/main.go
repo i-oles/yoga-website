@@ -144,7 +144,7 @@ func setupRouter(db *gorm.DB, cfg *configuration.Configuration) *gin.Engine {
 		api.GET("/bookings", createBookingHandler.Handle)                     // creates booking
 		api.DELETE("/bookings/:id", cancelBookingHandler.Handle)              // deletes booking
 		api.POST("/bookings/pending", pendingBookingHandler.Handle)           // creates pending booking
-		api.POST("/bookings/pending_form", pendingBookingFormHandler.Handle)  // renders a form to pending booking
+		api.GET("/bookings/pending_form", pendingBookingFormHandler.Handle)   // renders a form to pending booking
 		api.GET("/bookings/:id/cancel_form", cancelBookingFormHandler.Handle) // renders a form to pending booking
 	}
 
