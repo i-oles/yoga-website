@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"main/internal/domain/models"
 	"main/pkg/converter"
-	"time"
+	"main/pkg/translator"
 
 	"github.com/google/uuid"
 )
@@ -27,7 +27,7 @@ func ToClassDTO(class models.Class) (ClassDTO, error) {
 		return ClassDTO{}, fmt.Errorf("error while converting time to warsaw time: %w", err)
 	}
 
-	weekday, err := translateToWeekDayToPolish(warsawTime.Weekday())
+	weekday, err := translator.TranslateToWeekDayToPolish(warsawTime.Weekday())
 	if err != nil {
 		return ClassDTO{}, fmt.Errorf("error while translating week day to polish: %w", err)
 	}
@@ -57,26 +57,4 @@ func ToClassesListDTO(classes []models.Class) ([]ClassDTO, error) {
 	}
 
 	return classesResponse, nil
-}
-
-// TODO: create separate translator for this
-func translateToWeekDayToPolish(weekDay time.Weekday) (string, error) {
-	switch weekDay {
-	case time.Monday:
-		return "poniedziałek", nil
-	case time.Tuesday:
-		return "wtorek", nil
-	case time.Wednesday:
-		return "środa", nil
-	case time.Thursday:
-		return "czwartek", nil
-	case time.Friday:
-		return "piątek", nil
-	case time.Saturday:
-		return "sobota", nil
-	case time.Sunday:
-		return "niedziela", nil
-	default:
-		return "", fmt.Errorf("unknown weekday")
-	}
 }

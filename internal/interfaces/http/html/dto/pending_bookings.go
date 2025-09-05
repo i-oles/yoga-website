@@ -13,15 +13,3 @@ type PendingBookingForm struct {
 type PendingBookingView struct {
 	ClassID uuid.UUID
 }
-
-// TODO: chce tu zwracac nazwisko i imie?
-type CancelBookingView struct {
-	WeekDay         string
-	StartDate       string
-	StartHour       string
-	ClassLevel      string
-	ClassName       string
-	CurrentCapacity int
-	MaxCapacity     int
-	Location        string
-}

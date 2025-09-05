@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"main/internal/domain/models"
 	"main/internal/infrastructure/errs"
-	"main/internal/infrastructure/models/db/bookings"
+	"main/internal/infrastructure/models/db"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -23,9 +23,11 @@ func NewBookingsRepo(db *gorm.DB) BookingsRepo {
 }
 
 func (r BookingsRepo) Get(ctx context.Context, id uuid.UUID) (models.Booking, error) {
-	var sqlBooking bookings.SQLBooking
+	var sqlBooking db.SQLBooking
 
-	tx := r.db.WithContext(ctx).Where("id = ?", id).First(&sqlBooking)
+	fmt.Println(id)
+
+	tx := r.db.WithContext(ctx).Where("id = ?", id).Preload("Class").First(&sqlBooking)
 
 	if tx.Error != nil {
 		if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
@@ -44,7 +46,7 @@ func (r BookingsRepo) GetByEmailAndClassID(
 	classID uuid.UUID,
 	email string,
 ) (models.Booking, error) {
-	var sqlBooking bookings.SQLBooking
+	var sqlBooking db.SQLBooking
 
 	tx := r.db.WithContext(ctx).
 		Where("class_id = ? AND email = ?", classID, email).
@@ -63,7 +65,7 @@ func (r BookingsRepo) GetByEmailAndClassID(
 }
 
 func (r BookingsRepo) GetAll(ctx context.Context) ([]models.Booking, error) {
-	var SQLBookings []bookings.SQLBooking
+	var SQLBookings []db.SQLBooking
 
 	if err := r.db.WithContext(ctx).Find(&SQLBookings).Error; err != nil {
 		return nil, fmt.Errorf("could not get all bookings: %w", err)
@@ -79,7 +81,7 @@ func (r BookingsRepo) GetAll(ctx context.Context) ([]models.Booking, error) {
 }
 
 func (r BookingsRepo) GetAllByClassID(ctx context.Context, classID uuid.UUID) ([]models.Booking, error) {
-	var SQLBookings []bookings.SQLBooking
+	var SQLBookings []db.SQLBooking
 
 	if err := r.db.WithContext(ctx).Where("class_id = ?", classID).Find(&SQLBookings).Error; err != nil {
 		return nil, fmt.Errorf("could not get bookings for classID %s: %w", classID, err)
@@ -98,7 +100,7 @@ func (r BookingsRepo) Insert(
 	ctx context.Context,
 	booking models.Booking,
 ) (uuid.UUID, error) {
-	sqlBooking := bookings.FromDomain(booking)
+	sqlBooking := db.SQLBookingsFromDomain(booking)
 
 	if err := r.db.WithContext(ctx).Create(&sqlBooking).Error; err != nil {
 		return uuid.Nil, fmt.Errorf("could not insert booking: %w", err)
@@ -108,7 +110,7 @@ func (r BookingsRepo) Insert(
 }
 
 func (r BookingsRepo) Delete(ctx context.Context, id uuid.UUID) error {
-	var sqlBooking bookings.SQLBooking
+	var sqlBooking db.SQLBooking
 
 	tx := r.db.WithContext(ctx).
 		Where("id = ?", id).

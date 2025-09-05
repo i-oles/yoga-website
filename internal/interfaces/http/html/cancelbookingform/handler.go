@@ -1,7 +1,6 @@
 package cancelbookingform
 
 import (
-	"main/internal/domain/models"
 	"main/internal/domain/services"
 	"main/internal/interfaces/http/err/handler"
 	"main/internal/interfaces/http/html/dto"
@@ -29,11 +28,11 @@ func NewHandler(
 func (h *Handler) Handle(c *gin.Context) {
 	var form dto.BookingCancelForm
 
-	if err := c.ShouldBindUri(&form); err != nil {
+	if err := c.ShouldBindQuery(&form); err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	}
 
-	if err := c.ShouldBindQuery(&form); err != nil {
+	if err := c.ShouldBindUri(&form); err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	}
 
@@ -44,7 +43,6 @@ func (h *Handler) Handle(c *gin.Context) {
 
 	ctx := c.Request.Context()
 
-	//TODO: could I return here class? would it be restful?
 	cancelledBooking, err := h.BookingService.CancelBookingForm(ctx, bookingID, form.Token)
 	if err != nil {
 		h.ErrorHandler.HandleHTMLError(c, "cancel_booking_form.tmpl", err)
@@ -52,7 +50,12 @@ func (h *Handler) Handle(c *gin.Context) {
 		return
 	}
 
-	resp := dto.CancelBookingView{}
+	view, err := dto.ToBookingCancelView(cancelledBooking)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 
-	c.HTML(http.StatusOK, "cancel_booking_form.tmpl", resp)
+		return
+	}
+
+	c.HTML(http.StatusOK, "cancel_booking_form.tmpl", view)
 }

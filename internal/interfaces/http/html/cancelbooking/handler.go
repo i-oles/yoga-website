@@ -45,7 +45,7 @@ func (h *Handler) Handle(c *gin.Context) {
 
 	err = h.bookingService.CancelBooking(ctx, bookingID, form.Token)
 	if err != nil {
-		h.errorHandler.HandleHTMLError(c, "err.tmpl", err)
+		h.errorHandler.HandleHTMLError(c, "cancel_booking_form.tmpl", err)
 
 		return
 	}

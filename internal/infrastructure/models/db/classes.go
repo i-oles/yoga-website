@@ -1,4 +1,4 @@
-package classes
+package db
 
 import (
 	"main/internal/domain/models"
@@ -15,6 +15,8 @@ type SQLClass struct {
 	CurrentCapacity int       `gorm:"not null"`
 	MaxCapacity     int       `gorm:"not null"`
 	Location        string    `gorm:"not null"`
+	//TODO: consider this?
+	//Bookings        []SQLBooking `gorm:"foreignKey:ClassID"`
 }
 
 func (SQLClass) TableName() string {
@@ -33,7 +35,7 @@ func (s SQLClass) ToDomain() models.Class {
 	}
 }
 
-func FromDomain(c models.Class) SQLClass {
+func SQLClassFromDomain(c models.Class) SQLClass {
 	return SQLClass{
 		ID:              c.ID,
 		StartTime:       c.StartTime,

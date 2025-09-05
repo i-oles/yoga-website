@@ -11,9 +11,7 @@ import (
 	"main/internal/application/pendingbookings"
 	"main/internal/infrastructure/configuration"
 	"main/internal/infrastructure/generator/token"
-	bookingsDBModels "main/internal/infrastructure/models/db/bookings"
-	classesDBModels "main/internal/infrastructure/models/db/classes"
-	pendingBookingsDBModels "main/internal/infrastructure/models/db/pendingbookings"
+	classesDBModels "main/internal/infrastructure/models/db"
 	sqliteRepo "main/internal/infrastructure/repository/sqlite"
 	"main/internal/infrastructure/sender/gmail"
 	"main/internal/interfaces/http/api/allbookings"
@@ -22,6 +20,7 @@ import (
 	"main/internal/interfaces/http/err/handler"
 	logWrapper "main/internal/interfaces/http/err/wrapper"
 	"main/internal/interfaces/http/html/cancelbooking"
+	"main/internal/interfaces/http/html/cancelbookingform"
 	"main/internal/interfaces/http/html/createbooking"
 	"main/internal/interfaces/http/html/home"
 	"main/internal/interfaces/http/html/pendingbooking"
@@ -58,8 +57,8 @@ func main() {
 
 	err = db.AutoMigrate(
 		&classesDBModels.SQLClass{},
-		&pendingBookingsDBModels.SQLPendingBooking{},
-		&bookingsDBModels.SQLBooking{},
+		&classesDBModels.SQLPendingBooking{},
+		&classesDBModels.SQLBooking{},
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -138,15 +137,15 @@ func setupRouter(db *gorm.DB, cfg *configuration.Configuration) *gin.Engine {
 	cancelBookingHandler := cancelbooking.NewHandler(bookingsService, errorHandler)
 	pendingBookingHandler := pendingbooking.NewHandler(pendingBookingsService, errorHandler)
 	pendingBookingFormHandler := pendingbookingform.NewHandler()
-	cancelBookingFormHandler := cancelbookingform.NewHandler()
+	cancelBookingFormHandler := cancelbookingform.NewHandler(bookingsService, errorHandler)
 
 	{
-		api.GET("/", homeHandler.Handle)                                     // home site
-		api.GET("/bookings", createBookingHandler.Handle)                    // creates booking
-		api.DELETE("/bookings/:id", cancelBookingHandler.Handle)             // deletes booking
-		api.POST("/bookings/pending", pendingBookingHandler.Handle)          // creates pending booking
-		api.POST("/bookings/pending/form", pendingBookingFormHandler.Handle) // renders a form to pending booking
-		api.POST("/bookings/cancel/form", pendingBookingFormHandler.Handle)  // renders a form to pending booking
+		api.GET("/", homeHandler.Handle)                                      // home site
+		api.GET("/bookings", createBookingHandler.Handle)                     // creates booking
+		api.DELETE("/bookings/:id", cancelBookingHandler.Handle)              // deletes booking
+		api.POST("/bookings/pending", pendingBookingHandler.Handle)           // creates pending booking
+		api.POST("/bookings/pending_form", pendingBookingFormHandler.Handle)  // renders a form to pending booking
+		api.GET("/bookings/:id/cancel_form", cancelBookingFormHandler.Handle) // renders a form to pending booking
 	}
 
 	// API

@@ -40,7 +40,7 @@ func NewService(
 	}
 }
 
-//TODO: this should return models.Booking with class field taken from relation
+// TODO: this should return models.Booking with class field taken from relation
 func (s *Service) CreateBooking(
 	ctx context.Context, token string,
 ) (models.Class, error) {
@@ -119,7 +119,7 @@ func (s *Service) CreateBooking(
 		Hour:               startTimeWarsawUTC.Format(converter.HourLayout),
 		Date:               startTimeWarsawUTC.Format(converter.DateLayout),
 		Location:           class.Location,
-		CancellationLink:   fmt.Sprintf("%s/bookings/%s?token=%s", s.DomainAddr, bookingID, token),
+		CancellationLink:   fmt.Sprintf("%s/bookings/%s/cancel_form?token=%s", s.DomainAddr, bookingID, token),
 	}
 
 	err = s.MessageSender.SendFinalConfirmations(msg)
@@ -151,12 +151,12 @@ func (s *Service) CancelBooking(ctx context.Context, bookingID uuid.UUID, token 
 	err = s.BookingsRepo.Delete(ctx, booking.ID)
 	if err != nil {
 		if errors.Is(err, errs.ErrNoRowsAffected) {
-			return models.Class{}, domainErrors.ErrBookingNotFound(
-				pendingBooking.ClassID,
-				pendingBooking.Email,
+			return domainErrors.ErrBookingNotFound(
+				booking.ClassID,
+				booking.Email,
 				fmt.Errorf("could not find booking with email %s for class %s",
-					pendingBooking.Email,
-					pendingBooking.ClassID,
+					booking.Email,
+					booking.ClassID,
 				),
 			)
 		}
@@ -196,15 +196,13 @@ func (s *Service) CancelBooking(ctx context.Context, bookingID uuid.UUID, token 
 }
 
 func (s *Service) CancelBookingForm(ctx context.Context, id uuid.UUID, token string) (models.Booking, error) {
-	// TODO: does booking should have field with whole class as a relation?
 	booking, err := s.BookingsRepo.Get(ctx, id)
 	if err != nil {
 		return models.Booking{}, fmt.Errorf("could not get booking for id %s: %w", id, err)
 	}
 
 	if booking.ConfirmationToken != token {
-		//TODO
-		return ????
+		return models.Booking{}, fmt.Errorf("token does not match %s, %s", booking.ConfirmationToken, token)
 	}
 
 	return booking, nil

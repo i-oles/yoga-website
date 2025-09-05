@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"main/internal/domain/models"
 	"main/internal/infrastructure/errs"
-	"main/internal/infrastructure/models/db/pendingbookings"
+	"main/internal/infrastructure/models/db"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -26,7 +26,7 @@ func (r PendingBookingsRepo) Insert(
 	ctx context.Context,
 	pendingBooking models.PendingBooking,
 ) error {
-	sqlPendingBooking := pendingbookings.FromDomain(pendingBooking)
+	sqlPendingBooking := db.SQLPendingBookingFromDomain(pendingBooking)
 
 	if err := r.db.WithContext(ctx).Create(&sqlPendingBooking).Error; err != nil {
 		return fmt.Errorf("could not insert pending booking: %w", err)
@@ -36,7 +36,7 @@ func (r PendingBookingsRepo) Insert(
 }
 
 func (r PendingBookingsRepo) GetByConfirmationToken(ctx context.Context, token string) (models.PendingBooking, error) {
-	var sqlPendingBooking pendingbookings.SQLPendingBooking
+	var sqlPendingBooking db.SQLPendingBooking
 
 	if err := r.db.WithContext(ctx).
 		Where("confirmation_token = ?", token).
@@ -59,7 +59,7 @@ func (r PendingBookingsRepo) CountPendingBookingsPerUser(
 	var count int64
 
 	if err := r.db.WithContext(ctx).
-		Model(&pendingbookings.SQLPendingBooking{}).
+		Model(&db.SQLPendingBooking{}).
 		Where("email = ? AND class_id = ?", email, classID).
 		Count(&count).Error; err != nil {
 		return 0, fmt.Errorf("could not count pending bookings: %w", err)
@@ -69,7 +69,7 @@ func (r PendingBookingsRepo) CountPendingBookingsPerUser(
 }
 
 func (r PendingBookingsRepo) Delete(ctx context.Context, id uuid.UUID) error {
-	var sqlPendingBooking pendingbookings.SQLPendingBooking
+	var sqlPendingBooking db.SQLPendingBooking
 
 	tx := r.db.WithContext(ctx).Where("id = ?", id).Delete(&sqlPendingBooking)
 	if tx.Error != nil {

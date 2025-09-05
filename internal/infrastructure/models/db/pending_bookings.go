@@ -1,4 +1,4 @@
-package pendingbookings
+package db
 
 import (
 	"main/internal/domain/models"
@@ -33,7 +33,7 @@ func (s SQLPendingBooking) ToDomain() models.PendingBooking {
 	}
 }
 
-func FromDomain(d models.PendingBooking) SQLPendingBooking {
+func SQLPendingBookingFromDomain(d models.PendingBooking) SQLPendingBooking {
 	return SQLPendingBooking{
 		ID:                d.ID,
 		ClassID:           d.ClassID,

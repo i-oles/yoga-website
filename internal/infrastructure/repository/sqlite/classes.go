@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"main/internal/domain/models"
 	"main/internal/infrastructure/errs"
-	dbModels "main/internal/infrastructure/models/db/classes"
+	dbModels "main/internal/infrastructure/models/db"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -88,7 +88,7 @@ func (c ClassesRepo) IncrementCurrentCapacity(ctx context.Context, id uuid.UUID)
 func (c ClassesRepo) Insert(ctx context.Context, classes []models.Class) ([]models.Class, error) {
 	sqlClass := make([]dbModels.SQLClass, len(classes))
 	for i, class := range classes {
-		sqlClass[i] = dbModels.FromDomain(class)
+		sqlClass[i] = dbModels.SQLClassFromDomain(class)
 	}
 
 	err := c.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {

@@ -14,6 +14,7 @@ type Booking struct {
 	Email             string    `db:"email"`
 	CreatedAt         time.Time `db:"created_at"`
 	ConfirmationToken string    `db:"confirmation_token"`
+	Class             Class     `db:"class"`
 }
 
 type ConfirmationMsg struct {

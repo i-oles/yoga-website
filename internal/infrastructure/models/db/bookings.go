@@ -1,4 +1,4 @@
-package bookings
+package db
 
 import (
 	"main/internal/domain/models"
@@ -15,6 +15,7 @@ type SQLBooking struct {
 	LastName          string    `gorm:"not null"`
 	ConfirmationToken string    `gorm:"unique;not null"`
 	CreatedAt         time.Time `gorm:"autoCreateTime"`
+	Class             SQLClass  `gorm:"foreignKey:ClassID"`
 }
 
 func (SQLBooking) TableName() string {
@@ -30,10 +31,11 @@ func (s SQLBooking) ToDomain() models.Booking {
 		Email:             s.Email,
 		CreatedAt:         s.CreatedAt,
 		ConfirmationToken: s.ConfirmationToken,
+		Class:             s.Class.ToDomain(),
 	}
 }
 
-func FromDomain(domain models.Booking) SQLBooking {
+func SQLBookingsFromDomain(domain models.Booking) SQLBooking {
 	return SQLBooking{
 		ID:                domain.ID,
 		ClassID:           domain.ClassID,
@@ -42,5 +44,6 @@ func FromDomain(domain models.Booking) SQLBooking {
 		Email:             domain.Email,
 		CreatedAt:         domain.CreatedAt,
 		ConfirmationToken: domain.ConfirmationToken,
+		Class:             SQLClassFromDomain(domain.Class),
 	}
 }

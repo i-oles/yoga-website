@@ -1,5 +1,5 @@
 <div class="cancel-booking-container">
-    <form id="form-{{ .ID }}">
+    <form id="form-{{ .BookingID }}">
         <div class="class-info">
             <table style="border-collapse: collapse; margin-top: 15px;">
                 <tr>
@@ -32,17 +32,18 @@
                 </tr>
             </table>
         </div>
-        <div id="book-button-{{ .ID }}">
+        <div class="err-msg">
+            {{ .Error }}
+        </div>
+        <div id="cancel-button-{{ .BookingID }}">
             <button class="btn-cancel"
-                    hx-delete="/bookings/{{ .ID }}"
+                    hx-delete="/bookings/{{ .BookingID }}?{{ .ConfirmationToken }}"
                     hx-swap="outerHTML"
                     hx-target="#cancel-booking-container"
-                    hx-vals='{"id": "{{ .ID }}"}'
+                    hx-vals='{"id": "{{ .BookingID }}"}'
                     hx-trigger="click">
                 odwołuję
             </button>
-        </div>
-        {{ end }}
         </div>
     </form>
 </div>
