@@ -9,13 +9,13 @@ import (
 type Operation string
 
 type PendingBooking struct {
-	ID                uuid.UUID `db:"id"`
-	ClassID           uuid.UUID `db:"class_id"`
-	Email             string    `db:"email"`
-	FirstName         string    `db:"first_name"`
-	LastName          string    `db:"last_name"`
-	ConfirmationToken string    `db:"confirmation_token"`
-	CreatedAt         time.Time `db:"created_at"`
+	ID                uuid.UUID
+	ClassID           uuid.UUID
+	Email             string
+	FirstName         string
+	LastName          string
+	ConfirmationToken string
+	CreatedAt         time.Time
 }
 
 type PendingBookingParams struct {

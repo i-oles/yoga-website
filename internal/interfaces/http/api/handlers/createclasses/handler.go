@@ -13,17 +13,17 @@ import (
 )
 
 type Handler struct {
-	classesService services.IClassesService
-	errorHandler   apiErrs.IErrorHandler
+	classesService  services.IClassesService
+	apiErrorHandler apiErrs.IErrorHandler
 }
 
 func NewHandler(
 	classesService services.IClassesService,
-	errorHandler apiErrs.IErrorHandler,
+	apiErrorHandler apiErrs.IErrorHandler,
 ) *Handler {
 	return &Handler{
-		classesService: classesService,
-		errorHandler:   errorHandler,
+		classesService:  classesService,
+		apiErrorHandler: apiErrorHandler,
 	}
 }
 
@@ -32,7 +32,7 @@ func (h *Handler) Handle(c *gin.Context) {
 
 	err := c.ShouldBindJSON(&dtoClasses)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 
 		return
 	}
@@ -57,14 +57,14 @@ func (h *Handler) Handle(c *gin.Context) {
 
 	createdClasses, err := h.classesService.CreateClasses(ctx, classes)
 	if err != nil {
-		h.errorHandler.HandleJSONError(c, err)
+		h.apiErrorHandler.Handle(c, err)
 
 		return
 	}
 
 	classesResp, err := sharedDTO.ToClassesListDTO(createdClasses)
 	if err != nil {
-		h.errorHandler.HandleJSONError(c, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "DTOResponse: " + err.Error()})
 
 		return
 	}

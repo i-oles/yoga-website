@@ -8,23 +8,23 @@ import (
 )
 
 type ErrorHandler struct {
-	errorHandler apiErrs.IErrorHandler
+	apiErrorHandler apiErrs.IErrorHandler
 }
 
 func NewErrorHandler(
-	errorHandler apiErrs.IErrorHandler,
+	apiErrorHandler apiErrs.IErrorHandler,
 ) ErrorHandler {
 	return ErrorHandler{
-		errorHandler: errorHandler,
+		apiErrorHandler: apiErrorHandler,
 	}
 }
 
-func (e ErrorHandler) HandleJSONError(c *gin.Context, err error) {
+func (e ErrorHandler) Handle(c *gin.Context, err error) {
 	slog.Error("APIError",
 		slog.String("error", err.Error()),
 		slog.Any("params", c.Request.URL.Query()),
 		slog.String("endpoint", c.FullPath()),
 	)
 
-	e.errorHandler.HandleJSONError(c, err)
+	e.apiErrorHandler.Handle(c, err)
 }

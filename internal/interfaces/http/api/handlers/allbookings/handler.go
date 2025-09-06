@@ -10,17 +10,17 @@ import (
 )
 
 type Handler struct {
-	bookingsRepo repositories.IBookings
-	errorHandler apiErrs.IErrorHandler
+	bookingsRepo    repositories.IBookings
+	apiErrorHandler apiErrs.IErrorHandler
 }
 
 func NewHandler(
 	bookingsRepo repositories.IBookings,
-	errorHandler apiErrs.IErrorHandler,
+	apiErrorHandler apiErrs.IErrorHandler,
 ) *Handler {
 	return &Handler{
-		bookingsRepo: bookingsRepo,
-		errorHandler: errorHandler,
+		bookingsRepo:    bookingsRepo,
+		apiErrorHandler: apiErrorHandler,
 	}
 }
 
@@ -29,14 +29,14 @@ func (h *Handler) Handle(c *gin.Context) {
 
 	allBookings, err := h.bookingsRepo.GetAll(ctx)
 	if err != nil {
-		h.errorHandler.HandleJSONError(c, err)
+		h.apiErrorHandler.Handle(c, err)
 
 		return
 	}
 
 	bookingsListResponse, err := dto.ToBookingsListResponse(allBookings)
 	if err != nil {
-		h.errorHandler.HandleJSONError(c, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "DTOResponse: " + err.Error()})
 
 		return
 	}

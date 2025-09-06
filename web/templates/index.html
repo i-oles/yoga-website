@@ -49,11 +49,10 @@
                     </tr>
                 </table>
             </div>
-
             <div id="booking-form-{{ .ID }}">
             {{ if eq .CurrentCapacity 0 }}
             <div id="book-button-{{ .ID }}">
-                <button disabled>rezerwuj</button>
+                <button class="btn-book" disabled>rezerwuj</button>
             </div>
             {{ else }}
             <div id="book-button-{{ .ID }}">

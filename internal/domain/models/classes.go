@@ -14,5 +14,4 @@ type Class struct {
 	CurrentCapacity int       `json:"current_capacity" db:"current_capacity"`
 	MaxCapacity     int       `json:"max_capacity" db:"max_capacity"`
 	Location        string    `json:"location" db:"location"`
-	Bookings        []Booking `json:"bookings" db:"bookings"`
 }

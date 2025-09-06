@@ -14,7 +14,7 @@ func NewErrorHandler() ErrorHandler {
 	return ErrorHandler{}
 }
 
-func (e ErrorHandler) HandleJSONError(c *gin.Context, err error) {
+func (e ErrorHandler) Handle(c *gin.Context, err error) {
 	var classError *domainErrs.ClassError
 	if errors.As(err, &classError) {
 		switch classError.Code {
