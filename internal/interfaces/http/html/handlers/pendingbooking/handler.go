@@ -1,7 +1,6 @@
 package pendingbooking
 
 import (
-	"fmt"
 	"main/internal/domain/models"
 	"main/internal/domain/services"
 	"main/internal/interfaces/http/html/dto"
@@ -29,17 +28,15 @@ func NewHandler(
 }
 
 func (h *Handler) Handle(c *gin.Context) {
-	fmt.Printf("z requestu: %v", c.Request.PostForm)
-
 	var form dto.PendingBookingForm
 	if err := c.ShouldBind(&form); err != nil {
-		viewErrs.ErrBadRequest(c, "bookings_pending_form.tmpl", err)
+		viewErrs.ErrBadRequest(c, "pending_booking_form.tmpl", err)
 		return
 	}
 
 	parsedUUID, err := uuid.Parse(form.ClassID)
 	if err != nil {
-		viewErrs.ErrBadRequest(c, "bookings_pending_form.tmpl", err)
+		viewErrs.ErrBadRequest(c, "pending_booking_form.tmpl", err)
 		return
 	}
 
@@ -54,7 +51,7 @@ func (h *Handler) Handle(c *gin.Context) {
 
 	classID, err := h.PendingBookingsService.CreatePendingBooking(ctx, pendingBookingParams)
 	if err != nil {
-		h.ViewErrorHandler.Handle(c, "bookings_pending_form.tmpl", err)
+		h.ViewErrorHandler.Handle(c, "pending_booking_form.tmpl", err)
 
 		return
 	}

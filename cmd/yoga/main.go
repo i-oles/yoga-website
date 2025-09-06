@@ -142,14 +142,18 @@ func setupRouter(db *gorm.DB, cfg *configuration.Configuration) *gin.Engine {
 	pendingBookingHandler := pendingbooking.NewHandler(pendingBookingsService, viewErrorHandler)
 	pendingBookingFormHandler := pendingbookingform.NewHandler()
 	cancelBookingFormHandler := cancelbookingform.NewHandler(bookingsService, viewErrorHandler)
-
 	{
-		api.GET("/", homeHandler.Handle)                                      // home site
+		api.GET("/", homeHandler.Handle) // home site
+
+		//bookings
+		//this endpoint should be POST according to REST, but it is GET - from confirmation link sent via email
 		api.GET("/bookings", createBookingHandler.Handle)                     // creates booking
 		api.DELETE("/bookings/:id", cancelBookingHandler.Handle)              // deletes booking
-		api.POST("/bookings/pending", pendingBookingHandler.Handle)           // creates pending booking
-		api.POST("/bookings/pending_form", pendingBookingFormHandler.Handle)  // renders a form to pending booking
-		api.GET("/bookings/:id/cancel_form", cancelBookingFormHandler.Handle) // renders a form to pending booking
+		api.GET("/bookings/:id/cancel_form", cancelBookingFormHandler.Handle) // renders cancel booking form
+
+		//pending_bookings
+		api.GET("/classes/:class_id/pending_bookings/form", pendingBookingFormHandler.Handle) // renders a form to pending booking
+		api.POST("/pending_bookings", pendingBookingHandler.Handle)                           // creates pending booking
 	}
 
 	var apiErrorHandler apiErrs.IErrorHandler

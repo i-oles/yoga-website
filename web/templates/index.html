@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>classes</title>
+    <title>otojoga</title>
     <script src="https://unpkg.com/htmx.org/dist/htmx.min.js"></script>
     <link rel="stylesheet" href="/web/static/css/styles.css">
 
@@ -58,10 +58,9 @@
             {{ else }}
             <div id="book-button-{{ .ID }}">
                 <button class="btn-book"
-                        hx-post="/bookings/pending_form"
+                        hx-get="/classes/{{ .ID }}/pending_bookings/form"
                         hx-swap="outerHTML"
                         hx-target="#booking-form-{{ .ID }}"
-                        hx-vals='{"id": "{{ .ID }}"}'
                         hx-trigger="click">
                     rezerwuj
                 </button>
