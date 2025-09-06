@@ -25,11 +25,7 @@ type BookingError struct {
 }
 
 func (e *BookingError) Error() string {
-	if e.Err != nil {
-		return fmt.Sprintf("%s: %v", e.Message, e.Err)
-	}
-
-	return e.Message
+	return e.Err.Error()
 }
 
 func ErrBookingAlreadyExists(classID uuid.UUID, email string, err error) *BookingError {
@@ -68,7 +64,7 @@ func ErrPendingBookingNotFound(err error) *BookingError {
 	}
 }
 
-func ErrTooManyPendingOperations(classID uuid.UUID, email string, err error) *BookingError {
+func ErrTooManyPendingBookings(classID uuid.UUID, email string, err error) *BookingError {
 	return &BookingError{
 		Code:    TooManyPendingBookingsCode,
 		ClassID: &classID,

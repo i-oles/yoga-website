@@ -123,7 +123,7 @@ func (s *Service) validatePendingBookingsPerUser(
 	}
 
 	if count >= 2 {
-		return domainErrors.ErrTooManyPendingOperations(
+		return domainErrors.ErrTooManyPendingBookings(
 			classID,
 			email,
 			fmt.Errorf("found %d pending operations per user", count),
