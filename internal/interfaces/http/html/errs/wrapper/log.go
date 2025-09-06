@@ -10,35 +10,38 @@ import (
 )
 
 type ErrorHandler struct {
-	errorHandler      viewErrs.IErrorHandler
+	viewErrorHandler  viewErrs.IErrorHandler
 	logBusinessErrors bool
 }
 
 func NewErrorHandler(
-	errorHandler viewErrs.IErrorHandler,
+	viewErrorHandler viewErrs.IErrorHandler,
 	logBusinessErrors bool,
 ) ErrorHandler {
 	return ErrorHandler{
-		errorHandler:      errorHandler,
+		viewErrorHandler:  viewErrorHandler,
 		logBusinessErrors: logBusinessErrors,
 	}
 }
 
 func (e ErrorHandler) Handle(c *gin.Context, tmplName string, err error) {
 	var bookingError *errs.BookingError
+
 	if e.logBusinessErrors && errors.As(err, &bookingError) {
-		slog.Error("bookingBusinessError",
+		slog.Info("BookingBusinessError",
+			slog.Int("code", bookingError.Code),
+			slog.String("message", bookingError.Message),
+			slog.Any("classID", bookingError.ClassID),
+			slog.Any("params", c.Request.URL.Query()),
+			slog.String("endpoint", c.FullPath()),
+		)
+	} else {
+		slog.Error("UnknownError",
 			slog.String("error", err.Error()),
 			slog.Any("params", c.Request.URL.Query()),
 			slog.String("endpoint", c.FullPath()),
 		)
 	}
 
-	slog.Error("UnknownError",
-		slog.String("error", err.Error()),
-		slog.Any("params", c.Request.URL.Query()),
-		slog.String("endpoint", c.FullPath()),
-	)
-
-	e.errorHandler.Handle(c, tmplName, err)
+	e.viewErrorHandler.Handle(c, tmplName, err)
 }
