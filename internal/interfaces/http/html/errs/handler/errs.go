@@ -1,35 +1,12 @@
-package handler
+package viewErrHandler
 
 import (
 	"errors"
-	"log/slog"
 	domainErrs "main/internal/domain/errs"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
-
-type HandlerError struct {
-	StatusCode int
-	Message    string
-	Err        error
-}
-
-func (e *HandlerError) Error() string {
-	return e.Err.Error()
-}
-
-func ErrStatusBadRequest(c *gin.Context, tmplName string, err error) {
-	slog.Error("handlerError", slog.String("error", err.Error()))
-	c.HTML(http.StatusBadRequest, tmplName, gin.H{
-		"Error": "Coś poszło nie tak, skontaktuj się ze mną.",
-	})
-}
-
-type IErrorHandler interface {
-	HandleHTMLError(ctx *gin.Context, tmplName string, err error)
-	HandleJSONError(ctx *gin.Context, err error)
-}
 
 type ErrorHandler struct{}
 
@@ -37,7 +14,7 @@ func NewErrorHandler() ErrorHandler {
 	return ErrorHandler{}
 }
 
-func (e ErrorHandler) HandleHTMLError(c *gin.Context, tmplName string, err error) {
+func (e ErrorHandler) Handle(c *gin.Context, tmplName string, err error) {
 	var bookingError *domainErrs.BookingError
 	if errors.As(err, &bookingError) {
 		switch bookingError.Code {
@@ -81,7 +58,7 @@ func (e ErrorHandler) HandleHTMLError(c *gin.Context, tmplName string, err error
 			})
 		default:
 			c.HTML(http.StatusInternalServerError, "err.tmpl", gin.H{
-				"Error": "Coś poszło nie tak... Contact me :)",
+				"Error": "Coś poszło nie tak... Skontaktuj się ze mną :)",
 			})
 		}
 
@@ -89,26 +66,8 @@ func (e ErrorHandler) HandleHTMLError(c *gin.Context, tmplName string, err error
 	}
 
 	c.HTML(http.StatusInternalServerError, "err.tmpl", gin.H{
-		"Error": "Coś poszło nie tak... Contact me :)",
+		"Error": "Coś poszło nie tak... Skontaktuj się ze mną :)",
 	})
-
-	return
-}
-
-func (e ErrorHandler) HandleJSONError(c *gin.Context, err error) {
-	var classError *domainErrs.ClassError
-	if errors.As(err, &classError) {
-		switch classError.Code {
-		case domainErrs.BadRequestCode:
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		default:
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		}
-
-		return
-	}
-
-	c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 
 	return
 }

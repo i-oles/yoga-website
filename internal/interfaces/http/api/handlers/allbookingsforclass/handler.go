@@ -1,22 +1,23 @@
-package allbookings
+package allbookingsforclass
 
 import (
 	"main/internal/domain/repositories"
 	"main/internal/interfaces/http/api/dto"
-	"main/internal/interfaces/http/err/handler"
+	apiErrs "main/internal/interfaces/http/api/errs"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type Handler struct {
 	bookingsRepo repositories.IBookings
-	errorHandler handler.IErrorHandler
+	errorHandler apiErrs.IErrorHandler
 }
 
 func NewHandler(
 	bookingsRepo repositories.IBookings,
-	errorHandler handler.IErrorHandler,
+	errorHandler apiErrs.IErrorHandler,
 ) *Handler {
 	return &Handler{
 		bookingsRepo: bookingsRepo,
@@ -25,21 +26,28 @@ func NewHandler(
 }
 
 func (h *Handler) Handle(c *gin.Context) {
+	classIDStr := c.Param("class_id")
+
+	classID, err := uuid.Parse(classIDStr)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	}
+
 	ctx := c.Request.Context()
 
-	allBookings, err := h.bookingsRepo.GetAll(ctx)
+	allBookingsForClass, err := h.bookingsRepo.GetAllByClassID(ctx, classID)
 	if err != nil {
 		h.errorHandler.HandleJSONError(c, err)
 
 		return
 	}
 
-	bookingsListResponse, err := dto.ToBookingsListResponse(allBookings)
+	response, err := dto.ToBookingsListResponse(allBookingsForClass)
 	if err != nil {
 		h.errorHandler.HandleJSONError(c, err)
 
 		return
 	}
 
-	c.JSON(http.StatusOK, bookingsListResponse)
+	c.JSON(http.StatusOK, response)
 }

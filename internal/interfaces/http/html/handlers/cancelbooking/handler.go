@@ -2,8 +2,8 @@ package cancelbooking
 
 import (
 	"main/internal/domain/services"
-	"main/internal/interfaces/http/err/handler"
 	"main/internal/interfaces/http/html/dto"
+	viewErrs "main/internal/interfaces/http/html/errs"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -11,17 +11,17 @@ import (
 )
 
 type Handler struct {
-	bookingService services.IBookingsService
-	errorHandler   handler.IErrorHandler
+	bookingService   services.IBookingsService
+	viewErrorHandler viewErrs.IErrorHandler
 }
 
 func NewHandler(
 	bookingService services.IBookingsService,
-	errorHandler handler.IErrorHandler,
+	viewErrorHandler viewErrs.IErrorHandler,
 ) *Handler {
 	return &Handler{
-		bookingService: bookingService,
-		errorHandler:   errorHandler,
+		bookingService:   bookingService,
+		viewErrorHandler: viewErrorHandler,
 	}
 }
 
@@ -29,20 +29,23 @@ func (h *Handler) Handle(c *gin.Context) {
 	var uri dto.BookingCancelURI
 
 	if err := c.ShouldBindUri(&uri); err != nil {
-		h.errorHandler.HandleHTMLError(c, "cancel_booking_form.tmpl", err)
+		viewErrs.ErrBadRequest(c, "cancel_booking_form.tmpl", err)
+
 		return
 	}
 
 	var form dto.BookingCancelForm
 
 	if err := c.ShouldBindQuery(&form); err != nil {
-		h.errorHandler.HandleHTMLError(c, "cancel_booking_form.tmpl", err)
+		viewErrs.ErrBadRequest(c, "cancel_booking_form.tmpl", err)
+
 		return
 	}
 
 	bookingID, err := uuid.Parse(uri.BookingID)
 	if err != nil {
-		h.errorHandler.HandleHTMLError(c, "cancel_booking_form.tmpl", err)
+		viewErrs.ErrBadRequest(c, "cancel_booking_form.tmpl", err)
+
 		return
 	}
 
@@ -50,7 +53,8 @@ func (h *Handler) Handle(c *gin.Context) {
 
 	err = h.bookingService.CancelBooking(ctx, bookingID, form.Token)
 	if err != nil {
-		h.errorHandler.HandleHTMLError(c, "cancel_booking_form.tmpl", err)
+		h.viewErrorHandler.Handle(c, "cancel_booking_form.tmpl", err)
+
 		return
 	}
 

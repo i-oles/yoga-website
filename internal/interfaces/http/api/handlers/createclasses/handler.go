@@ -4,7 +4,7 @@ import (
 	"main/internal/domain/models"
 	"main/internal/domain/services"
 	"main/internal/interfaces/http/api/dto"
-	"main/internal/interfaces/http/err/handler"
+	"main/internal/interfaces/http/api/errs"
 	sharedDTO "main/internal/interfaces/http/shared/dto"
 	"net/http"
 
@@ -14,12 +14,12 @@ import (
 
 type Handler struct {
 	classesService services.IClassesService
-	errorHandler   handler.IErrorHandler
+	errorHandler   apiErrs.IErrorHandler
 }
 
 func NewHandler(
 	classesService services.IClassesService,
-	errorHandler handler.IErrorHandler,
+	errorHandler apiErrs.IErrorHandler,
 ) *Handler {
 	return &Handler{
 		classesService: classesService,

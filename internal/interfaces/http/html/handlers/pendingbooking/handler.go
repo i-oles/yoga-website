@@ -1,10 +1,11 @@
 package pendingbooking
 
 import (
+	"fmt"
 	"main/internal/domain/models"
 	"main/internal/domain/services"
-	"main/internal/interfaces/http/err/handler"
 	"main/internal/interfaces/http/html/dto"
+	viewErrs "main/internal/interfaces/http/html/errs"
 	"net/http"
 	"strings"
 
@@ -14,29 +15,31 @@ import (
 
 type Handler struct {
 	PendingBookingsService services.IPendingBookingsService
-	ErrorHandler           handler.IErrorHandler
+	ViewErrorHandler       viewErrs.IErrorHandler
 }
 
 func NewHandler(
 	pendingBookingsService services.IPendingBookingsService,
-	errorHandler handler.IErrorHandler,
+	viewErrorHandler viewErrs.IErrorHandler,
 ) *Handler {
 	return &Handler{
 		PendingBookingsService: pendingBookingsService,
-		ErrorHandler:           errorHandler,
+		ViewErrorHandler:       viewErrorHandler,
 	}
 }
 
 func (h *Handler) Handle(c *gin.Context) {
+	fmt.Printf("z requestu: %v", c.Request.PostForm)
+
 	var form dto.PendingBookingForm
 	if err := c.ShouldBind(&form); err != nil {
-		handler.ErrStatusBadRequest(c, "bookings_pending_form.tmpl", err)
+		viewErrs.ErrBadRequest(c, "bookings_pending_form.tmpl", err)
 		return
 	}
 
 	parsedUUID, err := uuid.Parse(form.ClassID)
 	if err != nil {
-		handler.ErrStatusBadRequest(c, "bookings_pending_form.tmpl", err)
+		viewErrs.ErrBadRequest(c, "bookings_pending_form.tmpl", err)
 		return
 	}
 
@@ -51,7 +54,7 @@ func (h *Handler) Handle(c *gin.Context) {
 
 	classID, err := h.PendingBookingsService.CreatePendingBooking(ctx, pendingBookingParams)
 	if err != nil {
-		h.ErrorHandler.HandleHTMLError(c, "bookings_pending_form.tmpl", err)
+		h.ViewErrorHandler.Handle(c, "bookings_pending_form.tmpl", err)
 
 		return
 	}

@@ -2,32 +2,32 @@ package createbooking
 
 import (
 	"main/internal/domain/services"
-	"main/internal/interfaces/http/err/handler"
 	"main/internal/interfaces/http/html/dto"
+	viewErrs "main/internal/interfaces/http/html/errs"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
 type Handler struct {
-	bookingsService services.IBookingsService
-	errorHandler    handler.IErrorHandler
+	bookingsService  services.IBookingsService
+	viewErrorHandler viewErrs.IErrorHandler
 }
 
 func NewHandler(
-	confirmationService services.IBookingsService,
-	errorHandler handler.IErrorHandler,
+	bookingService services.IBookingsService,
+	viewErrorHandler viewErrs.IErrorHandler,
 ) *Handler {
 	return &Handler{
-		bookingsService: confirmationService,
-		errorHandler:    errorHandler,
+		bookingsService:  bookingService,
+		viewErrorHandler: viewErrorHandler,
 	}
 }
 
 func (h *Handler) Handle(c *gin.Context) {
 	var form dto.BookingCreateForm
 	if err := c.ShouldBindQuery(&form); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		viewErrs.ErrBadRequest(c, "err.tmpl", err)
 
 		return
 	}
@@ -36,14 +36,14 @@ func (h *Handler) Handle(c *gin.Context) {
 
 	class, err := h.bookingsService.CreateBooking(ctx, form.Token)
 	if err != nil {
-		h.errorHandler.HandleHTMLError(c, "err.tmpl", err)
+		h.viewErrorHandler.Handle(c, "err.tmpl", err)
 
 		return
 	}
 
 	view, err := dto.ToBookingView(class)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		viewErrs.ErrDTOConversion(c, "err.tmpl", err)
 
 		return
 	}

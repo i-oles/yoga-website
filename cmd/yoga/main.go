@@ -14,17 +14,21 @@ import (
 	classesDBModels "main/internal/infrastructure/models/db"
 	sqliteRepo "main/internal/infrastructure/repository/sqlite"
 	"main/internal/infrastructure/sender/gmail"
-	"main/internal/interfaces/http/api/allbookings"
-	"main/internal/interfaces/http/api/allbookingsforclass"
-	"main/internal/interfaces/http/api/createclasses"
-	"main/internal/interfaces/http/err/handler"
-	logWrapper "main/internal/interfaces/http/err/wrapper"
-	"main/internal/interfaces/http/html/cancelbooking"
-	"main/internal/interfaces/http/html/cancelbookingform"
-	"main/internal/interfaces/http/html/createbooking"
-	"main/internal/interfaces/http/html/home"
-	"main/internal/interfaces/http/html/pendingbooking"
-	"main/internal/interfaces/http/html/pendingbookingform"
+	apiErrs "main/internal/interfaces/http/api/errs"
+	apiErrHandler "main/internal/interfaces/http/api/errs/handler"
+	"main/internal/interfaces/http/api/errs/wrapper"
+	"main/internal/interfaces/http/api/handlers/allbookings"
+	"main/internal/interfaces/http/api/handlers/allbookingsforclass"
+	"main/internal/interfaces/http/api/handlers/createclasses"
+	"main/internal/interfaces/http/html/errs"
+	"main/internal/interfaces/http/html/errs/handler"
+	logWrapper "main/internal/interfaces/http/html/errs/wrapper"
+	"main/internal/interfaces/http/html/handlers/cancelbooking"
+	"main/internal/interfaces/http/html/handlers/cancelbookingform"
+	"main/internal/interfaces/http/html/handlers/createbooking"
+	"main/internal/interfaces/http/html/handlers/home"
+	"main/internal/interfaces/http/html/handlers/pendingbooking"
+	"main/internal/interfaces/http/html/handlers/pendingbookingform"
 	"main/internal/interfaces/http/middleware"
 	"net/http"
 	"os"
@@ -126,37 +130,42 @@ func setupRouter(db *gorm.DB, cfg *configuration.Configuration) *gin.Engine {
 		cfg.DomainAddr,
 	)
 
-	var errorHandler handler.IErrorHandler
+	var viewErrorHandler viewErrs.IErrorHandler
 
-	errorHandler = handler.NewErrorHandler()
-	errorHandler = logWrapper.NewErrorHandler(errorHandler, cfg.LogBusinessErrors)
+	viewErrorHandler = viewErrHandler.NewErrorHandler()
+	viewErrorHandler = logWrapper.NewErrorHandler(viewErrorHandler, cfg.LogBusinessErrors)
 
 	// HTML
-	homeHandler := home.NewHandler(classesService)
-	createBookingHandler := createbooking.NewHandler(bookingsService, errorHandler)
-	cancelBookingHandler := cancelbooking.NewHandler(bookingsService, errorHandler)
-	pendingBookingHandler := pendingbooking.NewHandler(pendingBookingsService, errorHandler)
+	homeHandler := home.NewHandler(classesService, viewErrorHandler)
+	createBookingHandler := createbooking.NewHandler(bookingsService, viewErrorHandler)
+	cancelBookingHandler := cancelbooking.NewHandler(bookingsService, viewErrorHandler)
+	pendingBookingHandler := pendingbooking.NewHandler(pendingBookingsService, viewErrorHandler)
 	pendingBookingFormHandler := pendingbookingform.NewHandler()
-	cancelBookingFormHandler := cancelbookingform.NewHandler(bookingsService, errorHandler)
+	cancelBookingFormHandler := cancelbookingform.NewHandler(bookingsService, viewErrorHandler)
 
 	{
 		api.GET("/", homeHandler.Handle)                                      // home site
 		api.GET("/bookings", createBookingHandler.Handle)                     // creates booking
 		api.DELETE("/bookings/:id", cancelBookingHandler.Handle)              // deletes booking
 		api.POST("/bookings/pending", pendingBookingHandler.Handle)           // creates pending booking
-		api.GET("/bookings/pending_form", pendingBookingFormHandler.Handle)   // renders a form to pending booking
+		api.POST("/bookings/pending_form", pendingBookingFormHandler.Handle)  // renders a form to pending booking
 		api.GET("/bookings/:id/cancel_form", cancelBookingFormHandler.Handle) // renders a form to pending booking
 	}
 
+	var apiErrorHandler apiErrs.IErrorHandler
+
+	apiErrorHandler = apiErrHandler.NewErrorHandler()
+	apiErrorHandler = wrapper.NewErrorHandler(apiErrorHandler)
+
 	// API
 	authMiddleware := middleware.Auth(cfg.AuthSecret)
-	createClassHandler := createclasses.NewHandler(classesService, errorHandler)
-	//updateClassHandler := updateclass.NewHandler(classesService, errorHandler)
-	//deleteClassHandler := deleteclass.NewHandler(classesService, errorHandler)
-	getAllBookingsHandler := allbookings.NewHandler(bookingsRepo, errorHandler)
-	getAllBookingsForClassHandler := allbookingsforclass.NewHandler(bookingsRepo, errorHandler)
-	//deleteBookingHandler := deletebooking.NewHandler(bookingsRepo, errorHandler)
-	//getAllPendingBookingsHandler := allpendingbookings.NewHandler(bookingsRepo, errorHandler)
+	createClassHandler := createclasses.NewHandler(classesService, apiErrorHandler)
+	//updateClassHandler := updateclass.NewHandler(classesService, apiErrorHandler)
+	//deleteClassHandler := deleteclass.NewHandler(classesService, apiErrorHandler)
+	getAllBookingsHandler := allbookings.NewHandler(bookingsRepo, apiErrorHandler)
+	getAllBookingsForClassHandler := allbookingsforclass.NewHandler(bookingsRepo, apiErrorHandler)
+	//deleteBookingHandler := deletebooking.NewHandler(bookingsRepo, apiErrorHandler)
+	//getAllPendingBookingsHandler := allpendingbookings.NewHandler(bookingsRepo, apiErrorHandler)
 
 	{
 		api.GET("/api/v1/bookings", authMiddleware, getAllBookingsHandler.Handle) // gets all bookings

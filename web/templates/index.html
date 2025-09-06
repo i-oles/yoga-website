@@ -58,7 +58,7 @@
             {{ else }}
             <div id="book-button-{{ .ID }}">
                 <button class="btn-book"
-                        hx-get="/bookings/pending_form"
+                        hx-post="//pending_form"
                         hx-swap="outerHTML"
                         hx-target="#booking-form-{{ .ID }}"
                         hx-vals='{"id": "{{ .ID }}"}'
