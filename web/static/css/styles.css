@@ -46,6 +46,14 @@ div#main-container {
     transform: translateY(-2px);
 }
 
+.vacation-info {
+    margin-top: 15px;
+    margin-left: -10px;
+    margin-bottom: 10px;
+    padding: 12px;
+    font-size: 1rem;
+}
+
 /* Tabele z informacjami */
 .booking-info table,
 .class-info table {

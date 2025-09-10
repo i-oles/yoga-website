@@ -19,6 +19,7 @@
     "password": "",
     "host": "db"
   },
+  "isVacation": true,
   "domainAddr": "https://otojoga.art",
   "confirmationCreateEmailTmplPath": "internal/infrastructure/sender/templates/confirmation_create_email.tmpl",
   "confirmationCancelEmailTmplPath": "internal/infrastructure/sender/templates/confirmation_cancel_email.tmpl",

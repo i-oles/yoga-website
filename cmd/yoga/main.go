@@ -136,7 +136,7 @@ func setupRouter(db *gorm.DB, cfg *configuration.Configuration) *gin.Engine {
 	viewErrorHandler = logWrapper.NewErrorHandler(viewErrorHandler, cfg.LogBusinessErrors)
 
 	// HTML
-	homeHandler := home.NewHandler(classesService, viewErrorHandler)
+	homeHandler := home.NewHandler(classesService, viewErrorHandler, cfg.IsVacation)
 	createBookingHandler := createbooking.NewHandler(bookingsService, viewErrorHandler)
 	cancelBookingHandler := cancelbooking.NewHandler(bookingsService, viewErrorHandler)
 	pendingBookingHandler := pendingbooking.NewHandler(pendingBookingsService, viewErrorHandler)

@@ -12,15 +12,18 @@ import (
 type Handler struct {
 	classesService   services.IClassesService
 	viewErrorHandler viewErrs.IErrorHandler
+	isVacation       bool
 }
 
 func NewHandler(
 	classesService services.IClassesService,
 	viewErrorHandler viewErrs.IErrorHandler,
+	isVacation bool,
 ) *Handler {
 	return &Handler{
 		classesService:   classesService,
 		viewErrorHandler: viewErrorHandler,
+		isVacation:       isVacation,
 	}
 }
 
@@ -41,7 +44,12 @@ func (h *Handler) Handle(c *gin.Context) {
 		return
 	}
 
-	c.HTML(http.StatusOK, "index.html", gin.H{
+	tmplName := "index.html"
+	if h.isVacation {
+		tmplName = "index_with_vacation_info.html"
+	}
+
+	c.HTML(http.StatusOK, tmplName, gin.H{
 		"Classes": classesView,
 	})
 }
