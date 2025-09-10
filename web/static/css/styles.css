@@ -46,6 +46,14 @@ div#main-container {
     transform: translateY(-2px);
 }
 
+.vacation-info {
+    margin-top: 15px;
+    margin-left: -10px;
+    margin-bottom: 10px;
+    padding: 12px;
+    font-size: 1rem;
+}
+
 /* Tabele z informacjami */
 .booking-info table,
 .class-info table {
@@ -141,8 +149,6 @@ button:disabled {
     display: none;
 }
 
-
-
 /* Komunikaty o błędach */
 .err-msg {
     font-size: 0.8rem;
@@ -216,27 +222,13 @@ button:disabled {
     outline: none;
     box-shadow: 0 1px 6px rgba(0, 0, 0, 0.1);
 }
+
 * {
     font-family: "Alegreya Sans SC", sans-serif;
     font-style: normal;
 }
 
-.confirmation-container .error-container {
-    display: flex;
-    justify-content: center;
-    align-items: center; /* Wyśrodkowanie wertykalne */
-    background-color: #fff;
-    border: 1px solid #e0e0e0;
-    padding: 24px;
-    transition: all 0.2s ease;
-    margin-left: 0;
-    border-radius: 4px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-    min-height: 400px;
-    min-width: 350px;
-}
-
-.confirmation-card, .error-card {
+.cancel-booking-card, .confirmation-card, .error-card {
     background-color: #fff;
     border: 1px solid #e0e0e0;
     padding: 24px;
@@ -250,18 +242,20 @@ button:disabled {
     margin: 0 auto; /* Wyśrodkowanie poziome */
 }
 
-.confirmation-card:hover .error-card:hover {
+.cancel-booking-card:hover,
+.confirmation-card:hover, .error-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
 }
 
-.confirmation-card .error-card h2 {
+.cancel-booking-card,
+.confirmation-card, .error-card h2 {
     color: #2c3e50;
     margin-bottom: 20px;
     font-size: 1.2rem;
 }
 
-.confirmation-message .error-message {
+.confirmation-message, .error-message {
     color: #333;
     font-size: 0.9rem;
     margin-bottom: 30px;
@@ -274,16 +268,19 @@ button:disabled {
 
 /* Dodatkowe style dla responsywności */
 @media (max-width: 480px) {
+    .cancel-booking-card,
     .confirmation-card, .error-card {
         max-width: 90%; /* Mniejsza szerokość na małych ekranach */
         padding: 16px;
     }
 
-    .confirmation-container .error-container {
+    .cancel-booking-container,
+    .confirmation-container, .error-container {
         min-height: 300px;
         padding: 16px;
     }
 
+    .cancel-booking-card,
     .confirmation-card .error-card {
         padding: 15px;
         font-size: 1.5rem;

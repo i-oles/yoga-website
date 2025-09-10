@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>otojoga</title>
+    <script src="https://unpkg.com/htmx.org/dist/htmx.min.js"></script>
+    <link rel="stylesheet" href="/web/static/css/styles.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Alegreya+Sans+SC:ital,wght@0,100;0,300;0,400;0,500;0,700;0,800;0,900;1,100;1,300;1,400;1,500;1,700;1,800;1,900&display=swap" rel="stylesheet">
+</head>
+<body>
+<br>
+<div id="main-container">
+    <div class="class-container">
+        <div class="vacation-info">
+            w terminie <br>
+            10.09 - 06.10 <br>
+            jestem na urlopie
+            <br><br>
+            :)
+        </div>
+    </div>
+    {{ range .Classes }}
+    <div class="class-container">
+        <form class="form-{{ .ID }}">
+            <div class="class-info">
+                <table style="border-collapse: collapse; margin-top: 15px;">
+                    <tr>
+                        <td style="font-weight:300;">zajęcia:</td>
+                        <td style="font-weight:500;">{{ .ClassName }}</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight:300;">poziom:</td>
+                        <td style="font-weight:500;">{{ .ClassLevel }}</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight:300;">dzień:</td>
+                        <td style="font-weight:500;">{{ .WeekDay }}</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight:300;">data:</td>
+                        <td style="font-weight:500;">{{ .StartDate }}</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight:300;">godzina:</td>
+                        <td style="font-weight:500;">{{ .StartHour }}</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight:300;">gdzie:</td>
+                        <td style="font-weight:500;">{{ .Location }}</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight:300;">ilość miejsc:</td>
+                        <td style="font-weight:500;">{{ .CurrentCapacity }} / {{ .MaxCapacity }}</td>
+                    </tr>
+                </table>
+            </div>
+            <div id="booking-form-{{ .ID }}">
+            {{ if eq .CurrentCapacity 0 }}
+            <div id="book-button-{{ .ID }}">
+                <button class="btn-book" disabled>rezerwuj</button>
+            </div>
+            {{ else }}
+            <div id="book-button-{{ .ID }}">
+                <button class="btn-book"
+                        hx-get="/classes/{{ .ID }}/pending_bookings/form"
+                        hx-swap="outerHTML"
+                        hx-target="#booking-form-{{ .ID }}"
+                        hx-trigger="click">
+                    rezerwuj
+                </button>
+            </div>
+            {{ end }}
+            </div>
+        </form>
+    </div>
+    {{ end }}
+</div>
+<script>
+    document.addEventListener('htmx:beforeSwap', function(event) {
+        // handle status 409 (Conflict) and 400 (Bad Request)
+        if ([409, 400].includes(event.detail.xhr.status)) {
+            event.detail.shouldSwap = true;  // force swap
+            event.detail.isError = false;    // treat as proper resp
+        }
+    });
+</script>
+</body>
+</html>

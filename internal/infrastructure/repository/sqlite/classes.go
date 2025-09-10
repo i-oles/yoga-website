@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"main/internal/domain/models"
 	"main/internal/infrastructure/errs"
-	dbModels "main/internal/infrastructure/models/db/classes"
+	dbModels "main/internal/infrastructure/models/db"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -23,32 +23,32 @@ func NewClassesRepo(db *gorm.DB) *ClassesRepo {
 }
 
 func (c ClassesRepo) GetAll(ctx context.Context) ([]models.Class, error) {
-	var SQLClasses []dbModels.SQLClass
+	var sqlClasses []dbModels.SQLClass
 
-	if err := c.db.WithContext(ctx).Order("start_time ASC").Find(&SQLClasses).Error; err != nil {
-		return nil, fmt.Errorf("failed to get all classes: %w", err)
+	if err := c.db.WithContext(ctx).Order("start_time ASC").Find(&sqlClasses).Error; err != nil {
+		return nil, fmt.Errorf("could not get all classes: %w", err)
 	}
 
-	classes := make([]models.Class, len(SQLClasses))
+	classes := make([]models.Class, len(sqlClasses))
 
-	for i, SQLClass := range SQLClasses {
-		classes[i] = SQLClass.ToDomain()
+	for i, sqlClass := range sqlClasses {
+		classes[i] = sqlClass.ToDomain()
 	}
 
 	return classes, nil
 }
 
 func (c ClassesRepo) Get(ctx context.Context, id uuid.UUID) (models.Class, error) {
-	var SQLClass dbModels.SQLClass
+	var sqlClass dbModels.SQLClass
 
-	if err := c.db.WithContext(ctx).First(&SQLClass, "id = ?", id).Error; err != nil {
+	if err := c.db.WithContext(ctx).First(&sqlClass, "id = ?", id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return models.Class{}, errs.ErrNotFound
 		}
-		return models.Class{}, fmt.Errorf("failed to get class: %w", err)
+		return models.Class{}, fmt.Errorf("could not get class: %w", err)
 	}
 
-	return SQLClass.ToDomain(), nil
+	return sqlClass.ToDomain(), nil
 }
 
 func (c ClassesRepo) DecrementCurrentCapacity(ctx context.Context, id uuid.UUID) error {
@@ -58,7 +58,7 @@ func (c ClassesRepo) DecrementCurrentCapacity(ctx context.Context, id uuid.UUID)
 		Update("current_capacity", gorm.Expr("current_capacity - ?", 1))
 
 	if result.Error != nil {
-		return fmt.Errorf("failed to decrement current capacity: %w", result.Error)
+		return fmt.Errorf("could not decrement current capacity: %w", result.Error)
 	}
 
 	if result.RowsAffected == 0 {
@@ -75,7 +75,7 @@ func (c ClassesRepo) IncrementCurrentCapacity(ctx context.Context, id uuid.UUID)
 		Update("current_capacity", gorm.Expr("current_capacity + ?", 1))
 
 	if result.Error != nil {
-		return fmt.Errorf("failed to increment current capacity: %w", result.Error)
+		return fmt.Errorf("could not increment current capacity: %w", result.Error)
 	}
 
 	if result.RowsAffected == 0 {
@@ -86,23 +86,23 @@ func (c ClassesRepo) IncrementCurrentCapacity(ctx context.Context, id uuid.UUID)
 }
 
 func (c ClassesRepo) Insert(ctx context.Context, classes []models.Class) ([]models.Class, error) {
-	SQLClasses := make([]dbModels.SQLClass, len(classes))
+	sqlClass := make([]dbModels.SQLClass, len(classes))
 	for i, class := range classes {
-		SQLClasses[i] = dbModels.FromDomain(class)
+		sqlClass[i] = dbModels.SQLClassFromDomain(class)
 	}
 
 	err := c.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := tx.Create(&SQLClasses).Error; err != nil {
+		if err := tx.Create(&sqlClass).Error; err != nil {
 			return err
 		}
 		return nil
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to insert classes: %w", err)
+		return nil, fmt.Errorf("could not insert classes: %w", err)
 	}
 
-	insertedClasses := make([]models.Class, len(SQLClasses))
-	for i, SQLClass := range SQLClasses {
+	insertedClasses := make([]models.Class, len(sqlClass))
+	for i, SQLClass := range sqlClass {
 		insertedClasses[i] = SQLClass.ToDomain()
 	}
 

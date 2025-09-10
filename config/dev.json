@@ -19,7 +19,8 @@
     "password": "",
     "host" : "localhost"
   },
-  "domainAddr": "localhost:8080",
+  "isVacation": false,
+  "domainAddr": "http://localhost:8080",
   "confirmationCreateEmailTmplPath": "internal/infrastructure/sender/templates/confirmation_create_email.tmpl",
   "confirmationCancelEmailTmplPath": "internal/infrastructure/sender/templates/confirmation_cancel_email.tmpl",
   "confirmationFinalEmailTmplPath" : "internal/infrastructure/sender/templates/confirmation_final_email.tmpl"

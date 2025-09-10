@@ -15,7 +15,7 @@ type Service struct {
 	classesRepo repositories.IClasses
 }
 
-func New(classesRepo repositories.IClasses) *Service {
+func NewService(classesRepo repositories.IClasses) *Service {
 	return &Service{classesRepo: classesRepo}
 }
 
@@ -48,7 +48,7 @@ func (s *Service) GetAllClasses(ctx context.Context) ([]models.Class, error) {
 func (s *Service) CreateClasses(ctx context.Context, classes []models.Class) ([]models.Class, error) {
 	err := s.validateClasses(classes)
 	if err != nil {
-		return nil, errs.ErrClassBadRequest(err)
+		return nil, errs.ErrClassValidation(err)
 	}
 
 	insertedClasses, err := s.classesRepo.Insert(ctx, classes)

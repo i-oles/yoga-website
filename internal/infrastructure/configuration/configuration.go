@@ -35,6 +35,7 @@ type Configuration struct {
 	ConfirmationCreateEmailTmplPath string
 	ConfirmationCancelEmailTmplPath string
 	ConfirmationFinalEmailTmplPath  string
+	IsVacation                      bool
 }
 
 func (c *Configuration) Pretty() string {

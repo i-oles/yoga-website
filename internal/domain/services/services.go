@@ -12,14 +12,14 @@ type IClassesService interface {
 	CreateClasses(ctx context.Context, class []models.Class) ([]models.Class, error)
 }
 
-type IPendingOperationsService interface {
-	CreateBooking(ctx context.Context, createParams models.CreateParams) (uuid.UUID, error)
-	CancelBooking(ctx context.Context, cancelParams models.CancelParams) (uuid.UUID, error)
+type IBookingsService interface {
+	CreateBooking(ctx context.Context, token string) (models.Class, error)
+	CancelBooking(ctx context.Context, id uuid.UUID, token string) error
+	CancelBookingForm(ctx context.Context, id uuid.UUID, token string) (models.Booking, error)
 }
 
-type IConfirmationService interface {
-	CreateBooking(ctx context.Context, token string) (models.Class, error)
-	CancelBooking(ctx context.Context, token string) (models.Class, error)
+type IPendingBookingsService interface {
+	CreatePendingBooking(ctx context.Context, params models.PendingBookingParams) (uuid.UUID, error)
 }
 
 type ITokenGenerator interface {
@@ -29,6 +29,6 @@ type ITokenGenerator interface {
 type ISender interface {
 	SendConfirmationCreateLink(msg models.ConfirmationCreateMsg) error
 	SendConfirmationCancelLink(msg models.ConfirmationCancelMsg) error
-	SendFinalConfirmations(msg models.ConfirmationMessage) error
+	SendFinalConfirmations(msg models.ConfirmationMsg) error
 	SendInfoAboutCancellationToOwner(msg models.ConfirmationToOwnerMsg) error
 }
