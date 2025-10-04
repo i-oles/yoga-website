@@ -35,3 +35,7 @@ go.work.sum
 modules.xml
 vcs.xml
 workspace.xml
+.vscode/settings.json
+
+# DB
+yoga.db
