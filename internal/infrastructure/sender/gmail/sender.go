@@ -6,18 +6,20 @@ import (
 	"html/template"
 	"main/internal/domain/models"
 	infrastructureModels "main/internal/infrastructure/models"
+	"main/pkg/converter"
+	"main/pkg/translator"
 	"strings"
+	"time"
 
 	"gopkg.in/gomail.v2"
 )
 
 type Sender struct {
-	SenderName                      string
-	SenderEmail                     string
-	ConfirmationRequestTmplPath     string
-	ConfirmationCancelEmailTmplPath string
-	ConfirmationFinalEmailTmplPath  string
-	Dialer                          *gomail.Dialer
+	SenderName                     string
+	SenderEmail                    string
+	ConfirmationRequestTmplPath    string
+	ConfirmationFinalEmailTmplPath string
+	Dialer                         *gomail.Dialer
 }
 
 func NewSender(
@@ -26,30 +28,30 @@ func NewSender(
 	senderEmail string,
 	password string,
 	senderName string,
-	confirmationCreateEmailTmplPath string,
-	confirmationCancelEmailTmplPath string,
-	confirmationFinalEmailTmplPath string,
+	confirmationRequestEmailTmplPath string,
+	confirmationEmailTmplPath string,
 ) *Sender {
 	d := gomail.NewDialer(host, port, senderEmail, password)
 	d.TLSConfig = &tls.Config{InsecureSkipVerify: true} // TODO: change to false in production
 
 	return &Sender{
-		SenderName:                      senderName,
-		SenderEmail:                     senderEmail,
-		ConfirmationRequestTmplPath:     confirmationCreateEmailTmplPath,
-		ConfirmationCancelEmailTmplPath: confirmationCancelEmailTmplPath,
-		ConfirmationFinalEmailTmplPath:  confirmationFinalEmailTmplPath,
-		Dialer:                          d,
+		SenderName:                     senderName,
+		SenderEmail:                    senderEmail,
+		ConfirmationRequestTmplPath:    confirmationRequestEmailTmplPath,
+		ConfirmationFinalEmailTmplPath: confirmationEmailTmplPath,
+		Dialer:                         d,
 	}
 }
 
-//TODO: refactor - one common function
-
-func (s Sender) SendConfirmationCreateLink(msg models.ConfirmationCreateMsg) error {
+func (s Sender) SendLinkToConfirmation(
+	recipientEmail string,
+	recipientFirstName string,
+	linkToConfirmation string,
+) error {
 	tmplData := infrastructureModels.ConfirmationRequestTmplData{
 		SenderName:         s.SenderName,
-		RecipientFirstName: msg.RecipientFirstName,
-		ConfirmationLink:   msg.ConfirmationCreateLink,
+		RecipientFirstName: recipientFirstName,
+		LinkToConfirmation: linkToConfirmation,
 	}
 
 	tmpl, err := template.ParseFiles(s.ConfirmationRequestTmplPath)
@@ -65,7 +67,7 @@ func (s Sender) SendConfirmationCreateLink(msg models.ConfirmationCreateMsg) err
 
 	m := gomail.NewMessage()
 	m.SetHeader("From", s.SenderEmail)
-	m.SetHeader("To", msg.RecipientEmail)
+	m.SetHeader("To", recipientEmail)
 	m.SetHeader("Subject", "Yoga - Prośba o potwierdzenie rezerwacji!")
 	m.SetBody("text/html", msgContent.String())
 
@@ -76,46 +78,20 @@ func (s Sender) SendConfirmationCreateLink(msg models.ConfirmationCreateMsg) err
 	return nil
 }
 
-func (s Sender) SendConfirmationCancelLink(msg models.ConfirmationCancelMsg) error {
-	tmplData := infrastructureModels.ConfirmationRequestTmplData{
-		SenderName:         s.SenderName,
-		RecipientFirstName: msg.RecipientFirstName,
-		ConfirmationLink:   msg.ConfirmationCancelLink,
-	}
-
-	tmpl, err := template.ParseFiles(s.ConfirmationCancelEmailTmplPath)
+func (s Sender) SendConfirmations(msg models.ConfirmationMsg) error {
+	startTimeDetails, err := getTimeDetails(msg.StartTime)
 	if err != nil {
-		return fmt.Errorf("could not parse template: %w", err)
+		return fmt.Errorf("could not get date details: %w", err)
 	}
 
-	var msgContent strings.Builder
-	err = tmpl.Execute(&msgContent, tmplData)
-	if err != nil {
-		return fmt.Errorf("could not execute template: %w", err)
-	}
-
-	m := gomail.NewMessage()
-	m.SetHeader("From", s.SenderEmail)
-	m.SetHeader("To", msg.RecipientEmail)
-	m.SetHeader("Subject", "Yoga - Prośba o potwierdzenie odwołania rezerwacji")
-	m.SetBody("text/html", msgContent.String())
-
-	if err = s.Dialer.DialAndSend(m); err != nil {
-		return fmt.Errorf("failed to send email: %w", err)
-	}
-
-	return nil
-}
-
-func (s Sender) SendFinalConfirmations(msg models.ConfirmationMsg) error {
 	tmplData := infrastructureModels.ConfirmationTmplData{
 		SenderName:         s.SenderName,
 		RecipientFirstName: msg.RecipientFirstName,
 		ClassName:          msg.ClassName,
 		ClassLevel:         msg.ClassLevel,
-		WeekDay:            msg.WeekDay,
-		Hour:               msg.Hour,
-		Date:               msg.Date,
+		WeekDay:            startTimeDetails.weekDayInPolish,
+		Hour:               startTimeDetails.startHour,
+		Date:               startTimeDetails.startDate,
 		Location:           msg.Location,
 		CancellationLink:   msg.CancellationLink,
 	}
@@ -140,9 +116,9 @@ func (s Sender) SendFinalConfirmations(msg models.ConfirmationMsg) error {
 	subject := fmt.Sprintf("%s %s booked: %s (%s) at %s.",
 		msg.RecipientFirstName,
 		msg.RecipientLastName,
-		msg.WeekDay,
-		msg.Date,
-		msg.Hour,
+		startTimeDetails.weekDayInPolish,
+		startTimeDetails.startDate,
+		startTimeDetails.startHour,
 	)
 
 	msgToOwner := gomail.NewMessage()
@@ -157,13 +133,20 @@ func (s Sender) SendFinalConfirmations(msg models.ConfirmationMsg) error {
 	return nil
 }
 
-func (s Sender) SendInfoAboutCancellationToOwner(msg models.ConfirmationToOwnerMsg) error {
+func (s Sender) SendInfoAboutCancellationToOwner(
+	recipientFirstName, recipientLastName string, startTime time.Time,
+) error {
+	startTimeDetails, err := getTimeDetails(startTime)
+	if err != nil {
+		return fmt.Errorf("could not get date details: %w", err)
+	}
+
 	subject := fmt.Sprintf("%s %s cancelled: %s (%s) at %s.",
-		msg.RecipientFirstName,
-		msg.RecipientLastName,
-		msg.WeekDay,
-		msg.Date,
-		msg.Hour,
+		recipientFirstName,
+		recipientLastName,
+		startTimeDetails.weekDayInPolish,
+		startTimeDetails.startDate,
+		startTimeDetails.startHour,
 	)
 
 	m := gomail.NewMessage()
@@ -171,9 +154,36 @@ func (s Sender) SendInfoAboutCancellationToOwner(msg models.ConfirmationToOwnerM
 	m.SetHeader("To", s.SenderEmail)
 	m.SetHeader("Subject", subject)
 
-	if err := s.Dialer.DialAndSend(m); err != nil {
+	if err = s.Dialer.DialAndSend(m); err != nil {
 		return fmt.Errorf("failed to send email: %w", err)
 	}
 
 	return nil
+}
+
+type timeDetails struct {
+	startHour       string
+	startDate       string
+	weekDayInPolish string
+}
+
+func getTimeDetails(t time.Time) (timeDetails, error) {
+	timeWarsawUTC, err := converter.ConvertToWarsawTime(t)
+	if err != nil {
+		return timeDetails{}, fmt.Errorf("could not convert to warsaw time: %w", err)
+	}
+
+	weekDayInPolish, err := translator.TranslateToWeekDayToPolish(timeWarsawUTC.Weekday())
+	if err != nil {
+		return timeDetails{}, fmt.Errorf("could not translate: %s weekday: %w", weekDayInPolish, err)
+	}
+
+	startDate := timeWarsawUTC.Format(converter.DateLayout)
+	startHour := timeWarsawUTC.Format(converter.HourLayout)
+
+	return timeDetails{
+		startHour:       startHour,
+		startDate:       startDate,
+		weekDayInPolish: weekDayInPolish,
+	}, nil
 }

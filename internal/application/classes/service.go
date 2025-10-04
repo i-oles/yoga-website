@@ -65,6 +65,7 @@ func (s *Service) validateClasses(classes []models.Class) error {
 			return fmt.Errorf("class start_time: %v expired", class.StartTime)
 		}
 
+		// TODO you do not need to pass currentCapacity in request, just set it as max capacity during creation
 		if class.CurrentCapacity != class.MaxCapacity {
 			return fmt.Errorf("%d != %d: current_capacity should be equal to max_capacity when creating class",
 				class.CurrentCapacity, class.MaxCapacity,

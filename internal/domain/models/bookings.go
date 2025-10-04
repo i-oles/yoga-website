@@ -23,9 +23,7 @@ type ConfirmationMsg struct {
 	RecipientLastName  string
 	ClassName          string
 	ClassLevel         string
-	WeekDay            string
-	Hour               string
-	Date               string
+	StartTime          time.Time
 	Location           string
 	CancellationLink   string
 }
@@ -33,7 +31,5 @@ type ConfirmationMsg struct {
 type ConfirmationToOwnerMsg struct {
 	RecipientFirstName string
 	RecipientLastName  string
-	WeekDay            string
-	Hour               string
-	Date               string
+	StartTime          time.Time
 }

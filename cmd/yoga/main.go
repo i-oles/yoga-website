@@ -20,8 +20,8 @@ import (
 	"main/internal/interfaces/http/api/handlers/allbookings"
 	"main/internal/interfaces/http/api/handlers/allbookingsforclass"
 	"main/internal/interfaces/http/api/handlers/createclasses"
-	"main/internal/interfaces/http/html/errs"
-	"main/internal/interfaces/http/html/errs/handler"
+	viewErrs "main/internal/interfaces/http/html/errs"
+	viewErrHandler "main/internal/interfaces/http/html/errs/handler"
 	logWrapper "main/internal/interfaces/http/html/errs/wrapper"
 	"main/internal/interfaces/http/html/handlers/cancelbooking"
 	"main/internal/interfaces/http/html/handlers/cancelbookingform"
@@ -114,9 +114,8 @@ func setupRouter(db *gorm.DB, cfg *configuration.Configuration) *gin.Engine {
 		cfg.EmailSender.User,
 		cfg.EmailSender.Password,
 		cfg.EmailSender.FromName,
-		cfg.ConfirmationCreateEmailTmplPath,
-		cfg.ConfirmationCancelEmailTmplPath,
-		cfg.ConfirmationFinalEmailTmplPath,
+		cfg.ConfirmationRequestEmailTmplPath,
+		cfg.ConfirmationEmailTmplPath,
 	)
 
 	classesService := classes.NewService(classesRepo)

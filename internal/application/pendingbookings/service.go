@@ -98,13 +98,11 @@ func (s *Service) CreatePendingBooking(
 		return uuid.Nil, fmt.Errorf("could not insert pending booking: %w", err)
 	}
 
-	msg := models.ConfirmationCreateMsg{
-		RecipientEmail:         pendingBookingParams.Email,
-		RecipientFirstName:     pendingBookingParams.FirstName,
-		ConfirmationCreateLink: fmt.Sprintf("%s/bookings?token=%s", s.DomainAddr, confirmationToken),
-	}
-
-	err = s.MessageSender.SendConfirmationCreateLink(msg)
+	err = s.MessageSender.SendLinkToConfirmation(
+		pendingBookingParams.Email,
+		pendingBookingParams.FirstName,
+		fmt.Sprintf("%s/bookings?token=%s", s.DomainAddr, confirmationToken),
+	)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("could not send confirmation create link: %w", err)
 	}

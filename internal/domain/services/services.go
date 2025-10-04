@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"main/internal/domain/models"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -27,8 +28,7 @@ type ITokenGenerator interface {
 }
 
 type ISender interface {
-	SendConfirmationCreateLink(msg models.ConfirmationCreateMsg) error
-	SendConfirmationCancelLink(msg models.ConfirmationCancelMsg) error
-	SendFinalConfirmations(msg models.ConfirmationMsg) error
-	SendInfoAboutCancellationToOwner(msg models.ConfirmationToOwnerMsg) error
+	SendLinkToConfirmation(recipientEmail, recipientFirstName, linkToConfirmation string) error
+	SendConfirmations(msg models.ConfirmationMsg) error
+	SendInfoAboutCancellationToOwner(recipientFirstName, recipientLastName string, startTime time.Time) error
 }

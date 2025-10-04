@@ -10,7 +10,6 @@ import (
 	"main/internal/domain/repositories"
 	"main/internal/domain/services"
 	"main/internal/infrastructure/errs"
-	"main/pkg/converter"
 	"time"
 
 	"github.com/google/uuid"
@@ -104,25 +103,18 @@ func (s *Service) CreateBooking(
 		return models.Class{}, fmt.Errorf("could not get class: %w", err)
 	}
 
-	startTimeWarsawUTC, err := converter.ConvertToWarsawTime(class.StartTime)
-	if err != nil {
-		return models.Class{}, fmt.Errorf("could not convert to warsaw time: %w", err)
-	}
-
 	msg := models.ConfirmationMsg{
 		RecipientEmail:     pendingBooking.Email,
 		RecipientFirstName: pendingBooking.FirstName,
 		RecipientLastName:  pendingBooking.LastName,
 		ClassName:          class.ClassName,
 		ClassLevel:         class.ClassLevel,
-		WeekDay:            startTimeWarsawUTC.Weekday().String(),
-		Hour:               startTimeWarsawUTC.Format(converter.HourLayout),
-		Date:               startTimeWarsawUTC.Format(converter.DateLayout),
+		StartTime:          class.StartTime,
 		Location:           class.Location,
 		CancellationLink:   fmt.Sprintf("%s/bookings/%s/cancel_form?token=%s", s.DomainAddr, bookingID, token),
 	}
 
-	err = s.MessageSender.SendFinalConfirmations(msg)
+	err = s.MessageSender.SendConfirmations(msg)
 	if err != nil {
 		return models.Class{}, fmt.Errorf("error while sending final-confirmation: %w", err)
 	}
@@ -134,6 +126,10 @@ func (s *Service) CancelBooking(ctx context.Context, bookingID uuid.UUID, token 
 	booking, err := s.BookingsRepo.Get(ctx, bookingID)
 	if err != nil {
 		return fmt.Errorf("could not get booking for id %s: %w", bookingID, err)
+	}
+
+	if booking.ConfirmationToken != token {
+		//TODO: handle error
 	}
 
 	class, err := s.ClassesRepo.Get(ctx, booking.ClassID)
@@ -174,20 +170,8 @@ func (s *Service) CancelBooking(ctx context.Context, bookingID uuid.UUID, token 
 		return fmt.Errorf("could not get class: %w", err)
 	}
 
-	startTimeWarsawUTC, err := converter.ConvertToWarsawTime(class.StartTime)
-	if err != nil {
-		return fmt.Errorf("could not convert to warsaw time: %w", err)
-	}
-
-	msg := models.ConfirmationToOwnerMsg{
-		RecipientFirstName: booking.FirstName,
-		RecipientLastName:  booking.LastName,
-		WeekDay:            startTimeWarsawUTC.Weekday().String(),
-		Hour:               startTimeWarsawUTC.Format(converter.HourLayout),
-		Date:               startTimeWarsawUTC.Format(converter.DateLayout),
-	}
-
-	err = s.MessageSender.SendInfoAboutCancellationToOwner(msg)
+	err = s.MessageSender.SendInfoAboutCancellationToOwner(
+		booking.FirstName, booking.LastName, class.StartTime)
 	if err != nil {
 		return fmt.Errorf("could not send info about cancellation to owner: %w", err)
 	}
@@ -202,7 +186,8 @@ func (s *Service) CancelBookingForm(ctx context.Context, id uuid.UUID, token str
 	}
 
 	if booking.ConfirmationToken != token {
-		return models.Booking{}, fmt.Errorf("token does not match %s, %s", booking.ConfirmationToken, token)
+		//TODO: is it correct name for this error?
+		return models.Booking{}, domainErrors.ErrInvalidCancellationLink(err)
 	}
 
 	return booking, nil

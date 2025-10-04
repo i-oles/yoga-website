@@ -13,7 +13,7 @@
                required
                minlength="3"
                maxlength="30"
-               pattern="^[A-Za-zÀ-ž]+$"
+               pattern="^[A-Za-zÀ-ž\-]+$"
                class="form-input">
 
         <label for="lastname-{{ .ID }}">nazwisko:</label>
@@ -23,7 +23,7 @@
                required
                minlength="3"
                maxlength="30"
-               pattern="^[A-Za-zÀ-ž]+$"
+               pattern="^[A-Za-zÀ-ž\-]+$"
                class="form-input">
 
         <label for="email-{{ .ID }}">email:</label>

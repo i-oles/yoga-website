@@ -52,7 +52,7 @@ func (h *Handler) Handle(c *gin.Context) {
 
 	cancelledBooking, err := h.bookingService.CancelBookingForm(ctx, bookingID, form.Token)
 	if err != nil {
-		h.viewErrorHandler.Handle(c, "cancel_booking_form.tmpl", err)
+		h.viewErrorHandler.Handle(c, "err.tmpl", err)
 		return
 	}
 

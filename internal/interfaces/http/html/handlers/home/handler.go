@@ -44,12 +44,7 @@ func (h *Handler) Handle(c *gin.Context) {
 		return
 	}
 
-	tmplName := "index.html"
-	if h.isVacation {
-		tmplName = "index_with_vacation_info.html"
-	}
-
-	c.HTML(http.StatusOK, tmplName, gin.H{
-		"Classes": classesView,
+	c.HTML(http.StatusOK, "index.html", gin.H{
+		"Classes": classesView, "IsVacation": h.isVacation,
 	})
 }

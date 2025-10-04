@@ -3,7 +3,7 @@ package models
 type ConfirmationRequestTmplData struct {
 	SenderName         string
 	RecipientFirstName string
-	ConfirmationLink   string
+	LinkToConfirmation string
 }
 
 type ConfirmationTmplData struct {

@@ -56,6 +56,10 @@ func (e ErrorHandler) Handle(c *gin.Context, tmplName string, err error) {
 				"ID":    bookingError.ClassID,
 				"Error": bookingError.Message,
 			})
+		case domainErrs.InvalidCancellationLinkCode:
+			c.HTML(http.StatusNotFound, tmplName, gin.H{
+				"Error": bookingError.Message,
+			})
 		default:
 			c.HTML(http.StatusInternalServerError, "err.tmpl", gin.H{
 				"Error": "Coś poszło nie tak... Skontaktuj się ze mną :)",

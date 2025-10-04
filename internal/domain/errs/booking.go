@@ -15,6 +15,7 @@ const (
 	ClassFullyBookedCode
 	ClassEmptyCode
 	SomeoneBookedClassFasterCode
+	InvalidCancellationLinkCode
 )
 
 type BookingError struct {
@@ -89,4 +90,13 @@ func ErrSomeoneBookedClassFaster(err error) *BookingError {
 		Message: "Ktoś Cię uprzedził... :( Brak wolnych miejsc na te zajęcia.",
 		Err:     err,
 	}
+}
+
+func ErrInvalidCancellationLink(err error) *BookingError {
+	return &BookingError{
+		Code:    InvalidCancellationLinkCode,
+		Message: "Twój link do odwołania rezerwacji wygasł albo jest nieprawidłowy, skontaktuj się ze mną...",
+		Err:     err,
+	}
+
 }

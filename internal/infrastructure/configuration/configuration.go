@@ -22,20 +22,19 @@ type EmailSenderSettings struct {
 }
 
 type Configuration struct {
-	ListenAddress                   string
-	DBPath                          string
-	ReadTimeout                     time.Duration
-	WriteTimeout                    time.Duration
-	ContextTimeout                  time.Duration
-	AuthSecret                      string
-	LogBusinessErrors               bool
-	LogConfig                       bool
-	EmailSender                     EmailSenderSettings
-	DomainAddr                      string
-	ConfirmationCreateEmailTmplPath string
-	ConfirmationCancelEmailTmplPath string
-	ConfirmationFinalEmailTmplPath  string
-	IsVacation                      bool
+	ListenAddress                    string
+	DBPath                           string
+	ReadTimeout                      time.Duration
+	WriteTimeout                     time.Duration
+	ContextTimeout                   time.Duration
+	AuthSecret                       string
+	LogBusinessErrors                bool
+	LogConfig                        bool
+	EmailSender                      EmailSenderSettings
+	DomainAddr                       string
+	ConfirmationRequestEmailTmplPath string
+	ConfirmationEmailTmplPath        string
+	IsVacation                       bool
 }
 
 func (c *Configuration) Pretty() string {
