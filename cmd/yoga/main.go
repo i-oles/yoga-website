@@ -20,6 +20,7 @@ import (
 	"main/internal/interfaces/http/api/handlers/allbookings"
 	"main/internal/interfaces/http/api/handlers/allbookingsforclass"
 	"main/internal/interfaces/http/api/handlers/createclasses"
+	"main/internal/interfaces/http/api/handlers/deletebooking"
 	"main/internal/interfaces/http/api/handlers/deleteclass"
 	viewErrs "main/internal/interfaces/http/html/errs"
 	viewErrHandler "main/internal/interfaces/http/html/errs/handler"
@@ -168,16 +169,16 @@ func setupRouter(db *gorm.DB, cfg *configuration.Configuration) *gin.Engine {
 	deleteClassHandler := deleteclass.NewHandler(classesService, apiErrorHandler)
 	getAllBookingsHandler := allbookings.NewHandler(bookingsRepo, apiErrorHandler)
 	getAllBookingsForClassHandler := allbookingsforclass.NewHandler(bookingsRepo, apiErrorHandler)
-	//deleteBookingHandler := deletebooking.NewHandler(bookingsRepo, apiErrorHandler)
+	deleteBookingHandler := deletebooking.NewHandler(bookingsService, apiErrorHandler)
 	//getAllPendingBookingsHandler := allpendingbookings.NewHandler(bookingsRepo, apiErrorHandler)
 
 	{
-		api.GET("/api/v1/bookings", authMiddleware, getAllBookingsHandler.Handle) // gets all bookings
-		//api.DELETE("/api/v1/bookings/:id", authMiddleware, deleteBookingHandler.Handle)         // deletes booking
+		api.GET("/api/v1/bookings", authMiddleware, getAllBookingsHandler.Handle)               // gets all bookings
+		api.DELETE("/api/v1/bookings/:booking_id", authMiddleware, deleteBookingHandler.Handle) // deletes booking
 		//api.GET("api/v1/bookings/pending", authMiddleware, getAllPendingBookingsHandler.Handle) //gets all
 		api.POST("/api/v1/classes", authMiddleware, createClassHandler.Handle) // creates classes
 		//api.PATCH("/api/v1/classes/:id"), authMiddleware, updateClassHandler.Handle)            // updates class
-		api.DELETE("/api/v1/classes/:class_id", authMiddleware, deleteClassHandler.Handle)           // deletes class
+		api.DELETE("/api/v1/classes/:class_id", authMiddleware, deleteClassHandler.Handle) // deletes class
 		api.GET("/api/v1/classes/:class_id/bookings", authMiddleware, getAllBookingsForClassHandler.Handle)
 	}
 
