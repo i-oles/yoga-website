@@ -20,6 +20,8 @@ func (e ErrorHandler) Handle(c *gin.Context, err error) {
 		switch classError.Code {
 		case domainErrs.BadRequestCode:
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		case domainErrs.ConflictCode:
+			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 		default:
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		}

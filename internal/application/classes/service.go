@@ -7,16 +7,25 @@ import (
 	"main/internal/domain/models"
 	"main/internal/domain/repositories"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 const classesLimit = 6
 
 type Service struct {
-	classesRepo repositories.IClasses
+	classesRepo  repositories.IClasses
+	bookingsRepo repositories.IBookings
 }
 
-func NewService(classesRepo repositories.IClasses) *Service {
-	return &Service{classesRepo: classesRepo}
+func NewService(
+	classesRepo repositories.IClasses,
+	bookingsRepo repositories.IBookings,
+) *Service {
+	return &Service{
+		classesRepo:  classesRepo,
+		bookingsRepo: bookingsRepo,
+	}
 }
 
 func (s *Service) GetAllClasses(ctx context.Context) ([]models.Class, error) {
@@ -57,6 +66,26 @@ func (s *Service) CreateClasses(ctx context.Context, classes []models.Class) ([]
 	}
 
 	return insertedClasses, nil
+}
+
+func (s *Service) DeleteClass(ctx context.Context, id uuid.UUID) error {
+	bookings, err := s.bookingsRepo.GetAllByClassID(ctx, id)
+	if err != nil {
+		return fmt.Errorf("could get classes for classID %v: %w", id, err)
+	}
+
+	if len(bookings) != 0 {
+		return errs.ErrClassNotEmpty(
+			fmt.Errorf("could not delete class: %v - class not empty", id),
+		)
+	}
+
+	err = s.classesRepo.Delete(ctx, id)
+	if err != nil {
+		return fmt.Errorf("could not delete class: %w", err)
+	}
+
+	return nil
 }
 
 func (s *Service) validateClasses(classes []models.Class) error {

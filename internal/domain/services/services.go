@@ -11,6 +11,7 @@ import (
 type IClassesService interface {
 	GetAllClasses(ctx context.Context) ([]models.Class, error)
 	CreateClasses(ctx context.Context, class []models.Class) ([]models.Class, error)
+	DeleteClass(ctx context.Context, classID uuid.UUID) error
 }
 
 type IBookingsService interface {

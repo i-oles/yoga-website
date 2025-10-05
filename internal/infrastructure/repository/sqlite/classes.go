@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"main/internal/domain/models"
 	"main/internal/infrastructure/errs"
+	"main/internal/infrastructure/models/db"
 	dbModels "main/internal/infrastructure/models/db"
 
 	"github.com/google/uuid"
@@ -107,4 +108,21 @@ func (c ClassesRepo) Insert(ctx context.Context, classes []models.Class) ([]mode
 	}
 
 	return insertedClasses, nil
+}
+
+func (c ClassesRepo) Delete(ctx context.Context, id uuid.UUID) error {
+	var sqlClass db.SQLClass
+
+	tx := c.db.WithContext(ctx).
+		Where("id = ?", id).
+		Delete(&sqlClass)
+	if tx.Error != nil {
+		return fmt.Errorf("could not delete class: %w", tx.Error)
+	}
+
+	if tx.RowsAffected == 0 {
+		return errs.ErrNoRowsAffected
+	}
+
+	return nil
 }

@@ -11,6 +11,7 @@ type IClasses interface {
 	Get(ctx context.Context, id uuid.UUID) (models.Class, error)
 	GetAll(ctx context.Context) ([]models.Class, error)
 	Insert(ctx context.Context, classes []models.Class) ([]models.Class, error)
+	Delete(ctx context.Context, id uuid.UUID) error
 	DecrementCurrentCapacity(ctx context.Context, id uuid.UUID) error
 	IncrementCurrentCapacity(ctx context.Context, id uuid.UUID) error
 }
