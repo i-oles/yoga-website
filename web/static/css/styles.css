@@ -67,7 +67,7 @@ div#main-container {
     div#main-container {
         grid-template-columns: repeat(2, 1fr); /* Dokładnie 2 kolumny */
         max-width: 800px; /* Ograniczamy szerokość żeby karty nie były za szerokie */
-        margin: 0; /* Usuwamy auto - karty będą po lewej stronie */
+        margin-left: -100px; /* Przesuwamy jeszcze bardziej w lewo */
     }
 }
 
