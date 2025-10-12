@@ -62,6 +62,15 @@ div#main-container {
     padding: 10px;
 }
 
+/* Na desktopie 2 kolumny */
+@media (min-width: 1025px) {
+    div#main-container {
+        grid-template-columns: repeat(2, 1fr); /* Dokładnie 2 kolumny */
+        max-width: 800px; /* Ograniczamy szerokość żeby karty nie były za szerokie */
+        margin: 0; /* Usuwamy auto - karty będą po lewej stronie */
+    }
+}
+
 /* Karty zajęć - minimalistyczny design z cieniami */
 .class-container {
     background-color: rgba(255, 255, 255, 0.95);
