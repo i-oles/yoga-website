@@ -66,8 +66,17 @@ div#main-container {
 @media (min-width: 1025px) {
     div#main-container {
         grid-template-columns: repeat(2, 1fr); /* Dokładnie 2 kolumny */
-        max-width: 800px; /* Ograniczamy szerokość żeby karty nie były za szerokie */
+        max-width: 500px; /* Ograniczamy szerokość żeby karty nie były za szerokie */
         margin-left: -100px; /* Przesuwamy jeszcze bardziej w lewo */
+    }
+
+    .class-container {
+        font-size: 0.7rem;
+    }
+
+    .btn-book {
+        font-size: 0.6rem;
+        
     }
 }
 
@@ -164,7 +173,8 @@ button:disabled {
 .btn-cancel,
 .btn-return,
 .btn-book {
-    border-color: #000;
+    border-color: #a8a8a8;
+    border-radius: 4px;
     color: #000;
     font-weight: 300;
     display: flex;
