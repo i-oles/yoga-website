@@ -74,9 +74,15 @@ div#main-container {
         font-size: 0.7rem;
     }
 
+    .btn-return,
     .btn-book {
         font-size: 0.6rem;
-        
+    }
+
+    .form-input {
+        height: 35px;
+        border-radius: 20px;
+        font-size: 0.7rem;
     }
 }
 
@@ -268,13 +274,12 @@ button:disabled {
     width: 100%;
     padding: 12px;
     border-radius: 0;
-    font-size: 1rem;
     box-sizing: border-box;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .form-input:focus {
-    border-color: #000;
+    border-color: #989898;
     outline: none;
     box-shadow: 0 1px 6px rgba(0, 0, 0, 0.1);
 }
