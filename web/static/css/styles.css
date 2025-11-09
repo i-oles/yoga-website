@@ -4,7 +4,7 @@
 }
 
 /* Reset i podstawowe style */
-html, body {
+body {
     font-family: 'Inter', 'Helvetica Neue', sans-serif;
     line-height: 1.5;
     color: #000;
