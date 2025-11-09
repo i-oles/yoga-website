@@ -11,8 +11,6 @@ import (
 	"github.com/google/uuid"
 )
 
-const classesLimit = 6
-
 type Service struct {
 	classesRepo  repositories.IClasses
 	bookingsRepo repositories.IBookings
@@ -28,30 +26,51 @@ func NewService(
 	}
 }
 
-func (s *Service) GetAllClasses(ctx context.Context) ([]models.Class, error) {
-	filteredClasses := make([]models.Class, 0)
+func (s *Service) GetClasses(
+	ctx context.Context,
+	onlyUpcomingClasses bool,
+	classesLimit *int,
+) ([]models.Class, error) {
+	if classesLimit != nil && *classesLimit < 0 {
+		return nil, errs.ErrClassValidation(
+			fmt.Errorf("classes_limit must be greater than or equal to 0, got: %d", *classesLimit),
+		)
+	}
 
 	classes, err := s.classesRepo.GetAll(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("could not get all classes: %w", err)
 	}
 
-	counter := 0
+	hasLimit := classesLimit != nil
 
-	for _, class := range classes {
-		if counter >= classesLimit {
-			break
-		}
-
-		if class.StartTime.Before(time.Now()) {
-			continue
-		}
-
-		filteredClasses = append(filteredClasses, class)
-		counter++
+	if !hasLimit && !onlyUpcomingClasses {
+		return classes, nil
 	}
 
-	return filteredClasses, nil
+	var filteredClasses []models.Class
+
+	if onlyUpcomingClasses {
+		filteredClasses = make([]models.Class, 0)
+		for _, class := range classes {
+			if class.StartTime.Before(time.Now()) {
+				continue
+			}
+
+			filteredClasses = append(filteredClasses, class)
+		}
+	} else {
+		filteredClasses = classes
+	}
+
+	if !hasLimit {
+		return filteredClasses, nil
+	}
+
+	limit := min(*classesLimit, len(filteredClasses))
+
+	return filteredClasses[:limit], nil
+
 }
 
 func (s *Service) CreateClasses(ctx context.Context, classes []models.Class) ([]models.Class, error) {

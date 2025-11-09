@@ -1,7 +1,6 @@
-package createclasses
+package getclasses
 
 import (
-	"main/internal/domain/models"
 	"main/internal/domain/services"
 	"main/internal/interfaces/http/api/dto"
 	apiErrs "main/internal/interfaces/http/api/errs"
@@ -9,7 +8,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 type Handler struct {
@@ -28,46 +26,34 @@ func NewHandler(
 }
 
 func (h *Handler) Handle(c *gin.Context) {
-	var dtoClasses []dto.CreateClassRequest
+	var dtoGetClasses dto.GetClassesRequest
 
-	err := c.ShouldBindJSON(&dtoClasses)
+	err := c.ShouldBindJSON(&dtoGetClasses)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 
 		return
 	}
 
-	classes := make([]models.Class, 0, len(dtoClasses))
-
-	for _, dtoClass := range dtoClasses {
-		class := models.Class{
-			ID:              uuid.New(),
-			StartTime:       dtoClass.StartTime.UTC(),
-			ClassLevel:      dtoClass.ClassLevel,
-			ClassName:       dtoClass.ClassName,
-			CurrentCapacity: dtoClass.CurrentCapacity,
-			MaxCapacity:     dtoClass.MaxCapacity,
-			Location:        dtoClass.Location,
-		}
-
-		classes = append(classes, class)
-	}
-
 	ctx := c.Request.Context()
 
-	createdClasses, err := h.classesService.CreateClasses(ctx, classes)
+	classes, err := h.classesService.GetClasses(
+		ctx,
+		dtoGetClasses.OnlyUpcomingClasses,
+		dtoGetClasses.ClassesLimit,
+	)
 	if err != nil {
 		h.apiErrorHandler.Handle(c, err)
 
 		return
 	}
 
-	classesResp, err := sharedDTO.ToClassesListDTO(createdClasses)
+	classesResp, err := sharedDTO.ToClassesListDTO(classes)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "DTOResponse: " + err.Error()})
 
 		return
 	}
 
-	c.JSON(http.StatusCreated, classesResp)
+	c.JSON(http.StatusOK, classesResp)
 }
