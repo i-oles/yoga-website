@@ -32,13 +32,20 @@ body::before {
     opacity: 1;
 }
 
+/* Dodatkowe zabezpieczenia dla iOS Safari */
+@supports (-webkit-touch-callout: none) {
+    body {
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
 /* Responsive background images */
 @media (max-width: 768px) {
     body::before {
         background-image: url('/web/static/images/mobile/yoga-bg.jpeg');
         opacity: 1; /* Zwiększamy przezroczystość na mobile */
-        position: fixed;
-        background-attachment: scroll;
+        touch-action: pan-y;
+        overscroll-behavior-y: none;
     }
 }
 
@@ -46,8 +53,8 @@ body::before {
     body::before {
         background-image: url('/web/static/images/tablet/yoga-bg.jpeg');
         opacity: 1;
-        position: fixed;
-        background-attachment: scroll;
+        touch-action: pan-y;
+        overscroll-behavior-y: none;
     }
 }
 
