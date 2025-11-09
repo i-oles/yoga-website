@@ -67,7 +67,7 @@ div#main-container {
     div#main-container {
         grid-template-columns: repeat(2, 1fr); /* Dokładnie 2 kolumny */
         max-width: 500px; /* Ograniczamy szerokość żeby karty nie były za szerokie */
-        margin-left: -100px; /* Przesuwamy jeszcze bardziej w lewo */
+        margin: left; /* Przesuwamy jeszcze bardziej w lewo */
     }
 
     .class-container {
@@ -328,7 +328,7 @@ button:disabled {
     margin-bottom: 40px;
 }
 
-/* Dodatkowe style dla responsywności */
+/* mobile responsive */
 @media (max-width: 480px) {
     .cancel-booking-card,
     .confirmation-card, .error-card {
