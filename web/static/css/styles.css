@@ -37,6 +37,8 @@ body::before {
     body::before {
         background-image: url('/web/static/images/mobile/yoga-bg.jpeg');
         opacity: 1; /* Zwiększamy przezroczystość na mobile */
+        position: fixed;
+        background-attachment: scroll;
     }
 }
 
@@ -44,6 +46,8 @@ body::before {
     body::before {
         background-image: url('/web/static/images/tablet/yoga-bg.jpeg');
         opacity: 1;
+        position: fixed;
+        background-attachment: scroll;
     }
 }
 
