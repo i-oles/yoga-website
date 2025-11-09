@@ -4,7 +4,7 @@
 }
 
 /* Reset i podstawowe style */
-body {
+html, body {
     font-family: 'Inter', 'Helvetica Neue', sans-serif;
     line-height: 1.5;
     color: #000;
@@ -14,6 +14,10 @@ body {
     background-color: #fff;
     position: relative;
     min-height: 100vh;
+    touch-action: pan-y;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    overflow-x: hidden;
 }
 
 /* Fullscreen background image */
