@@ -19,6 +19,7 @@ type Sender struct {
 	SenderEmail                    string
 	ConfirmationRequestTmplPath    string
 	ConfirmationFinalEmailTmplPath string
+	ClassCancellationTmplPath      string
 	Dialer                         *gomail.Dialer
 }
 
@@ -28,8 +29,7 @@ func NewSender(
 	senderEmail string,
 	password string,
 	senderName string,
-	confirmationRequestEmailTmplPath string,
-	confirmationEmailTmplPath string,
+	baseSenderTmplPath string,
 ) *Sender {
 	d := gomail.NewDialer(host, port, senderEmail, password)
 	d.TLSConfig = &tls.Config{InsecureSkipVerify: true} // TODO: change to false in production
@@ -37,8 +37,9 @@ func NewSender(
 	return &Sender{
 		SenderName:                     senderName,
 		SenderEmail:                    senderEmail,
-		ConfirmationRequestTmplPath:    confirmationRequestEmailTmplPath,
-		ConfirmationFinalEmailTmplPath: confirmationEmailTmplPath,
+		ConfirmationRequestTmplPath:    baseSenderTmplPath + "confirmation_request_email.tmpl",
+		ConfirmationFinalEmailTmplPath: baseSenderTmplPath + "confirmation_email.tmpl",
+		ClassCancellationTmplPath:      baseSenderTmplPath + "class_cancellation.tmpl",
 		Dialer:                         d,
 	}
 }
@@ -186,4 +187,46 @@ func getTimeDetails(t time.Time) (timeDetails, error) {
 		startDate:       startDate,
 		weekDayInPolish: weekDayInPolish,
 	}, nil
+}
+
+func (s Sender) SendInfoAboutClassCancellation(
+	recipientEmail, recipientFirstName string, class models.Class,
+) error {
+	classTimeDetails, err := getTimeDetails(class.StartTime)
+	if err != nil {
+		return fmt.Errorf("could not get date details: %w", err)
+	}
+
+	tmplData := infrastructureModels.ClassCancellationTmplData{
+		SenderName:         s.SenderName,
+		RecipientFirstName: recipientFirstName,
+		ClassName:          class.ClassName,
+		Hour:               classTimeDetails.startHour,
+		WeekDay:            classTimeDetails.weekDayInPolish,
+		Date:               classTimeDetails.startDate,
+		Location:           class.Location,
+	}
+
+	tmpl, err := template.ParseFiles(s.ClassCancellationTmplPath)
+	if err != nil {
+		return fmt.Errorf("could not parse template: %w", err)
+	}
+
+	var msgContent strings.Builder
+	err = tmpl.Execute(&msgContent, tmplData)
+	if err != nil {
+		return fmt.Errorf("could not execute template: %w", err)
+	}
+
+	m := gomail.NewMessage()
+	m.SetHeader("From", s.SenderEmail)
+	m.SetHeader("To", recipientEmail)
+	m.SetHeader("Subject", "Yoga - Zajęcia Odwołane!")
+	m.SetBody("text/html", msgContent.String())
+
+	if err = s.Dialer.DialAndSend(m); err != nil {
+		return fmt.Errorf("failed to send email: %w", err)
+	}
+
+	return nil
 }

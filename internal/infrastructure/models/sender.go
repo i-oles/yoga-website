@@ -26,3 +26,13 @@ type ConfirmationToOwnerTmplData struct {
 	Hour               string
 	Date               string
 }
+
+type ClassCancellationTmplData struct {
+	SenderName         string
+	RecipientFirstName string
+	ClassName          string
+	WeekDay            string
+	Hour               string
+	Date               string
+	Location           string
+}

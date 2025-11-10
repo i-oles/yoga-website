@@ -21,6 +21,5 @@
   },
   "isVacation": false,
   "domainAddr": "https://otojoga.art",
-  "confirmationRequestEmailTmplPath": "internal/infrastructure/sender/templates/confirmation_request_email.tmpl",
-  "confirmationEmailTmplPath" : "internal/infrastructure/sender/templates/confirmation_email.tmpl"
+  "baseSenderTmplPath" : "internal/infrastructure/sender/templates/"
 }

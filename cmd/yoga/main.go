@@ -117,11 +117,10 @@ func setupRouter(db *gorm.DB, cfg *configuration.Configuration) *gin.Engine {
 		cfg.EmailSender.User,
 		cfg.EmailSender.Password,
 		cfg.EmailSender.FromName,
-		cfg.ConfirmationRequestEmailTmplPath,
-		cfg.ConfirmationEmailTmplPath,
+		cfg.BaseSenderTmplPath,
 	)
 
-	classesService := classes.NewService(classesRepo, bookingsRepo)
+	classesService := classes.NewService(classesRepo, bookingsRepo, emailSender)
 	bookingsService := bookings.NewService(classesRepo, bookingsRepo, pendingBookingsRepo, emailSender, cfg.DomainAddr)
 	pendingBookingsService := pendingbookings.NewService(
 		classesRepo,

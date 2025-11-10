@@ -81,9 +81,12 @@ func (r BookingsRepo) GetAll(ctx context.Context) ([]models.Booking, error) {
 func (r BookingsRepo) GetAllByClassID(ctx context.Context, classID uuid.UUID) ([]models.Booking, error) {
 	var SQLBookings []db.SQLBooking
 
-	if err := r.db.WithContext(ctx).Where("class_id = ?", classID).Find(&SQLBookings).Error; err != nil {
-		return nil, fmt.Errorf("could not get bookings for classID %s: %w", classID, err)
-	}
+    if err := r.db.WithContext(ctx).
+        Preload("Class").
+        Where("class_id = ?", classID).
+        Find(&SQLBookings).Error; err != nil {
+        return nil, fmt.Errorf("could not get bookings for classID %s: %w", classID, err)
+    }
 
 	result := make([]models.Booking, len(SQLBookings))
 

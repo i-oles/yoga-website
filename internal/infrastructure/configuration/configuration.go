@@ -34,6 +34,7 @@ type Configuration struct {
 	DomainAddr                       string
 	ConfirmationRequestEmailTmplPath string
 	ConfirmationEmailTmplPath        string
+	BaseSenderTmplPath               string
 	IsVacation                       bool
 }
 

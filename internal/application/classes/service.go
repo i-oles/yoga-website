@@ -6,23 +6,27 @@ import (
 	"main/internal/domain/errs"
 	"main/internal/domain/models"
 	"main/internal/domain/repositories"
+	"main/internal/domain/services"
 	"time"
 
 	"github.com/google/uuid"
 )
 
 type Service struct {
-	classesRepo  repositories.IClasses
-	bookingsRepo repositories.IBookings
+	classesRepo   repositories.IClasses
+	bookingsRepo  repositories.IBookings
+	MessageSender services.ISender
 }
 
 func NewService(
 	classesRepo repositories.IClasses,
 	bookingsRepo repositories.IBookings,
+	messageSender services.ISender,
 ) *Service {
 	return &Service{
 		classesRepo:  classesRepo,
 		bookingsRepo: bookingsRepo,
+		MessageSender: messageSender,
 	}
 }
 
@@ -90,13 +94,24 @@ func (s *Service) CreateClasses(ctx context.Context, classes []models.Class) ([]
 func (s *Service) DeleteClass(ctx context.Context, id uuid.UUID) error {
 	bookings, err := s.bookingsRepo.GetAllByClassID(ctx, id)
 	if err != nil {
-		return fmt.Errorf("could get classes for classID %v: %w", id, err)
+		return fmt.Errorf("could not get classes for classID %v: %w", id, err)
 	}
 
-	if len(bookings) != 0 {
-		return errs.ErrClassNotEmpty(
-			fmt.Errorf("could not delete class: %v - class not empty", id),
+	for _, booking := range bookings {
+		fmt.Printf("class info: %v", booking.Class)
+		err := s.MessageSender.SendInfoAboutClassCancellation(
+			booking.Email,
+			booking.FirstName,
+			booking.Class,
 		)
+		if err != nil {
+			return fmt.Errorf("could not send info about class cancellation: %w", err)
+		}
+
+		err = s.bookingsRepo.Delete(ctx, booking.ID)
+		if err != nil {
+			return fmt.Errorf("could not delete booking for id %v: %w", booking.ID, err)
+		}
 	}
 
 	err = s.classesRepo.Delete(ctx, id)

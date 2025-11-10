@@ -15,7 +15,7 @@ type SQLBooking struct {
 	LastName          string    `gorm:"not null"`
 	ConfirmationToken string    `gorm:"unique;not null"`
 	CreatedAt         time.Time `gorm:"autoCreateTime"`
-	Class             SQLClass  `gorm:"foreignKey:ClassID"`
+	Class             SQLClass  `gorm:"foreignKey:class_id"`
 }
 
 func (SQLBooking) TableName() string {
