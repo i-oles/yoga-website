@@ -23,6 +23,7 @@ import (
 	"main/internal/interfaces/http/api/handlers/deletebooking"
 	"main/internal/interfaces/http/api/handlers/deleteclass"
 	"main/internal/interfaces/http/api/handlers/getclasses"
+	"main/internal/interfaces/http/api/handlers/updateclass"
 	viewErrs "main/internal/interfaces/http/html/errs"
 	viewErrHandler "main/internal/interfaces/http/html/errs/handler"
 	logWrapper "main/internal/interfaces/http/html/errs/wrapper"
@@ -166,7 +167,7 @@ func setupRouter(db *gorm.DB, cfg *configuration.Configuration) *gin.Engine {
 	authMiddleware := middleware.Auth(cfg.AuthSecret)
 	createClassHandler := createclasses.NewHandler(classesService, apiErrorHandler)
 	getClassesHandler := getclasses.NewHandler(classesService, apiErrorHandler)
-	//updateClassHandler := updateclass.NewHandler(classesService, apiErrorHandler)
+	updateClassHandler := updateclass.NewHandler(classesService, apiErrorHandler)
 	deleteClassHandler := deleteclass.NewHandler(classesService, apiErrorHandler)
 	getAllBookingsHandler := allbookings.NewHandler(bookingsRepo, apiErrorHandler)
 	getAllBookingsForClassHandler := allbookingsforclass.NewHandler(bookingsRepo, apiErrorHandler)
@@ -179,7 +180,7 @@ func setupRouter(db *gorm.DB, cfg *configuration.Configuration) *gin.Engine {
 		//api.GET("api/v1/bookings/pending", authMiddleware, getAllPendingBookingsHandler.Handle) //gets all
 		api.POST("/api/v1/classes", authMiddleware, createClassHandler.Handle) // creates classes
 		api.GET("/api/v1/classes", authMiddleware, getClassesHandler.Handle) // get classes
-		//api.PATCH("/api/v1/classes/:id"), authMiddleware, updateClassHandler.Handle)            // updates class
+		api.PATCH("/api/v1/classes/:class_id", authMiddleware, updateClassHandler.Handle)            // updates class
 		api.DELETE("/api/v1/classes/:class_id", authMiddleware, deleteClassHandler.Handle) // deletes class
 		api.GET("/api/v1/classes/:class_id/bookings", authMiddleware, getAllBookingsForClassHandler.Handle)
 	}

@@ -17,3 +17,16 @@ type GetClassesRequest struct {
 	OnlyUpcomingClasses bool `json:"only_upcoming_classes"`
 	ClassesLimit        *int `json:"classes_limit"`
 }
+
+type UpdateClassRequest struct {
+	StartTime       *time.Time `json:"start_time"`
+	ClassLevel      *string    `json:"class_level"`
+	ClassName       *string    `json:"class_name"`
+	CurrentCapacity *int       `json:"current_capacity"`
+	MaxCapacity     *int       `json:"max_capacity"`
+	Location        *string    `json:"location"`
+}
+
+type UpdateClassURI struct {
+	ClassID         string     `uri:"class_id" binding:"required"`
+}
