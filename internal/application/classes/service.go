@@ -129,9 +129,49 @@ func (s *Service) UpdateClass(ctx context.Context, id uuid.UUID, update models.U
 		return models.Class{}, errs.ErrClassValidation(err)
 	}
 
-	//TODO: implement me
+	_, err = s.classesRepo.Get(ctx, id)
+	if err != nil {
+		//TODO: to ma byc inaczej teraz na slepo zakladasz ze kazdy error to not found, sprawdz gorm error
+		return models.Class{}, errs.ErrClassNotFound(err)
+	}
 
-	return models.Class{}, nil
+	updateData := map[string]interface{}{}
+	if update.StartTime != nil {
+		updateData["start_time"] = *update.StartTime
+	}
+	if update.ClassLevel != nil {
+		updateData["class_level"] = *update.ClassLevel
+	}
+	if update.ClassName != nil {
+		updateData["class_name"] = *update.ClassName
+	}
+	if update.CurrentCapacity != nil {
+		updateData["current_capacity"] = *update.CurrentCapacity
+	}
+	if update.MaxCapacity != nil {
+		updateData["max_capacity"] = *update.MaxCapacity
+	}
+	if update.Location != nil {
+		updateData["location"] = *update.Location
+	}
+
+	if len(updateData) == 0 {
+		return models.Class{}, fmt.Errorf("no fields to update class")
+	}
+
+	err = s.classesRepo.Update(ctx, id, updateData)
+	if err != nil {
+		return models.Class{}, fmt.Errorf("could not update class: %w", err)
+	}
+
+	updatedClass, err := s.classesRepo.Get(ctx, id)
+	if err != nil {
+		return models.Class{}, fmt.Errorf("could not get class after update: %w", err) 
+	}
+
+	// err = s.MessageSender.SendInfoAboutClassUpdate()
+
+	return updatedClass, nil
 }
 
 func (s *Service) validateClassUpdate(

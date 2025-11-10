@@ -22,6 +22,8 @@ func (e ErrorHandler) Handle(c *gin.Context, err error) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		case domainErrs.ConflictCode:
 			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+		case domainErrs.NotFoundCode:
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		default:
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		}

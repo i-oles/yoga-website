@@ -15,8 +15,6 @@ type SQLClass struct {
 	CurrentCapacity int       `gorm:"not null"`
 	MaxCapacity     int       `gorm:"not null"`
 	Location        string    `gorm:"not null"`
-	//TODO: consider this?
-	//Bookings        []SQLBooking `gorm:"foreignKey:ClassID"`
 }
 
 func (SQLClass) TableName() string {

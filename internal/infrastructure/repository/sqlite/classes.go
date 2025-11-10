@@ -7,7 +7,6 @@ import (
 	"main/internal/domain/models"
 	"main/internal/infrastructure/errs"
 	"main/internal/infrastructure/models/db"
-	dbModels "main/internal/infrastructure/models/db"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -24,7 +23,7 @@ func NewClassesRepo(db *gorm.DB) *ClassesRepo {
 }
 
 func (c ClassesRepo) GetAll(ctx context.Context) ([]models.Class, error) {
-	var sqlClasses []dbModels.SQLClass
+	var sqlClasses []db.SQLClass
 
 	if err := c.db.WithContext(ctx).Order("start_time ASC").Find(&sqlClasses).Error; err != nil {
 		return nil, fmt.Errorf("could not get all classes: %w", err)
@@ -40,7 +39,7 @@ func (c ClassesRepo) GetAll(ctx context.Context) ([]models.Class, error) {
 }
 
 func (c ClassesRepo) Get(ctx context.Context, id uuid.UUID) (models.Class, error) {
-	var sqlClass dbModels.SQLClass
+	var sqlClass db.SQLClass
 
 	if err := c.db.WithContext(ctx).First(&sqlClass, "id = ?", id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -54,7 +53,7 @@ func (c ClassesRepo) Get(ctx context.Context, id uuid.UUID) (models.Class, error
 
 func (c ClassesRepo) DecrementCurrentCapacity(ctx context.Context, id uuid.UUID) error {
 	result := c.db.WithContext(ctx).
-		Model(&dbModels.SQLClass{}).
+		Model(&db.SQLClass{}).
 		Where("id = ? AND current_capacity > 0", id).
 		Update("current_capacity", gorm.Expr("current_capacity - ?", 1))
 
@@ -71,7 +70,7 @@ func (c ClassesRepo) DecrementCurrentCapacity(ctx context.Context, id uuid.UUID)
 
 func (c ClassesRepo) IncrementCurrentCapacity(ctx context.Context, id uuid.UUID) error {
 	result := c.db.WithContext(ctx).
-		Model(&dbModels.SQLClass{}).
+		Model(&db.SQLClass{}).
 		Where("id = ? AND current_capacity < max_capacity", id).
 		Update("current_capacity", gorm.Expr("current_capacity + ?", 1))
 
@@ -87,9 +86,9 @@ func (c ClassesRepo) IncrementCurrentCapacity(ctx context.Context, id uuid.UUID)
 }
 
 func (c ClassesRepo) Insert(ctx context.Context, classes []models.Class) ([]models.Class, error) {
-	sqlClass := make([]dbModels.SQLClass, len(classes))
+	sqlClass := make([]db.SQLClass, len(classes))
 	for i, class := range classes {
-		sqlClass[i] = dbModels.SQLClassFromDomain(class)
+		sqlClass[i] = db.SQLClassFromDomain(class)
 	}
 
 	err := c.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
@@ -122,6 +121,14 @@ func (c ClassesRepo) Delete(ctx context.Context, id uuid.UUID) error {
 
 	if tx.RowsAffected == 0 {
 		return errs.ErrNoRowsAffected
+	}
+
+	return nil
+}
+
+func (c ClassesRepo) Update(ctx context.Context, id uuid.UUID, update map[string]any) error {
+	if err := c.db.WithContext(ctx).Model(&db.SQLClass{}).Where("id = ?", id).Updates(update).Error; err != nil {
+		return fmt.Errorf("could not update class: %v with data: %v, %w", id, update, err)
 	}
 
 	return nil

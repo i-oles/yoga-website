@@ -12,6 +12,7 @@ type IClasses interface {
 	GetAll(ctx context.Context) ([]models.Class, error)
 	Insert(ctx context.Context, classes []models.Class) ([]models.Class, error)
 	Delete(ctx context.Context, id uuid.UUID) error
+	Update(ctx context.Context, id uuid.UUID, update map[string]interface{}) error
 	DecrementCurrentCapacity(ctx context.Context, id uuid.UUID) error
 	IncrementCurrentCapacity(ctx context.Context, id uuid.UUID) error
 }
