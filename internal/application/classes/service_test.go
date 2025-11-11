@@ -48,6 +48,28 @@ func (m *mockClassesRepo) IncrementCurrentCapacity(ctx context.Context, id uuid.
 	return nil
 }
 
+func (m *mockClassesRepo) Update(ctx context.Context, id uuid.UUID, update map[string]any) error {
+	return nil
+}
+
+type mockSender struct{}
+
+func (m *mockSender) SendLinkToConfirmation(recipientEmail, recipientFirstName, linkToConfirmation string) error {
+	return nil
+}
+
+func (m *mockSender) SendConfirmations(msg models.ConfirmationMsg) error {
+	return nil
+}
+
+func (m *mockSender) SendInfoAboutCancellationToOwner(recipientFirstName, recipientLastName string, startTime time.Time) error {
+	return nil
+}
+
+func (m *mockSender) SendInfoAboutClassCancellation(recipientEmail, recipientFirstName string, class models.Class) error {
+	return nil
+}
+
 type mockBookingsRepo struct{}
 
 func (m *mockBookingsRepo) GetByEmailAndClassID(ctx context.Context, classID uuid.UUID, email string) (models.Booking, error) {
@@ -382,7 +404,9 @@ func TestService_GetClasses(t *testing.T) {
 			}
 			bookingsRepo := &mockBookingsRepo{}
 
-			service := NewService(classesRepo, bookingsRepo)
+			sender := &mockSender{}
+
+			service := NewService(classesRepo, bookingsRepo, sender)
 			ctx := context.Background()
 
 			classes, err := service.GetClasses(ctx, tt.onlyUpcomingClasses, tt.classesLimit)
