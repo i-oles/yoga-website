@@ -22,7 +22,7 @@ type IClassesService interface {
 type IBookingsService interface {
 	CreateBooking(ctx context.Context, token string) (models.Class, error)
 	CancelBooking(ctx context.Context, id uuid.UUID, token string) error
-	CancelBookingForm(ctx context.Context, id uuid.UUID, token string) (models.Booking, error)
+	GetBookingForCancellation(ctx context.Context, id uuid.UUID, token string) (models.Booking, error)
 	DeleteBooking(ctx context.Context, id uuid.UUID) error
 }
 

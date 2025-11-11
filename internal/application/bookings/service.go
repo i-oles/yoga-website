@@ -179,7 +179,7 @@ func (s *Service) CancelBooking(ctx context.Context, bookingID uuid.UUID, token 
 	return nil
 }
 
-func (s *Service) CancelBookingForm(ctx context.Context, bookingID uuid.UUID, token string) (models.Booking, error) {
+func (s *Service) GetBookingForCancellation(ctx context.Context, bookingID uuid.UUID, token string) (models.Booking, error) {
 	booking, err := s.BookingsRepo.Get(ctx, bookingID)
 	if err != nil {
 		return models.Booking{}, fmt.Errorf("could not get booking for id %s: %w", bookingID, err)
@@ -193,7 +193,6 @@ func (s *Service) CancelBookingForm(ctx context.Context, bookingID uuid.UUID, to
 	return booking, nil
 }
 
-//TODO: should this be in separate module with services only for api
 func (s *Service) DeleteBooking(ctx context.Context, bookingID uuid.UUID) error {
 	booking, err := s.BookingsRepo.Get(ctx, bookingID)
 	if err != nil {
@@ -205,9 +204,13 @@ func (s *Service) DeleteBooking(ctx context.Context, bookingID uuid.UUID) error 
 		return fmt.Errorf("could not delete booking for id %s: %w", bookingID, err)
 	}
 
-	err = s.ClassesRepo.IncrementCurrentCapacity(ctx, booking.ClassID)
-	if err != nil {
-		return fmt.Errorf("could not increment currentCapacity for class %s: %w", booking.ClassID, err)
+	if booking.Class.StartTime.After(time.Now()) {
+		err = s.ClassesRepo.IncrementCurrentCapacity(ctx, booking.ClassID)
+		if err != nil {
+			return fmt.Errorf("could not increment currentCapacity for class %s: %w", booking.ClassID, err)
+		}
+
+		// TODO: send here notification to user about cancel by owner	
 	}
 
 	return nil

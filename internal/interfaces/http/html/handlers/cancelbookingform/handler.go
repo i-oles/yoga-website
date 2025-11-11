@@ -50,13 +50,13 @@ func (h *Handler) Handle(c *gin.Context) {
 
 	ctx := c.Request.Context()
 
-	cancelledBooking, err := h.bookingService.CancelBookingForm(ctx, bookingID, form.Token)
+	bookingForCancellation, err := h.bookingService.GetBookingForCancellation(ctx, bookingID, form.Token)
 	if err != nil {
 		h.viewErrorHandler.Handle(c, "err.tmpl", err)
 		return
 	}
 
-	view, err := dto.ToBookingCancelView(cancelledBooking)
+	view, err := dto.ToBookingCancelView(bookingForCancellation)
 	if err != nil {
 		viewErrs.ErrDTOConversion(c, "cancel_booking_form.tmpl", err)
 		return

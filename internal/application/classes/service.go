@@ -92,14 +92,13 @@ func (s *Service) CreateClasses(ctx context.Context, classes []models.Class) ([]
 	return insertedClasses, nil
 }
 
-func (s *Service) DeleteClass(ctx context.Context, id uuid.UUID) error {
-	bookings, err := s.bookingsRepo.GetAllByClassID(ctx, id)
+func (s *Service) DeleteClass(ctx context.Context, class_id uuid.UUID) error {
+	bookings, err := s.bookingsRepo.GetAllByClassID(ctx, class_id)
 	if err != nil {
-		return fmt.Errorf("could not get classes for classID %v: %w", id, err)
+		return fmt.Errorf("could not get classes for classID %v: %w", class_id, err)
 	}
 
 	for _, booking := range bookings {
-		fmt.Printf("class info: %v", booking.Class)
 		err := s.MessageSender.SendInfoAboutClassCancellation(
 			booking.Email,
 			booking.FirstName,
@@ -115,7 +114,7 @@ func (s *Service) DeleteClass(ctx context.Context, id uuid.UUID) error {
 		}
 	}
 
-	err = s.classesRepo.Delete(ctx, id)
+	err = s.classesRepo.Delete(ctx, class_id)
 	if err != nil {
 		return fmt.Errorf("could not delete class: %w", err)
 	}
