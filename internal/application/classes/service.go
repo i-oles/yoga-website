@@ -99,10 +99,14 @@ func (s *Service) DeleteClass(ctx context.Context, class_id uuid.UUID) error {
 	}
 
 	for _, booking := range bookings {
+		if booking.Class == nil {
+			return fmt.Errorf("class field should not be empty")
+		}
+
 		err := s.MessageSender.SendInfoAboutClassCancellation(
 			booking.Email,
 			booking.FirstName,
-			booking.Class,
+			*booking.Class,
 		)
 		if err != nil {
 			return fmt.Errorf("could not send info about class cancellation: %w", err)

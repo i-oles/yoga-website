@@ -132,15 +132,14 @@ func (s *Service) CancelBooking(ctx context.Context, bookingID uuid.UUID, token 
 		//TODO: handle error
 	}
 
-	class, err := s.ClassesRepo.Get(ctx, booking.ClassID)
-	if err != nil {
-		return fmt.Errorf("could not get class with id: %s, %w", booking.ClassID, err)
+	if booking.Class == nil {
+		return fmt.Errorf("booking.Class field should not be empty")
 	}
 
-	if class.StartTime.Before(time.Now()) {
+	if booking.Class.StartTime.Before(time.Now()) {
 		return domainErrors.ErrClassExpired(
-			class.ID,
-			fmt.Errorf("class %s has expired at %v", booking.ClassID, class.StartTime),
+			booking.Class.ID,
+			fmt.Errorf("class %s has expired at %v", booking.ClassID, booking.Class.StartTime),
 		)
 	}
 
@@ -165,7 +164,7 @@ func (s *Service) CancelBooking(ctx context.Context, bookingID uuid.UUID, token 
 		return fmt.Errorf("could not increment class current capacity: %w", err)
 	}
 
-	class, err = s.ClassesRepo.Get(ctx, booking.ClassID)
+	class, err := s.ClassesRepo.Get(ctx, booking.ClassID)
 	if err != nil {
 		return fmt.Errorf("could not get class: %w", err)
 	}

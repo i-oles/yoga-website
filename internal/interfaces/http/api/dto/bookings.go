@@ -3,23 +3,21 @@ package dto
 import (
 	"fmt"
 	domainModels "main/internal/domain/models"
+	"main/internal/interfaces/http/shared/dto"
 	"main/pkg/converter"
 	"time"
 
 	"github.com/google/uuid"
 )
 
-//type GetAllBookingsForClassRequest struct {
-//	BookingID string `uri:"class_id" binding:"required"`
-//}
-
 type BookingResponse struct {
-	ID        uuid.UUID `json:"id"`
-	ClassID   uuid.UUID `json:"class_id"`
-	FirstName string    `json:"first_name"`
-	LastName  string    `json:"last_name"`
-	Email     string    `json:"email"`
-	CreatedAt time.Time `json:"created_at"`
+	ID        uuid.UUID     `json:"id"`
+	ClassID   uuid.UUID     `json:"class_id"`
+	FirstName string        `json:"first_name"`
+	LastName  string        `json:"last_name"`
+	Email     string        `json:"email"`
+	CreatedAt time.Time     `json:"created_at"`
+	Class     *dto.ClassDTO `json:"class,omitempty"`
 }
 
 func ToBookingResponse(booking domainModels.Booking) (BookingResponse, error) {
@@ -28,14 +26,25 @@ func ToBookingResponse(booking domainModels.Booking) (BookingResponse, error) {
 		return BookingResponse{}, fmt.Errorf("could not convert createdAt to warsaw time: %w", err)
 	}
 
-	return BookingResponse{
+	resp := BookingResponse{
 		ID:        booking.ID,
 		ClassID:   booking.ClassID,
 		FirstName: booking.FirstName,
 		LastName:  booking.LastName,
 		Email:     booking.Email,
 		CreatedAt: createdAtWarsawTime,
-	}, nil
+	}
+
+	if booking.Class != nil {
+		class, err := dto.ToClassDTO(*booking.Class)
+		if err != nil {
+			return BookingResponse{}, fmt.Errorf("could not cast class to dto class: %w", err)
+		}
+
+		resp.Class = &class
+	}
+
+	return resp, nil
 }
 
 func ToBookingsListResponse(bookings []domainModels.Booking) ([]BookingResponse, error) {

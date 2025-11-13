@@ -65,7 +65,7 @@ func (r BookingsRepo) GetByEmailAndClassID(
 func (r BookingsRepo) GetAll(ctx context.Context) ([]models.Booking, error) {
 	var SQLBookings []db.SQLBooking
 
-	if err := r.db.WithContext(ctx).Find(&SQLBookings).Error; err != nil {
+	if err := r.db.WithContext(ctx).Preload("Class").Find(&SQLBookings).Error; err != nil {
 		return nil, fmt.Errorf("could not get all bookings: %w", err)
 	}
 
