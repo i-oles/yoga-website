@@ -198,6 +198,10 @@ func (s *Service) DeleteBooking(ctx context.Context, bookingID uuid.UUID) error 
 		return fmt.Errorf("could get booking for id %s: %w", bookingID, err)
 	}
 
+	if booking.Class == nil {
+		return errors.New("booking.Class field should not be empty")
+	}
+
 	err = s.BookingsRepo.Delete(ctx, bookingID)
 	if err != nil {
 		return fmt.Errorf("could not delete booking for id %s: %w", bookingID, err)
@@ -208,8 +212,11 @@ func (s *Service) DeleteBooking(ctx context.Context, bookingID uuid.UUID) error 
 		if err != nil {
 			return fmt.Errorf("could not increment currentCapacity for class %s: %w", booking.ClassID, err)
 		}
-
-		// TODO: send here notification to user about cancel by owner	
+		
+		err = s.MessageSender.SendInfoAboutBookingCancellation(booking.Email, booking.FirstName, *booking.Class)
+		if err != nil {
+			return fmt.Errorf("could not send info about booking cancellation to %s: %w", booking.Email, err)
+		}	
 	}
 
 	return nil
