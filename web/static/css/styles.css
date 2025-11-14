@@ -363,3 +363,35 @@ button:disabled {
         font-size: 1.5rem;
     }
 }
+
+@keyframes spin {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+.btn-content {
+    position: relative;
+    width: 100%;
+}
+
+.spinner {
+    display: none;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(0,0,0,0.2);
+    border-top-color: rgba(0,0,0,0.7);
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+form.htmx-request .btn-book .spinner {
+    display: inline-block;
+}
+
+form.htmx-request .btn-book .submit-text {
+    visibility: hidden;
+}
