@@ -20,6 +20,7 @@ type Sender struct {
 	ConfirmationRequestTmplPath    string
 	ConfirmationFinalEmailTmplPath string
 	ClassCancellationTmplPath      string
+	ClassUpdateTmplPath            string
 	Dialer                         *gomail.Dialer
 }
 
@@ -40,6 +41,7 @@ func NewSender(
 		ConfirmationRequestTmplPath:    baseSenderTmplPath + "confirmation_request_email.tmpl",
 		ConfirmationFinalEmailTmplPath: baseSenderTmplPath + "confirmation_email.tmpl",
 		ClassCancellationTmplPath:      baseSenderTmplPath + "class_cancellation.tmpl",
+		ClassUpdateTmplPath:            baseSenderTmplPath + "class_update.tmpl",
 		Dialer:                         d,
 	}
 }
@@ -222,6 +224,50 @@ func (s Sender) SendInfoAboutClassCancellation(
 	m.SetHeader("From", s.SenderEmail)
 	m.SetHeader("To", recipientEmail)
 	m.SetHeader("Subject", "Yoga - Zajęcia Odwołane!")
+	m.SetBody("text/html", msgContent.String())
+
+	if err = s.Dialer.DialAndSend(m); err != nil {
+		return fmt.Errorf("failed to send email: %w", err)
+	}
+
+	return nil
+}
+
+func (s Sender) SendInfoAboutUpdate(
+	recipientEmail, recipientFirstName, message string, class models.Class,
+) error {
+	classTimeDetails, err := getTimeDetails(class.StartTime)
+	if err != nil {
+		return fmt.Errorf("could not get date details: %w", err)
+	}
+
+	tmplData := infrastructureModels.ClassUpdateTmplData{
+		SenderName:         s.SenderName,
+		RecipientFirstName: recipientFirstName,
+		ClassName:          class.ClassName,
+		ClassLevel:         class.ClassLevel,
+		Hour:               classTimeDetails.startHour,
+		WeekDay:            classTimeDetails.weekDayInPolish,
+		Date:               classTimeDetails.startDate,
+		Location:           class.Location,
+		Message:            message,
+	}
+
+	tmpl, err := template.ParseFiles(s.ClassUpdateTmplPath)
+	if err != nil {
+		return fmt.Errorf("could not parse template: %w", err)
+	}
+
+	var msgContent strings.Builder
+	err = tmpl.Execute(&msgContent, tmplData)
+	if err != nil {
+		return fmt.Errorf("could not execute template: %w", err)
+	}
+
+	m := gomail.NewMessage()
+	m.SetHeader("From", s.SenderEmail)
+	m.SetHeader("To", recipientEmail)
+	m.SetHeader("Subject", "Yoga - Musiałem wprowadzić zmiany w zajęciach, na które się wybierasz!")
 	m.SetBody("text/html", msgContent.String())
 
 	if err = s.Dialer.DialAndSend(m); err != nil {

@@ -12,7 +12,7 @@ type IClassesService interface {
 	GetClasses(
 		ctx context.Context,
 		onlyUpcomingClasses bool,
-		classesLimit *int, 
+		classesLimit *int,
 	) ([]models.Class, error)
 	CreateClasses(ctx context.Context, classes []models.Class) ([]models.Class, error)
 	UpdateClass(ctx context.Context, id uuid.UUID, update models.UpdateClass) (models.Class, error)
@@ -39,4 +39,5 @@ type ISender interface {
 	SendConfirmations(msg models.ConfirmationMsg) error
 	SendInfoAboutCancellationToOwner(recipientFirstName, recipientLastName string, startTime time.Time) error
 	SendInfoAboutClassCancellation(recipientEmail, recipientFirstName string, class models.Class) error
+	SendInfoAboutUpdate(recipientEmail, recipientFirstName, message string, class models.Class) error
 }

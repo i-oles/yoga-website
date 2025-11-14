@@ -36,3 +36,15 @@ type ClassCancellationTmplData struct {
 	Date               string
 	Location           string
 }
+
+type ClassUpdateTmplData struct {
+	SenderName         string
+	RecipientFirstName string
+	ClassName          string
+	ClassLevel         string
+	WeekDay            string
+	Hour               string
+	Date               string
+	Location           string
+	Message            string
+}

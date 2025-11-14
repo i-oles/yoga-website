@@ -9,6 +9,7 @@ import (
 	"main/internal/domain/repositories"
 	"main/internal/domain/services"
 	"time"
+	repositoryError "main/internal/infrastructure/errs"
 
 	"github.com/google/uuid"
 )
@@ -134,10 +135,58 @@ func (s *Service) UpdateClass(ctx context.Context, id uuid.UUID, update models.U
 
 	_, err = s.classesRepo.Get(ctx, id)
 	if err != nil {
-		//TODO: to ma byc inaczej teraz na slepo zakladasz ze kazdy error to not found, sprawdz gorm error
-		return models.Class{}, errs.ErrClassNotFound(err)
+		if errors.Is(err, repositoryError.ErrNotFound) {
+			return models.Class{}, errs.ErrClassNotFound(err) 
+		}
+
+		return models.Class{}, fmt.Errorf("could not get class for class_id %v: %w", id, err) 
 	}
 
+	updateData, err := getDataForClassUpdate(update)
+	if err != nil {
+		return models.Class{}, fmt.Errorf("could not get data for class update: %w", err)
+	}
+
+	err = s.classesRepo.Update(ctx, id, updateData)
+	if err != nil {
+		return models.Class{}, fmt.Errorf("could not update class: %w", err)
+	}
+
+	updatedClass, err := s.classesRepo.Get(ctx, id)
+	if err != nil {
+		return models.Class{}, fmt.Errorf("could not get class after update: %w", err)
+	}
+
+	if update.Location == nil && update.StartTime == nil {
+		return updatedClass, nil
+	}
+
+	bookings, err := s.bookingsRepo.GetAllByClassID(ctx, updatedClass.ID)
+	if err != nil {
+		return models.Class{}, fmt.Errorf("could not get bookings for class %v: %w", updatedClass.ID, err)
+	}
+
+	msg, err := setMessageForNotification(update.StartTime, update.Location)
+	if err != nil {
+		return models.Class{}, fmt.Errorf("could not set msg for notification: %w", err)
+	}
+
+	for _, booking := range bookings {
+		err = s.MessageSender.SendInfoAboutUpdate(
+			booking.Email,
+			booking.FirstName,
+			msg,
+			updatedClass,
+		)
+		if err != nil {
+			return models.Class{}, fmt.Errorf("could not send info about class update to %s: %w", booking.Email, err)
+		}
+	}
+
+	return updatedClass, nil
+}
+
+func getDataForClassUpdate(update models.UpdateClass) (map[string]interface{}, error) {
 	updateData := map[string]interface{}{}
 	if update.StartTime != nil {
 		updateData["start_time"] = *update.StartTime
@@ -159,22 +208,29 @@ func (s *Service) UpdateClass(ctx context.Context, id uuid.UUID, update models.U
 	}
 
 	if len(updateData) == 0 {
-		return models.Class{}, fmt.Errorf("no fields to update class")
+		return nil, fmt.Errorf("no fields to update class")
 	}
 
-	err = s.classesRepo.Update(ctx, id, updateData)
-	if err != nil {
-		return models.Class{}, fmt.Errorf("could not update class: %w", err)
+	return updateData, nil
+}
+
+func setMessageForNotification(
+	startTime *time.Time,
+	location *string,
+) (string, error) {
+	if location != nil && startTime != nil {
+		return "Wyjątkowo musiałem zmienić lokalizację i czas rozpoczęcia zajęć.", nil
 	}
 
-	updatedClass, err := s.classesRepo.Get(ctx, id)
-	if err != nil {
-		return models.Class{}, fmt.Errorf("could not get class after update: %w", err) 
+	if location != nil {
+		return "Wyjątkowo musiałem zmienić lokalizację zajęć.", nil
 	}
 
-	// err = s.MessageSender.SendInfoAboutClassUpdate()
+	if startTime != nil {
+		return "Wyjątkowo musiałem zmienić czas rozpoczęcia zajęć.", nil
+	}
 
-	return updatedClass, nil
+	return "", errors.New("message for notification should not be empty")
 }
 
 func (s *Service) validateClassUpdate(

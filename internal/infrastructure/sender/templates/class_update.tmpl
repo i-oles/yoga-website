@@ -1,0 +1,33 @@
+<html>
+  <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+    <h2 style="color:#444;">Hej {{.RecipientFirstName}}!</h2>
+
+    <p>{{.Message}}</p>
+    <p>Poniżej zaktualizowane dane Twoich zajęć:</p> 
+
+    <table cellpadding="6" cellspacing="0" style="border-collapse: collapse; margin-top: 15px;">
+      <tr>
+        <td style="font-weight:bold;">Zajęcia:</td>
+        <td>{{ .ClassName }} ({{.ClassLevel}})</td>
+      </tr>
+      <tr>
+        <td style="font-weight:bold;">Data:</td>
+        <td>{{ .WeekDay }} ({{ .Date }})</td>
+      </tr>
+      <tr>
+        <td style="font-weight:bold;">Godzina:</td>
+        <td>{{ .Hour }}</td>
+      </tr>
+      <tr>
+        <td style="font-weight:bold;">Gdzie:</td>
+        <td>{{ .Location }}</td>
+      </tr>
+    </table>
+    <br>
+
+    <p>Proszę potwierdź, czy taka zmiana Ci odpowiada.</p>
+
+    <p style="margin-top:20px;">Przepraszam za utrudnienia,</p>
+    <p style="font-weight:bold;">{{.SenderName}}</p>
+  </body>
+</html>
