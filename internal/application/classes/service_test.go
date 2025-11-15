@@ -70,6 +70,14 @@ func (m *mockSender) SendInfoAboutClassCancellation(recipientEmail, recipientFir
 	return nil
 }
 
+func (m *mockSender) SendInfoAboutBookingCancellation(recipientEmail, recipientFirstName string, class models.Class) error {
+	return nil
+}
+
+func (m *mockSender) SendInfoAboutUpdate(recipientEmail, recipientFirstName, message string, class models.Class) error {
+	return nil
+}
+
 type mockBookingsRepo struct{}
 
 func (m *mockBookingsRepo) GetByEmailAndClassID(ctx context.Context, classID uuid.UUID, email string) (models.Booking, error) {
