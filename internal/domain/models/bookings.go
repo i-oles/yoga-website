@@ -7,14 +7,14 @@ import (
 )
 
 type Booking struct {
-	ID                uuid.UUID `db:"id"`
-	ClassID           uuid.UUID `db:"class_id"`
-	FirstName         string    `db:"first_name"`
-	LastName          string    `db:"last_name"`
-	Email             string    `db:"email"`
-	CreatedAt         time.Time `db:"created_at"`
-	ConfirmationToken string    `db:"confirmation_token"`
-	Class             *Class    `db:"class"`
+	ID                uuid.UUID
+	ClassID           uuid.UUID
+	FirstName         string
+	LastName          string
+	Email             string
+	CreatedAt         time.Time
+	ConfirmationToken string
+	Class             *Class
 }
 
 type ConfirmationMsg struct {
@@ -26,10 +26,4 @@ type ConfirmationMsg struct {
 	StartTime          time.Time
 	Location           string
 	CancellationLink   string
-}
-
-type ConfirmationToOwnerMsg struct {
-	RecipientFirstName string
-	RecipientLastName  string
-	StartTime          time.Time
 }
