@@ -13,7 +13,7 @@ type IClassesService interface {
 		ctx context.Context,
 		onlyUpcomingClasses bool,
 		classesLimit *int,
-	) ([]models.Class, error)
+	) ([]models.ClassWithCurrentCapacity, error)
 	CreateClasses(ctx context.Context, classes []models.Class) ([]models.Class, error)
 	UpdateClass(ctx context.Context, id uuid.UUID, update models.UpdateClass) (models.Class, error)
 	DeleteClass(ctx context.Context, classID uuid.UUID) error

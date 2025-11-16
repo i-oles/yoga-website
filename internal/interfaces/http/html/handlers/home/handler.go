@@ -38,7 +38,7 @@ func (h *Handler) Handle(c *gin.Context) {
 		return
 	}
 
-	classesView, err := sharedDTO.ToClassesListDTO(classes)
+	classesView, err := sharedDTO.ToClassesWithCurrentCapacityDTO(classes)
 	if err != nil {
 		viewErrs.ErrDTOConversion(c, "err.tmpl", err)
 

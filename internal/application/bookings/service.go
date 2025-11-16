@@ -66,7 +66,12 @@ func (s *Service) CreateBooking(
 		)
 	}
 
-	if class.CurrentCapacity < 1 {
+	bookingCount, err := s.BookingsRepo.CountForClassID(ctx, class.ID)
+	if err != nil {
+		return models.Class{}, fmt.Errorf("could not count bookings for class %v: %w ", class.ID, err)
+	}
+
+	if bookingCount == class.MaxCapacity {
 		return models.Class{}, domainErrors.ErrSomeoneBookedClassFaster(
 			fmt.Errorf("max capacity of class %d exceeded", class.MaxCapacity),
 		)
@@ -90,12 +95,6 @@ func (s *Service) CreateBooking(
 	err = s.PendingBookingsRepo.Delete(ctx, pendingBooking.ID)
 	if err != nil {
 		return models.Class{}, fmt.Errorf("could not delete pending booking: %w", err)
-	}
-
-	//TODO: should this return class?
-	err = s.ClassesRepo.DecrementCurrentCapacity(ctx, pendingBooking.ClassID)
-	if err != nil {
-		return models.Class{}, fmt.Errorf("could not decrement class max capacity: %w", err)
 	}
 
 	class, err = s.ClassesRepo.Get(ctx, pendingBooking.ClassID)
@@ -159,11 +158,6 @@ func (s *Service) CancelBooking(ctx context.Context, bookingID uuid.UUID, token 
 		return fmt.Errorf("could not delete booking: %w", err)
 	}
 
-	err = s.ClassesRepo.IncrementCurrentCapacity(ctx, booking.ClassID)
-	if err != nil {
-		return fmt.Errorf("could not increment class current capacity: %w", err)
-	}
-
 	class, err := s.ClassesRepo.Get(ctx, booking.ClassID)
 	if err != nil {
 		return fmt.Errorf("could not get class: %w", err)
@@ -208,11 +202,6 @@ func (s *Service) DeleteBooking(ctx context.Context, bookingID uuid.UUID) error 
 	}
 
 	if booking.Class.StartTime.After(time.Now()) {
-		err = s.ClassesRepo.IncrementCurrentCapacity(ctx, booking.ClassID)
-		if err != nil {
-			return fmt.Errorf("could not increment currentCapacity for class %s: %w", booking.ClassID, err)
-		}
-		
 		err = s.MessageSender.SendInfoAboutBookingCancellation(booking.Email, booking.FirstName, *booking.Class)
 		if err != nil {
 			return fmt.Errorf("could not send info about booking cancellation to %s: %w", booking.Email, err)

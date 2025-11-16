@@ -40,14 +40,6 @@ func (m *mockClassesRepo) Delete(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
-func (m *mockClassesRepo) DecrementCurrentCapacity(ctx context.Context, id uuid.UUID) error {
-	return nil
-}
-
-func (m *mockClassesRepo) IncrementCurrentCapacity(ctx context.Context, id uuid.UUID) error {
-	return nil
-}
-
 func (m *mockClassesRepo) Update(ctx context.Context, id uuid.UUID, update map[string]any) error {
 	return nil
 }
@@ -92,6 +84,10 @@ func (m *mockBookingsRepo) GetAllByClassID(ctx context.Context, classID uuid.UUI
 	return nil, nil
 }
 
+func (m *mockBookingsRepo) CountForClassID(ctx context.Context, classID uuid.UUID) (int, error) {
+	return 0, nil
+}
+
 func (m *mockBookingsRepo) Get(ctx context.Context, id uuid.UUID) (models.Booking, error) {
 	return models.Booking{}, nil
 }
@@ -111,7 +107,7 @@ func TestService_GetClasses(t *testing.T) {
 	futureTime2 := now.Add(2 * time.Hour)
 	futureTime3 := now.Add(3 * time.Hour)
 
-	testClasses := []models.Class{
+	testClassesWithCurrentCap := []models.ClassWithCurrentCapacity{
 		{
 			ID:              uuid.New(),
 			StartTime:       pastTime,
@@ -150,24 +146,61 @@ func TestService_GetClasses(t *testing.T) {
 		},
 	}
 
+	testClasses := []models.Class{
+		{
+			ID:          uuid.New(),
+			StartTime:   pastTime,
+			ClassLevel:  "Beginner",
+			ClassName:   "Morning Yoga",
+			MaxCapacity: 10,
+			Location:    "Studio A",
+		},
+		{
+			ID:          uuid.New(),
+			StartTime:   futureTime1,
+			ClassLevel:  "Intermediate",
+			ClassName:   "Afternoon Yoga",
+			MaxCapacity: 15,
+			Location:    "Studio B",
+		},
+		{
+			ID:          uuid.New(),
+			StartTime:   futureTime2,
+			ClassLevel:  "Advanced",
+			ClassName:   "Evening Yoga",
+			MaxCapacity: 12,
+			Location:    "Studio C",
+		},
+		{
+			ID:          uuid.New(),
+			StartTime:   futureTime3,
+			ClassLevel:  "Beginner",
+			ClassName:   "Night Yoga",
+			MaxCapacity: 20,
+			Location:    "Studio D",
+		},
+	}
+
 	tests := []struct {
 		name                string
+		classesWithCurrCap  []models.ClassWithCurrentCapacity
 		classes             []models.Class
 		repoError           error
 		onlyUpcomingClasses bool
 		classesLimit        *int
 		wantCount           int
 		wantError           bool
-		validateResult      func(t *testing.T, classes []models.Class)
+		validateResult      func(t *testing.T, classes []models.ClassWithCurrentCapacity)
 	}{
 		{
 			name:                "Get all classes without filters",
-			classes:             testClasses,
+			classesWithCurrCap:  testClassesWithCurrentCap,
+			classes: testClasses,
 			onlyUpcomingClasses: false,
 			classesLimit:        nil,
 			wantCount:           4,
 			wantError:           false,
-			validateResult: func(t *testing.T, classes []models.Class) {
+			validateResult: func(t *testing.T, classes []models.ClassWithCurrentCapacity) {
 				if len(classes) != 4 {
 					t.Errorf("Expected 4 classes, got %d", len(classes))
 				}
@@ -175,12 +208,13 @@ func TestService_GetClasses(t *testing.T) {
 		},
 		{
 			name:                "Get only upcoming classes",
-			classes:             testClasses,
+			classesWithCurrCap:  testClassesWithCurrentCap,
+			classes: testClasses,
 			onlyUpcomingClasses: true,
 			classesLimit:        nil,
 			wantCount:           3,
 			wantError:           false,
-			validateResult: func(t *testing.T, classes []models.Class) {
+			validateResult: func(t *testing.T, classes []models.ClassWithCurrentCapacity) {
 				if len(classes) != 3 {
 					t.Errorf("Expected 3 upcoming classes, got %d", len(classes))
 				}
@@ -193,12 +227,13 @@ func TestService_GetClasses(t *testing.T) {
 		},
 		{
 			name:                "Get all classes with limit",
-			classes:             testClasses,
+			classesWithCurrCap:  testClassesWithCurrentCap,
+			classes: testClasses,
 			onlyUpcomingClasses: false,
 			classesLimit:        intPtr(2),
 			wantCount:           2,
 			wantError:           false,
-			validateResult: func(t *testing.T, classes []models.Class) {
+			validateResult: func(t *testing.T, classes []models.ClassWithCurrentCapacity) {
 				if len(classes) != 2 {
 					t.Errorf("Expected 2 classes, got %d", len(classes))
 				}
@@ -226,12 +261,13 @@ func TestService_GetClasses(t *testing.T) {
 		},
 		{
 			name:                "Get upcoming classes with limit",
-			classes:             testClasses,
+			classesWithCurrCap:  testClassesWithCurrentCap,
+			
 			onlyUpcomingClasses: true,
 			classesLimit:        intPtr(2),
 			wantCount:           2,
 			wantError:           false,
-			validateResult: func(t *testing.T, classes []models.Class) {
+			validateResult: func(t *testing.T, classes []models.ClassWithCurrentCapacity) {
 				if len(classes) != 2 {
 					t.Errorf("Expected 2 classes, got %d", len(classes))
 				}
@@ -244,12 +280,12 @@ func TestService_GetClasses(t *testing.T) {
 		},
 		{
 			name:                "Get upcoming classes with limit larger than available",
-			classes:             testClasses,
+			classesWithCurrCap:  testClassesWithCurrentCap,
 			onlyUpcomingClasses: true,
 			classesLimit:        intPtr(10),
 			wantCount:           3,
 			wantError:           false,
-			validateResult: func(t *testing.T, classes []models.Class) {
+			validateResult: func(t *testing.T, classes []models.ClassWithCurrentCapacity) {
 				if len(classes) != 3 {
 					t.Errorf("Expected 3 classes (limit larger than available), got %d", len(classes))
 				}
@@ -257,12 +293,12 @@ func TestService_GetClasses(t *testing.T) {
 		},
 		{
 			name:                "Get all classes with limit larger than available",
-			classes:             testClasses,
+			classesWithCurrCap:  testClassesWithCurrentCap,
 			onlyUpcomingClasses: false,
 			classesLimit:        intPtr(10),
 			wantCount:           4,
 			wantError:           false,
-			validateResult: func(t *testing.T, classes []models.Class) {
+			validateResult: func(t *testing.T, classes []models.ClassWithCurrentCapacity) {
 				if len(classes) != 4 {
 					t.Errorf("Expected 4 classes (limit larger than available), got %d", len(classes))
 				}
@@ -270,12 +306,12 @@ func TestService_GetClasses(t *testing.T) {
 		},
 		{
 			name:                "Get upcoming classes with zero limit",
-			classes:             testClasses,
+			classesWithCurrCap:  testClassesWithCurrentCap,
 			onlyUpcomingClasses: true,
 			classesLimit:        intPtr(0),
 			wantCount:           0,
 			wantError:           false,
-			validateResult: func(t *testing.T, classes []models.Class) {
+			validateResult: func(t *testing.T, classes []models.ClassWithCurrentCapacity) {
 				if len(classes) != 0 {
 					t.Errorf("Expected 0 classes (limit 0), got %d", len(classes))
 				}
@@ -283,12 +319,12 @@ func TestService_GetClasses(t *testing.T) {
 		},
 		{
 			name:                "Get all classes with zero limit",
-			classes:             testClasses,
+			classesWithCurrCap:  testClassesWithCurrentCap,
 			onlyUpcomingClasses: false,
 			classesLimit:        intPtr(0),
 			wantCount:           0,
 			wantError:           false,
-			validateResult: func(t *testing.T, classes []models.Class) {
+			validateResult: func(t *testing.T, classes []models.ClassWithCurrentCapacity) {
 				if len(classes) != 0 {
 					t.Errorf("Expected 0 classes (limit 0), got %d", len(classes))
 				}
@@ -296,12 +332,12 @@ func TestService_GetClasses(t *testing.T) {
 		},
 		{
 			name:                "Get classes from empty repository",
-			classes:             []models.Class{},
+			classesWithCurrCap:  []models.ClassWithCurrentCapacity{},
 			onlyUpcomingClasses: false,
 			classesLimit:        nil,
 			wantCount:           0,
 			wantError:           false,
-			validateResult: func(t *testing.T, classes []models.Class) {
+			validateResult: func(t *testing.T, classes []models.ClassWithCurrentCapacity) {
 				if len(classes) != 0 {
 					t.Errorf("Expected 0 classes, got %d", len(classes))
 				}
@@ -309,12 +345,12 @@ func TestService_GetClasses(t *testing.T) {
 		},
 		{
 			name:                "Get upcoming classes from empty repository",
-			classes:             []models.Class{},
+			classesWithCurrCap:  []models.ClassWithCurrentCapacity{},
 			onlyUpcomingClasses: true,
 			classesLimit:        nil,
 			wantCount:           0,
 			wantError:           false,
-			validateResult: func(t *testing.T, classes []models.Class) {
+			validateResult: func(t *testing.T, classes []models.ClassWithCurrentCapacity) {
 				if len(classes) != 0 {
 					t.Errorf("Expected 0 classes, got %d", len(classes))
 				}
@@ -322,13 +358,13 @@ func TestService_GetClasses(t *testing.T) {
 		},
 		{
 			name:                "Repository error",
-			classes:             testClasses,
+			classesWithCurrCap:  testClassesWithCurrentCap,
 			repoError:           errors.New("database error"),
 			onlyUpcomingClasses: false,
 			classesLimit:        nil,
 			wantCount:           0,
 			wantError:           true,
-			validateResult: func(t *testing.T, classes []models.Class) {
+			validateResult: func(t *testing.T, classes []models.ClassWithCurrentCapacity) {
 				if classes != nil {
 					t.Errorf("Expected nil classes on error, got %v", classes)
 				}
@@ -336,12 +372,12 @@ func TestService_GetClasses(t *testing.T) {
 		},
 		{
 			name:                "Get only past classes with upcoming filter",
-			classes:             []models.Class{testClasses[0]},
+			classesWithCurrCap:  []models.ClassWithCurrentCapacity{testClassesWithCurrentCap[0]},
 			onlyUpcomingClasses: true,
 			classesLimit:        nil,
 			wantCount:           0,
 			wantError:           false,
-			validateResult: func(t *testing.T, classes []models.Class) {
+			validateResult: func(t *testing.T, classes []models.ClassWithCurrentCapacity) {
 				if len(classes) != 0 {
 					t.Errorf("Expected 0 classes (all are past), got %d", len(classes))
 				}
@@ -349,12 +385,12 @@ func TestService_GetClasses(t *testing.T) {
 		},
 		{
 			name:                "Get upcoming classes with limit of one",
-			classes:             testClasses,
+			classesWithCurrCap:  testClassesWithCurrentCap,
 			onlyUpcomingClasses: true,
 			classesLimit:        intPtr(1),
 			wantCount:           1,
 			wantError:           false,
-			validateResult: func(t *testing.T, classes []models.Class) {
+			validateResult: func(t *testing.T, classes []models.ClassWithCurrentCapacity) {
 				if len(classes) != 1 {
 					t.Errorf("Expected 1 class, got %d", len(classes))
 				}
@@ -365,12 +401,12 @@ func TestService_GetClasses(t *testing.T) {
 		},
 		{
 			name:                "Get classes with negative limit - should return error",
-			classes:             testClasses,
+			classesWithCurrCap:  testClassesWithCurrentCap,
 			onlyUpcomingClasses: false,
 			classesLimit:        intPtr(-1),
 			wantCount:           0,
 			wantError:           true,
-			validateResult: func(t *testing.T, classes []models.Class) {
+			validateResult: func(t *testing.T, classes []models.ClassWithCurrentCapacity) {
 				if classes != nil {
 					t.Errorf("Expected nil classes on error, got %v", classes)
 				}
@@ -378,12 +414,12 @@ func TestService_GetClasses(t *testing.T) {
 		},
 		{
 			name:                "Get upcoming classes with negative limit - should return error",
-			classes:             testClasses,
+			classesWithCurrCap:  testClassesWithCurrentCap,
 			onlyUpcomingClasses: true,
 			classesLimit:        intPtr(-5),
 			wantCount:           0,
 			wantError:           true,
-			validateResult: func(t *testing.T, classes []models.Class) {
+			validateResult: func(t *testing.T, classes []models.ClassWithCurrentCapacity) {
 				if classes != nil {
 					t.Errorf("Expected nil classes on error, got %v", classes)
 				}
@@ -391,12 +427,12 @@ func TestService_GetClasses(t *testing.T) {
 		},
 		{
 			name:                "Get classes with large negative limit - should return error",
-			classes:             testClasses,
+			classesWithCurrCap:  testClassesWithCurrentCap,
 			onlyUpcomingClasses: false,
 			classesLimit:        intPtr(-100),
 			wantCount:           0,
 			wantError:           true,
-			validateResult: func(t *testing.T, classes []models.Class) {
+			validateResult: func(t *testing.T, classes []models.ClassWithCurrentCapacity) {
 				if classes != nil {
 					t.Errorf("Expected nil classes on error, got %v", classes)
 				}

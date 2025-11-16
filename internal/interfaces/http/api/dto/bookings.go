@@ -11,12 +11,12 @@ import (
 )
 
 type BookingResponse struct {
-	ID        uuid.UUID     `json:"id"`
-	ClassID   uuid.UUID     `json:"class_id"`
-	FirstName string        `json:"first_name"`
-	LastName  string        `json:"last_name"`
-	Email     string        `json:"email"`
-	CreatedAt time.Time     `json:"created_at"`
+	ID        uuid.UUID                        `json:"id"`
+	ClassID   uuid.UUID                        `json:"class_id"`
+	FirstName string                           `json:"first_name"`
+	LastName  string                           `json:"last_name"`
+	Email     string                           `json:"email"`
+	CreatedAt time.Time                        `json:"created_at"`
 	Class     *dto.ClassDTO `json:"class,omitempty"`
 }
 

@@ -36,7 +36,7 @@ func (s *Service) GetClasses(
 	ctx context.Context,
 	onlyUpcomingClasses bool,
 	classesLimit *int,
-) ([]models.Class, error) {
+) ([]models.ClassWithCurrentCapacity, error) {
 	if classesLimit != nil && *classesLimit < 0 {
 		return nil, errs.ErrClassValidation(
 			fmt.Errorf("classes_limit must be greater than or equal to 0, got: %d", *classesLimit),
@@ -48,35 +48,42 @@ func (s *Service) GetClasses(
 		return nil, fmt.Errorf("could not get all classes: %w", err)
 	}
 
-	hasLimit := classesLimit != nil
+	result := make([]models.ClassWithCurrentCapacity, 0, len(classes))
+	for _, class := range classes {
+		bookingCount, err := s.bookingsRepo.CountForClassID(ctx, class.ID)
+		if err != nil {
+			return nil, fmt.Errorf("could not get bookings for class %v: %w", class.ID, err)
+		}
 
-	if !hasLimit && !onlyUpcomingClasses {
-		return classes, nil
+		result = append(result, models.ClassWithCurrentCapacity{
+			ID: class.ID,
+			StartTime: class.StartTime,
+			ClassLevel: class.ClassLevel,
+			ClassName: class.ClassName,
+			CurrentCapacity: class.MaxCapacity - bookingCount,
+			MaxCapacity: class.MaxCapacity,
+			Location: class.Location,
+		})		
 	}
-
-	var filteredClasses []models.Class
 
 	if onlyUpcomingClasses {
-		filteredClasses = make([]models.Class, 0)
-		for _, class := range classes {
-			if class.StartTime.Before(time.Now()) {
-				continue
+		filtered := make([]models.ClassWithCurrentCapacity, 0, len(result)) 
+		now := time.Now()
+		for _, class := range result {
+			if class.StartTime.After(now) {
+				filtered = append(filtered, class)
 			}
-
-			filteredClasses = append(filteredClasses, class)
 		}
-	} else {
-		filteredClasses = classes
+
+		result = filtered
 	}
 
-	if !hasLimit {
-		return filteredClasses, nil
+	if classesLimit != nil {
+		limit := min(*classesLimit, len(result))
+		result = result[:limit]
 	}
 
-	limit := min(*classesLimit, len(filteredClasses))
-
-	return filteredClasses[:limit], nil
-
+	return result, nil
 }
 
 func (s *Service) CreateClasses(ctx context.Context, classes []models.Class) ([]models.Class, error) {
@@ -89,6 +96,7 @@ func (s *Service) CreateClasses(ctx context.Context, classes []models.Class) ([]
 	if err != nil {
 		return nil, fmt.Errorf("could not insert classes: %w", err)
 	}
+
 
 	return insertedClasses, nil
 }
@@ -197,9 +205,6 @@ func getDataForClassUpdate(update models.UpdateClass) (map[string]interface{}, e
 	if update.ClassName != nil {
 		updateData["class_name"] = *update.ClassName
 	}
-	if update.CurrentCapacity != nil {
-		updateData["current_capacity"] = *update.CurrentCapacity
-	}
 	if update.MaxCapacity != nil {
 		updateData["max_capacity"] = *update.MaxCapacity
 	}
@@ -244,49 +249,6 @@ func (s *Service) validateClassUpdate(
 		}
 	}
 
-	if update.CurrentCapacity != nil && update.MaxCapacity != nil {
-		if *update.CurrentCapacity > *update.MaxCapacity ||
-			*update.CurrentCapacity < 0 ||
-			*update.MaxCapacity < 0 {
-			return errors.New("current and max capacity has to be positive number, where current capacity could not be bigger then max capacity")
-		}
-
-		return nil
-	}
-
-	if update.CurrentCapacity != nil || update.MaxCapacity != nil {
-		class, err := s.classesRepo.Get(ctx, id)
-		if err != nil {
-			return fmt.Errorf("could not get class for id: %v", id)
-		}
-
-		if update.CurrentCapacity != nil {
-			if *update.CurrentCapacity < 0 {
-				return fmt.Errorf("current capacity has to be positive number, got: %d", *update.CurrentCapacity)
-			}
-
-			if *update.CurrentCapacity > class.MaxCapacity {
-				return fmt.Errorf("could not set currentCapacity to %d - it is bigger then maxCapacity of this class: %d",
-					*update.CurrentCapacity,
-					class.MaxCapacity,
-				)
-			}
-		}
-
-		if update.MaxCapacity != nil {
-			if *update.MaxCapacity < 0 {
-				return fmt.Errorf("max capacity has to be positive number, got: %d", *update.MaxCapacity)
-			}
-
-			if *update.MaxCapacity < class.CurrentCapacity {
-				return fmt.Errorf("could not set maxCapacity to %d - it is lower then currentCapacity of this class: %d",
-					*update.MaxCapacity,
-					class.CurrentCapacity,
-				)
-			}
-		}
-	}
-
 	return nil
 }
 
@@ -304,13 +266,6 @@ func validateClasses(classes []models.Class) error {
 func validateClass(class models.Class) error {
 	if class.StartTime.Before(time.Now()) {
 		return fmt.Errorf("class start_time: %v expired", class.StartTime)
-	}
-
-	// TODO you do not need to pass currentCapacity in request, just set it as max capacity during creation
-	if class.CurrentCapacity != class.MaxCapacity {
-		return fmt.Errorf("%d != %d: current_capacity should be equal to max_capacity when creating class",
-			class.CurrentCapacity, class.MaxCapacity,
-		)
 	}
 
 	return nil

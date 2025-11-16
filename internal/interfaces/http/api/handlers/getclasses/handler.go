@@ -48,7 +48,7 @@ func (h *Handler) Handle(c *gin.Context) {
 		return
 	}
 
-	classesResp, err := sharedDTO.ToClassesListDTO(classes)
+	classesResp, err := sharedDTO.ToClassesWithCurrentCapacityDTO(classes)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "DTOResponse: " + err.Error()})
 

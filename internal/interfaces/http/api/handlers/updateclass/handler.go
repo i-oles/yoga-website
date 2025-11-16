@@ -58,7 +58,6 @@ func (h *Handler) Handle(c *gin.Context) {
 		StartTime: dtoUpdateClass.StartTime,
 		ClassLevel: dtoUpdateClass.ClassLevel,
 		ClassName: dtoUpdateClass.ClassName,
-		CurrentCapacity: dtoUpdateClass.CurrentCapacity,
 		MaxCapacity: dtoUpdateClass.MaxCapacity,
 		Location: dtoUpdateClass.Location,
 	}

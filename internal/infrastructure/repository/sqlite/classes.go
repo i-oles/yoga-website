@@ -51,40 +51,6 @@ func (c ClassesRepo) Get(ctx context.Context, id uuid.UUID) (models.Class, error
 	return sqlClass.ToDomain(), nil
 }
 
-func (c ClassesRepo) DecrementCurrentCapacity(ctx context.Context, id uuid.UUID) error {
-	result := c.db.WithContext(ctx).
-		Model(&db.SQLClass{}).
-		Where("id = ? AND current_capacity > 0", id).
-		Update("current_capacity", gorm.Expr("current_capacity - ?", 1))
-
-	if result.Error != nil {
-		return fmt.Errorf("could not decrement current capacity: %w", result.Error)
-	}
-
-	if result.RowsAffected == 0 {
-		return errs.ErrNoRowsAffected
-	}
-
-	return nil
-}
-
-func (c ClassesRepo) IncrementCurrentCapacity(ctx context.Context, id uuid.UUID) error {
-	result := c.db.WithContext(ctx).
-		Model(&db.SQLClass{}).
-		Where("id = ? AND current_capacity < max_capacity", id).
-		Update("current_capacity", gorm.Expr("current_capacity + ?", 1))
-
-	if result.Error != nil {
-		return fmt.Errorf("could not increment current capacity: %w", result.Error)
-	}
-
-	if result.RowsAffected == 0 {
-		return errs.ErrNoRowsAffected
-	}
-
-	return nil
-}
-
 func (c ClassesRepo) Insert(ctx context.Context, classes []models.Class) ([]models.Class, error) {
 	sqlClass := make([]db.SQLClass, len(classes))
 	for i, class := range classes {

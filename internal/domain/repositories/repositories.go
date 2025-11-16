@@ -13,8 +13,6 @@ type IClasses interface {
 	Insert(ctx context.Context, classes []models.Class) ([]models.Class, error)
 	Delete(ctx context.Context, id uuid.UUID) error
 	Update(ctx context.Context, id uuid.UUID, update map[string]interface{}) error
-	DecrementCurrentCapacity(ctx context.Context, id uuid.UUID) error
-	IncrementCurrentCapacity(ctx context.Context, id uuid.UUID) error
 }
 
 type IBookings interface {
@@ -22,6 +20,7 @@ type IBookings interface {
 	GetAll(ctx context.Context) ([]models.Booking, error)
 	GetAllByClassID(ctx context.Context, classID uuid.UUID) ([]models.Booking, error)
 	Get(ctx context.Context, id uuid.UUID) (models.Booking, error)
+	CountForClassID(ctx context.Context, classID uuid.UUID) (int, error)
 	Insert(ctx context.Context, confirmedBooking models.Booking) (uuid.UUID, error)
 	Delete(ctx context.Context, id uuid.UUID) error
 }

@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type ClassDTO struct {
+type ClassWithCurrentCapacityDTO struct {
 	ID              uuid.UUID `json:"id"`
 	WeekDay         string    `json:"week_day"`
 	StartDate       string    `json:"start_date"`
@@ -17,6 +17,55 @@ type ClassDTO struct {
 	ClassLevel      string    `json:"class_level"`
 	ClassName       string    `json:"class_name"`
 	CurrentCapacity int       `json:"current_capacity"`
+	MaxCapacity     int       `json:"max_capacity"`
+	Location        string    `json:"location"`
+}
+
+func ToClassWithCurrentCapacityDTO(class models.ClassWithCurrentCapacity) (ClassWithCurrentCapacityDTO, error) {
+	warsawTime, err := converter.ConvertToWarsawTime(class.StartTime)
+	if err != nil {
+		return ClassWithCurrentCapacityDTO{}, fmt.Errorf("error while converting time to warsaw time: %w", err)
+	}
+
+	weekday, err := translator.TranslateToWeekDayToPolish(warsawTime.Weekday())
+	if err != nil {
+		return ClassWithCurrentCapacityDTO{}, fmt.Errorf("error while translating week day to polish: %w", err)
+	}
+
+	return ClassWithCurrentCapacityDTO{
+		ID:              class.ID,
+		WeekDay:         weekday,
+		StartDate:       warsawTime.Format(converter.DateLayout),
+		StartHour:       warsawTime.Format(converter.HourLayout),
+		ClassLevel:      class.ClassLevel,
+		ClassName:       class.ClassName,
+		CurrentCapacity: class.CurrentCapacity,
+		MaxCapacity:     class.MaxCapacity,
+		Location:        class.Location,
+	}, nil
+}
+
+func ToClassesWithCurrentCapacityDTO(classes []models.ClassWithCurrentCapacity) ([]ClassWithCurrentCapacityDTO, error) {
+	classesResponse := make([]ClassWithCurrentCapacityDTO, len(classes))
+	for i, class := range classes {
+		classResponse, err := ToClassWithCurrentCapacityDTO(class)
+		if err != nil {
+			return nil, fmt.Errorf("could not convert class to classResponse: %w", err)
+		}
+
+		classesResponse[i] = classResponse
+	}
+
+	return classesResponse, nil
+}
+
+type ClassDTO struct {
+	ID              uuid.UUID `json:"id"`
+	WeekDay         string    `json:"week_day"`
+	StartDate       string    `json:"start_date"`
+	StartHour       string    `json:"start_hour"`
+	ClassLevel      string    `json:"class_level"`
+	ClassName       string    `json:"class_name"`
 	MaxCapacity     int       `json:"max_capacity"`
 	Location        string    `json:"location"`
 }
@@ -39,13 +88,12 @@ func ToClassDTO(class models.Class) (ClassDTO, error) {
 		StartHour:       warsawTime.Format(converter.HourLayout),
 		ClassLevel:      class.ClassLevel,
 		ClassName:       class.ClassName,
-		CurrentCapacity: class.CurrentCapacity,
 		MaxCapacity:     class.MaxCapacity,
 		Location:        class.Location,
 	}, nil
 }
 
-func ToClassesListDTO(classes []models.Class) ([]ClassDTO, error) {
+func ToClassesDTO(classes []models.Class) ([]ClassDTO, error) {
 	classesResponse := make([]ClassDTO, len(classes))
 	for i, class := range classes {
 		classResponse, err := ToClassDTO(class)

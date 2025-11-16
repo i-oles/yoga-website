@@ -59,12 +59,17 @@ func (s *Service) CreatePendingBooking(
 		return uuid.Nil, fmt.Errorf("validation failed for pending booking: %w", err)
 	}
 
+	bookingCount, err := s.BookingsRepo.CountForClassID(ctx, pendingBookingParams.ClassID)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("could not count bookings for class %v: %w ", pendingBookingParams.ClassID, err)
+	}
+
 	class, err := s.ClassesRepo.Get(ctx, pendingBookingParams.ClassID)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("could not get class: %w", err)
 	}
 
-	if class.CurrentCapacity == 0 {
+	if bookingCount == class.MaxCapacity {
 		return uuid.Nil, domainErrors.ErrClassFullyBooked(
 			pendingBookingParams.ClassID,
 			fmt.Errorf("no spots left in class with id: %d", pendingBookingParams.ClassID),

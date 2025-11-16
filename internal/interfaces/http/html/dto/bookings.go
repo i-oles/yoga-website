@@ -48,7 +48,6 @@ type BookingCancelView struct {
 	StartHour         string
 	ClassLevel        string
 	ClassName         string
-	CurrentCapacity   int
 	MaxCapacity       int
 	Location          string
 	ConfirmationToken string
@@ -72,7 +71,6 @@ func ToBookingCancelView(booking models.Booking) (BookingCancelView, error) {
 		StartHour:         warsawStartTime.Format(converter.HourLayout),
 		ClassLevel:        booking.Class.ClassLevel,
 		ClassName:         booking.Class.ClassName,
-		CurrentCapacity:   booking.Class.CurrentCapacity,
 		MaxCapacity:       booking.Class.MaxCapacity,
 		Location:          booking.Class.Location,
 		ConfirmationToken: booking.ConfirmationToken,

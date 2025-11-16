@@ -45,7 +45,6 @@ func (h *Handler) Handle(c *gin.Context) {
 			StartTime:       dtoClass.StartTime.UTC(),
 			ClassLevel:      dtoClass.ClassLevel,
 			ClassName:       dtoClass.ClassName,
-			CurrentCapacity: dtoClass.CurrentCapacity,
 			MaxCapacity:     dtoClass.MaxCapacity,
 			Location:        dtoClass.Location,
 		}
@@ -62,7 +61,7 @@ func (h *Handler) Handle(c *gin.Context) {
 		return
 	}
 
-	classesResp, err := sharedDTO.ToClassesListDTO(createdClasses)
+	classesResp, err := sharedDTO.ToClassesDTO(createdClasses)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "DTOResponse: " + err.Error()})
 

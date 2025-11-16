@@ -78,6 +78,20 @@ func (r BookingsRepo) GetAll(ctx context.Context) ([]models.Booking, error) {
 	return result, nil
 }
 
+func (r BookingsRepo) CountForClassID(ctx context.Context, classID uuid.UUID) (int, error) {
+	var count int64
+	var SQLBooking db.SQLBooking
+
+    if err := r.db.WithContext(ctx).
+		Model(&SQLBooking).
+        Where("class_id = ?", classID).
+        Count(&count).Error; err != nil {
+        return 0, fmt.Errorf("could count bookings for classID %s: %w", classID, err)
+    }
+
+	return int(count), nil
+}
+
 func (r BookingsRepo) GetAllByClassID(ctx context.Context, classID uuid.UUID) ([]models.Booking, error) {
 	var SQLBookings []db.SQLBooking
 
