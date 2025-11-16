@@ -14,7 +14,7 @@ RUN go build -o /yoga ./cmd/yoga
 
 FROM alpine:latest
 
-RUN apk add --no-cache tzdata
+RUN apk add --no-cache tzdata sqlite
 
 WORKDIR /app
 
