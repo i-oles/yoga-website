@@ -7,28 +7,28 @@ import (
 )
 
 type Class struct {
-	ID              uuid.UUID `json:"id"`
-	StartTime       time.Time `json:"start_time"`
-	ClassLevel      string    `json:"class_level"`
-	ClassName       string    `json:"class_name"`
-	MaxCapacity     int       `json:"max_capacity"`
-	Location        string    `json:"location"`
+	ID          uuid.UUID
+	StartTime   time.Time
+	ClassLevel  string
+	ClassName   string
+	MaxCapacity int
+	Location    string
 }
 
 type ClassWithCurrentCapacity struct {
-	ID              uuid.UUID `json:"id"`
-	StartTime       time.Time `json:"start_time"`
-	ClassLevel      string    `json:"class_level"`
-	ClassName       string    `json:"class_name"`
-	CurrentCapacity int       `json:"current_capacity"`
-	MaxCapacity     int       `json:"max_capacity"`
-	Location        string    `json:"location"` 
+	ID              uuid.UUID
+	StartTime       time.Time
+	ClassLevel      string
+	ClassName       string
+	CurrentCapacity int
+	MaxCapacity     int
+	Location        string
 }
 
 type UpdateClass struct {
-	StartTime       *time.Time `json:"start_time"`
-	ClassLevel      *string    `json:"class_level"`
-	ClassName       *string    `json:"class_name"`
-	MaxCapacity     *int       `json:"max_capacity"`
-	Location        *string    `json:"location"`
+	StartTime   *time.Time
+	ClassLevel  *string
+	ClassName   *string
+	MaxCapacity *int
+	Location    *string
 }

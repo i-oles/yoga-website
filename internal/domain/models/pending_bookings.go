@@ -17,8 +17,8 @@ type PendingBooking struct {
 }
 
 type PendingBookingParams struct {
-	ClassID   uuid.UUID `json:"class_id"`
-	FirstName string    `json:"first_name"`
-	LastName  string    `json:"last_name"`
-	Email     string    `json:"email"`
+	ClassID   uuid.UUID
+	FirstName string
+	LastName  string
+	Email     string
 }
