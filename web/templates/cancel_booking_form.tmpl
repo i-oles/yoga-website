@@ -37,21 +37,20 @@
                     <td style="font-weight:300;">gdzie:</td>
                     <td style="font-weight:500;">{{ .Location }}</td>
                 </tr>
-                <tr>
-                    <td style="font-weight:300;">wolne miejsca:</td>
-                    <td style="font-weight:500;">{{ .CurrentCapacity }}</td>
-                </tr>
             </table>
         </div>
         <div id="cancel-button-{{ .BookingID }}">
-            <button
-                    type="button"
-                    class="btn-cancel"
-                    hx-delete="/bookings/{{ .BookingID }}?token={{ .ConfirmationToken }}"
-                    hx-swap="outerHTML"
-                    hx-target="#cancel-booking-container">
-                odwołuję
-            </button>
+        <button
+            type="submit"
+            class="btn-cancel"
+            hx-delete="/bookings/{{ .BookingID }}?token={{ .ConfirmationToken }}"
+            hx-swap="outerHTML"
+            hx-target="#cancel-booking-container"> 
+            <span class="btn-content">
+                <span class="submit-text">odwołuję</span>
+                <span class="htmx-indicator spinner"></span>
+            </span>
+        </button>
         </div>
     </form>
     </div>

@@ -90,6 +90,7 @@ div#main-container {
     }
 
     .btn-return,
+    .btn-cancel,
     .btn-book {
         font-size: 0.6rem;
     }
@@ -196,32 +197,12 @@ button:disabled {
 .btn-book {
     border-color: #a8a8a8;
     border-radius: 4px;
+    min-height: 35px;
     color: #000;
     font-weight: 300;
     display: flex;
     align-items: center; /* wyśrodkowanie pionowe */
     justify-content: center; /* wyśrodkowanie poziome */
-}
-
-/* Style dla tekstów w przycisku */
-.submit-text, .htmx-indicator {
-    display: inline-block;
-    text-align: center;
-    width: 100%;
-}
-
-/* Ukrycie wskaźnika ładowania domyślnie */
-.htmx-indicator {
-    display: none;
-}
-
-/* Pokazanie wskaźnika ładowania podczas przetwarzania */
-.btn-book.htmx-request .htmx-indicator {
-    display: inline-block;
-}
-
-.btn-book.htmx-request .submit-text {
-    display: none;
 }
 
 /* Komunikaty o błędach */
@@ -265,20 +246,6 @@ button:disabled {
     body {
         padding: 0; /* Usuwamy padding z body na mobile */
     }
-}
-
-/* Animacja ładowania HTMX */
-.htmx-indicator {
-    opacity: 0;
-    transition: opacity 200ms ease-in;
-}
-
-.htmx-request .htmx-indicator {
-    opacity: 0.1;
-}
-
-.htmx-request.htmx-indicator {
-    opacity: 0.1;
 }
 
 .form-input {
@@ -374,7 +341,29 @@ button:disabled {
     width: 100%;
 }
 
-.spinner {
+.htmx-indicator {
+    display: none;
+    opacity: 0;
+    transition: opacity 200ms ease-in;
+}
+
+.htmx-request .htmx-indicator {
+    opacity: 0.1;
+}
+
+.htmx-request.htmx-indicator {
+    opacity: 0.1;
+}
+
+/* Style dla tekstów w przycisku */
+.submit-text, .htmx-indicator {
+    display: inline-block;
+    text-align: center;
+    width: 100%;
+}
+
+.btn-book .spinner,
+.btn-cancel .spinner {
     display: none;
     width: 16px;
     height: 16px;
@@ -392,6 +381,31 @@ form.htmx-request .btn-book .spinner {
     display: inline-block;
 }
 
+.btn-cancel.htmx-request .btn-cancel .spinner {
+    display: inline-block;
+}
+
 form.htmx-request .btn-book .submit-text {
     visibility: hidden;
 }
+
+.btn-cancel.htmx-request .btn-cancel .submit-text {
+    visibility: hidden;
+}
+
+.btn-book.htmx-request .htmx-indicator {
+    display: inline-block;
+}
+
+.btn-cancel.htmx-request .htmx-indicator {
+    display: inline-block;
+}
+
+.btn-book.htmx-request .submit-text {
+    display: none;
+}
+
+.btn-cancel.htmx-request .submit-text {
+    display: none;
+}
+
