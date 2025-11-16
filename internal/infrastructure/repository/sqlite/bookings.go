@@ -22,7 +22,7 @@ func NewBookingsRepo(db *gorm.DB) BookingsRepo {
 	}
 }
 
-func (r BookingsRepo) Get(ctx context.Context, id uuid.UUID) (models.Booking, error) {
+func (r BookingsRepo) GetByID(ctx context.Context, id uuid.UUID) (models.Booking, error) {
 	var sqlBooking db.SQLBooking
 
 	tx := r.db.WithContext(ctx).Where("id = ?", id).Preload("Class").First(&sqlBooking)
@@ -62,7 +62,7 @@ func (r BookingsRepo) GetByEmailAndClassID(
 	return sqlBooking.ToDomain(), nil
 }
 
-func (r BookingsRepo) GetAll(ctx context.Context) ([]models.Booking, error) {
+func (r BookingsRepo) List(ctx context.Context) ([]models.Booking, error) {
 	var SQLBookings []db.SQLBooking
 
 	if err := r.db.WithContext(ctx).Preload("Class").Find(&SQLBookings).Error; err != nil {
@@ -82,25 +82,25 @@ func (r BookingsRepo) CountForClassID(ctx context.Context, classID uuid.UUID) (i
 	var count int64
 	var SQLBooking db.SQLBooking
 
-    if err := r.db.WithContext(ctx).
+	if err := r.db.WithContext(ctx).
 		Model(&SQLBooking).
-        Where("class_id = ?", classID).
-        Count(&count).Error; err != nil {
-        return 0, fmt.Errorf("could count bookings for classID %s: %w", classID, err)
-    }
+		Where("class_id = ?", classID).
+		Count(&count).Error; err != nil {
+		return 0, fmt.Errorf("could count bookings for classID %s: %w", classID, err)
+	}
 
 	return int(count), nil
 }
 
-func (r BookingsRepo) GetAllByClassID(ctx context.Context, classID uuid.UUID) ([]models.Booking, error) {
+func (r BookingsRepo) ListByClassID(ctx context.Context, classID uuid.UUID) ([]models.Booking, error) {
 	var SQLBookings []db.SQLBooking
 
-    if err := r.db.WithContext(ctx).
-        Preload("Class").
-        Where("class_id = ?", classID).
-        Find(&SQLBookings).Error; err != nil {
-        return nil, fmt.Errorf("could not get bookings for classID %s: %w", classID, err)
-    }
+	if err := r.db.WithContext(ctx).
+		Preload("Class").
+		Where("class_id = ?", classID).
+		Find(&SQLBookings).Error; err != nil {
+		return nil, fmt.Errorf("could not get bookings for classID %s: %w", classID, err)
+	}
 
 	result := make([]models.Booking, len(SQLBookings))
 

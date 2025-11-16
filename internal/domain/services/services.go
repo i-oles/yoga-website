@@ -9,7 +9,7 @@ import (
 )
 
 type IClassesService interface {
-	GetClasses(
+	ListClasses(
 		ctx context.Context,
 		onlyUpcomingClasses bool,
 		classesLimit *int,

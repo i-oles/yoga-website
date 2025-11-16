@@ -76,11 +76,11 @@ func (m *mockBookingsRepo) GetByEmailAndClassID(ctx context.Context, classID uui
 	return models.Booking{}, nil
 }
 
-func (m *mockBookingsRepo) GetAll(ctx context.Context) ([]models.Booking, error) {
+func (m *mockBookingsRepo) List(ctx context.Context) ([]models.Booking, error) {
 	return nil, nil
 }
 
-func (m *mockBookingsRepo) GetAllByClassID(ctx context.Context, classID uuid.UUID) ([]models.Booking, error) {
+func (m *mockBookingsRepo) ListByClassID(ctx context.Context, classID uuid.UUID) ([]models.Booking, error) {
 	return nil, nil
 }
 
@@ -195,7 +195,7 @@ func TestService_GetClasses(t *testing.T) {
 		{
 			name:                "Get all classes without filters",
 			classesWithCurrCap:  testClassesWithCurrentCap,
-			classes: testClasses,
+			classes:             testClasses,
 			onlyUpcomingClasses: false,
 			classesLimit:        nil,
 			wantCount:           4,
@@ -209,7 +209,7 @@ func TestService_GetClasses(t *testing.T) {
 		{
 			name:                "Get only upcoming classes",
 			classesWithCurrCap:  testClassesWithCurrentCap,
-			classes: testClasses,
+			classes:             testClasses,
 			onlyUpcomingClasses: true,
 			classesLimit:        nil,
 			wantCount:           3,
@@ -228,7 +228,7 @@ func TestService_GetClasses(t *testing.T) {
 		{
 			name:                "Get all classes with limit",
 			classesWithCurrCap:  testClassesWithCurrentCap,
-			classes: testClasses,
+			classes:             testClasses,
 			onlyUpcomingClasses: false,
 			classesLimit:        intPtr(2),
 			wantCount:           2,
@@ -260,9 +260,9 @@ func TestService_GetClasses(t *testing.T) {
 			},
 		},
 		{
-			name:                "Get upcoming classes with limit",
-			classesWithCurrCap:  testClassesWithCurrentCap,
-			
+			name:               "Get upcoming classes with limit",
+			classesWithCurrCap: testClassesWithCurrentCap,
+
 			onlyUpcomingClasses: true,
 			classesLimit:        intPtr(2),
 			wantCount:           2,
@@ -453,7 +453,7 @@ func TestService_GetClasses(t *testing.T) {
 			service := NewService(classesRepo, bookingsRepo, sender)
 			ctx := context.Background()
 
-			classes, err := service.GetClasses(ctx, tt.onlyUpcomingClasses, tt.classesLimit)
+			classes, err := service.ListClasses(ctx, tt.onlyUpcomingClasses, tt.classesLimit)
 
 			if tt.wantError {
 				if err == nil {

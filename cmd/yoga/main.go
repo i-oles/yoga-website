@@ -17,12 +17,12 @@ import (
 	apiErrs "main/internal/interfaces/http/api/errs"
 	apiErrHandler "main/internal/interfaces/http/api/errs/handler"
 	"main/internal/interfaces/http/api/errs/wrapper"
-	"main/internal/interfaces/http/api/handlers/allbookings"
-	"main/internal/interfaces/http/api/handlers/allbookingsforclass"
+	"main/internal/interfaces/http/api/handlers/listbookings"
+	"main/internal/interfaces/http/api/handlers/listbookingsbyclass"
 	"main/internal/interfaces/http/api/handlers/createclasses"
 	"main/internal/interfaces/http/api/handlers/deletebooking"
 	"main/internal/interfaces/http/api/handlers/deleteclass"
-	"main/internal/interfaces/http/api/handlers/getclasses"
+	"main/internal/interfaces/http/api/handlers/listclasses"
 	"main/internal/interfaces/http/api/handlers/updateclass"
 	viewErrs "main/internal/interfaces/http/html/errs"
 	viewErrHandler "main/internal/interfaces/http/html/errs/handler"
@@ -166,11 +166,11 @@ func setupRouter(db *gorm.DB, cfg *configuration.Configuration) *gin.Engine {
 	// API
 	authMiddleware := middleware.Auth(cfg.AuthSecret)
 	createClassHandler := createclasses.NewHandler(classesService, apiErrorHandler)
-	getClassesHandler := getclasses.NewHandler(classesService, apiErrorHandler)
+	getClassesHandler := listclasses.NewHandler(classesService, apiErrorHandler)
 	updateClassHandler := updateclass.NewHandler(classesService, apiErrorHandler)
 	deleteClassHandler := deleteclass.NewHandler(classesService, apiErrorHandler)
-	getAllBookingsHandler := allbookings.NewHandler(bookingsRepo, apiErrorHandler)
-	getAllBookingsForClassHandler := allbookingsforclass.NewHandler(bookingsRepo, apiErrorHandler)
+	getAllBookingsHandler := listbookings.NewHandler(bookingsRepo, apiErrorHandler)
+	getAllBookingsForClassHandler := listbookingsbyclass.NewHandler(bookingsRepo, apiErrorHandler)
 	deleteBookingHandler := deletebooking.NewHandler(bookingsService, apiErrorHandler)
 	//getAllPendingBookingsHandler := allpendingbookings.NewHandler(bookingsRepo, apiErrorHandler)
 

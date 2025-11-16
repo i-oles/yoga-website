@@ -1,4 +1,4 @@
-package allbookings
+package listbookings
 
 import (
 	"main/internal/domain/repositories"
@@ -27,7 +27,7 @@ func NewHandler(
 func (h *Handler) Handle(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	allBookings, err := h.bookingsRepo.GetAll(ctx)
+	allBookings, err := h.bookingsRepo.List(ctx)
 	if err != nil {
 		h.apiErrorHandler.Handle(c, err)
 

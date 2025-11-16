@@ -122,7 +122,7 @@ func (s *Service) CreateBooking(
 }
 
 func (s *Service) CancelBooking(ctx context.Context, bookingID uuid.UUID, token string) error {
-	booking, err := s.BookingsRepo.Get(ctx, bookingID)
+	booking, err := s.BookingsRepo.GetByID(ctx, bookingID)
 	if err != nil {
 		return fmt.Errorf("could not get booking for id %s: %w", bookingID, err)
 	}
@@ -173,7 +173,7 @@ func (s *Service) CancelBooking(ctx context.Context, bookingID uuid.UUID, token 
 }
 
 func (s *Service) GetBookingForCancellation(ctx context.Context, bookingID uuid.UUID, token string) (models.Booking, error) {
-	booking, err := s.BookingsRepo.Get(ctx, bookingID)
+	booking, err := s.BookingsRepo.GetByID(ctx, bookingID)
 	if err != nil {
 		return models.Booking{}, fmt.Errorf("could not get booking for id %s: %w", bookingID, err)
 	}
@@ -187,7 +187,7 @@ func (s *Service) GetBookingForCancellation(ctx context.Context, bookingID uuid.
 }
 
 func (s *Service) DeleteBooking(ctx context.Context, bookingID uuid.UUID) error {
-	booking, err := s.BookingsRepo.Get(ctx, bookingID)
+	booking, err := s.BookingsRepo.GetByID(ctx, bookingID)
 	if err != nil {
 		return fmt.Errorf("could get booking for id %s: %w", bookingID, err)
 	}

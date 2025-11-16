@@ -1,34 +1,34 @@
-package allbookingsforclass
+package listclasses
 
 import (
-	"main/internal/domain/repositories"
+	"main/internal/domain/services"
 	"main/internal/interfaces/http/api/dto"
 	apiErrs "main/internal/interfaces/http/api/errs"
+	sharedDTO "main/internal/interfaces/http/shared/dto"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 type Handler struct {
-	bookingsRepo    repositories.IBookings
+	classesService  services.IClassesService
 	apiErrorHandler apiErrs.IErrorHandler
 }
 
 func NewHandler(
-	bookingsRepo repositories.IBookings,
+	classesService services.IClassesService,
 	apiErrorHandler apiErrs.IErrorHandler,
 ) *Handler {
 	return &Handler{
-		bookingsRepo:    bookingsRepo,
+		classesService:  classesService,
 		apiErrorHandler: apiErrorHandler,
 	}
 }
 
 func (h *Handler) Handle(c *gin.Context) {
-	classIDStr := c.Param("class_id")
+	var dtoGetClasses dto.GetClassesRequest
 
-	classID, err := uuid.Parse(classIDStr)
+	err := c.ShouldBindJSON(&dtoGetClasses)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 
@@ -37,19 +37,23 @@ func (h *Handler) Handle(c *gin.Context) {
 
 	ctx := c.Request.Context()
 
-	allBookingsForClass, err := h.bookingsRepo.GetAllByClassID(ctx, classID)
+	classes, err := h.classesService.ListClasses(
+		ctx,
+		dtoGetClasses.OnlyUpcomingClasses,
+		dtoGetClasses.ClassesLimit,
+	)
 	if err != nil {
 		h.apiErrorHandler.Handle(c, err)
 
 		return
 	}
 
-	response, err := dto.ToBookingsListResponse(allBookingsForClass)
+	classesResp, err := sharedDTO.ToClassesWithCurrentCapacityDTO(classes)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "DTOResponse: " + err.Error()})
 
 		return
 	}
 
-	c.JSON(http.StatusOK, response)
+	c.JSON(http.StatusOK, classesResp)
 }

@@ -32,7 +32,7 @@ func NewService(
 	}
 }
 
-func (s *Service) GetClasses(
+func (s *Service) ListClasses(
 	ctx context.Context,
 	onlyUpcomingClasses bool,
 	classesLimit *int,
@@ -43,7 +43,7 @@ func (s *Service) GetClasses(
 		)
 	}
 
-	classes, err := s.classesRepo.GetAll(ctx)
+	classes, err := s.classesRepo.List(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("could not get all classes: %w", err)
 	}
@@ -102,7 +102,7 @@ func (s *Service) CreateClasses(ctx context.Context, classes []models.Class) ([]
 }
 
 func (s *Service) DeleteClass(ctx context.Context, class_id uuid.UUID) error {
-	bookings, err := s.bookingsRepo.GetAllByClassID(ctx, class_id)
+	bookings, err := s.bookingsRepo.ListByClassID(ctx, class_id)
 	if err != nil {
 		return fmt.Errorf("could not get classes for classID %v: %w", class_id, err)
 	}
@@ -169,7 +169,7 @@ func (s *Service) UpdateClass(ctx context.Context, id uuid.UUID, update models.U
 		return updatedClass, nil
 	}
 
-	bookings, err := s.bookingsRepo.GetAllByClassID(ctx, updatedClass.ID)
+	bookings, err := s.bookingsRepo.ListByClassID(ctx, updatedClass.ID)
 	if err != nil {
 		return models.Class{}, fmt.Errorf("could not get bookings for class %v: %w", updatedClass.ID, err)
 	}

@@ -22,7 +22,7 @@ func NewClassesRepo(db *gorm.DB) *ClassesRepo {
 	}
 }
 
-func (c ClassesRepo) GetAll(ctx context.Context) ([]models.Class, error) {
+func (c ClassesRepo) List(ctx context.Context) ([]models.Class, error) {
 	var sqlClasses []db.SQLClass
 
 	if err := c.db.WithContext(ctx).Order("start_time ASC").Find(&sqlClasses).Error; err != nil {

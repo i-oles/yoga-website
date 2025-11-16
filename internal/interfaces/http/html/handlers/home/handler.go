@@ -31,7 +31,7 @@ func (h *Handler) Handle(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	limit := 6
-	classes, err := h.classesService.GetClasses(ctx, true, &limit)
+	classes, err := h.classesService.ListClasses(ctx, true, &limit)
 	if err != nil {
 		h.viewErrorHandler.Handle(c, "err.tmpl", err)
 
