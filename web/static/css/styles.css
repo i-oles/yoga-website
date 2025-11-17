@@ -17,7 +17,8 @@ body {
     touch-action: pan-y;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
-    overflow-x: hidden;
+    overflow-x: hidden;    height: 100%;
+    min-height: -webkit-fill-available; /* for Safari */
 }
 
 /* Fullscreen background image */
@@ -34,12 +35,27 @@ body::before {
     background-repeat: no-repeat;
     z-index: -1;
     opacity: 1;
+    height: 100vh;
+    height: -webkit-fill-available;
+    min-height: -webkit-fill-available;
 }
 
-/* Dodatkowe zabezpieczenia dla iOS Safari */
 @supports (-webkit-touch-callout: none) {
     body {
-        -webkit-overflow-scrolling: touch;
+        min-height: -webkit-fill-available;
+    }
+    
+    body::before {
+        height: -webkit-fill-available;
+    }
+}
+
+@supports (padding: max(0px)) {
+    body {
+        padding-left: max(20px, env(safe-area-inset-left));
+        padding-right: max(20px, env(safe-area-inset-right));
+        padding-top: max(20px, env(safe-area-inset-top));
+        padding-bottom: max(20px, env(safe-area-inset-bottom));
     }
 }
 
@@ -310,6 +326,10 @@ button:disabled {
     margin-bottom: 40px;
 }
 
+.form-input {
+    font-size: 1.5rem;
+}
+
 /* mobile responsive */
 @media (max-width: 480px) {
     .cancel-booking-card,
@@ -327,10 +347,6 @@ button:disabled {
     .cancel-booking-card,
     .confirmation-card .error-card {
         padding: 15px;
-        font-size: 1.5rem;
-    }
-
-    .form-input {
         font-size: 1.5rem;
     }
 }
