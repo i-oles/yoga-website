@@ -50,15 +50,6 @@ body::before {
     }
 }
 
-@supports (padding: max(0px)) {
-    body {
-        padding-left: max(20px, env(safe-area-inset-left));
-        padding-right: max(20px, env(safe-area-inset-right));
-        padding-top: max(20px, env(safe-area-inset-top));
-        padding-bottom: max(20px, env(safe-area-inset-bottom));
-    }
-}
-
 /* Responsive background images */
 @media (max-width: 768px) {
     body::before {
@@ -247,7 +238,7 @@ button:disabled {
     color: #757575;
 }
 
-/* Tablet - Media */
+/* Phone - Media */
 @media (max-width: 768px) {
     div#main-container {
         grid-template-columns: 1fr;
@@ -259,22 +250,8 @@ button:disabled {
         font-size: 1.1rem;
     }
 
-    body {
-        padding: 0; 
-        width: 100%;
-        height: 100%;
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
-    }
-    
-    #main-container {
-        min-height: 100vh;
-        min-height: -webkit-fill-available;
-    }
-    
-    .class-container {
-        min-height: auto;
-        padding: 20px;
+    input, textarea, select {
+        touch-action: manipulation;
     }
 }
 
