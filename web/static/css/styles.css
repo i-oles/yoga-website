@@ -242,8 +242,8 @@ button:disabled {
 @media (max-width: 768px) {
     div#main-container {
         grid-template-columns: 1fr;
-        margin-top: 60vh; 
-        padding: 16px;
+        margin-top: 45vh; 
+        padding: 8px;
     }
 
     .form-input {
