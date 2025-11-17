@@ -242,7 +242,7 @@ button:disabled {
 @media (max-width: 768px) {
     div#main-container {
         grid-template-columns: 1fr;
-        margin-top: 45vh; 
+        margin-top: 48vh; 
         padding: 8px;
     }
 
