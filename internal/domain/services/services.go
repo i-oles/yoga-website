@@ -16,7 +16,7 @@ type IClassesService interface {
 	) ([]models.ClassWithCurrentCapacity, error)
 	CreateClasses(ctx context.Context, classes []models.Class) ([]models.Class, error)
 	UpdateClass(ctx context.Context, id uuid.UUID, update models.UpdateClass) (models.Class, error)
-	DeleteClass(ctx context.Context, classID uuid.UUID) error
+	DeleteClass(ctx context.Context, classID uuid.UUID, reasonMsg string) error
 }
 
 type IBookingsService interface {
@@ -38,7 +38,7 @@ type ISender interface {
 	SendLinkToConfirmation(recipientEmail, recipientFirstName, linkToConfirmation string) error
 	SendConfirmations(msg models.ConfirmationMsg) error
 	SendInfoAboutCancellationToOwner(recipientFirstName, recipientLastName string, startTime time.Time) error
-	SendInfoAboutClassCancellation(recipientEmail, recipientFirstName string, class models.Class) error
+	SendInfoAboutClassCancellation(recipientEmail, recipientFirstName, reasonMsg string, class models.Class) error
 	SendInfoAboutUpdate(recipientEmail, recipientFirstName, message string, class models.Class) error
 	SendInfoAboutBookingCancellation(recipientEmail, recipientFirstName string, class models.Class) error
 }

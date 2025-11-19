@@ -194,7 +194,7 @@ func getTimeDetails(t time.Time) (timeDetails, error) {
 }
 
 func (s Sender) SendInfoAboutClassCancellation(
-	recipientEmail, recipientFirstName string, class models.Class,
+	recipientEmail, recipientFirstName string, reasonMsg string, class models.Class,
 ) error {
 	classTimeDetails, err := getTimeDetails(class.StartTime)
 	if err != nil {
@@ -209,6 +209,7 @@ func (s Sender) SendInfoAboutClassCancellation(
 		WeekDay:            classTimeDetails.weekDayInPolish,
 		Date:               classTimeDetails.startDate,
 		Location:           class.Location,
+		ReasonMsg:          reasonMsg,
 	}
 
 	tmpl, err := template.ParseFiles(s.ClassCancellationTmplPath)

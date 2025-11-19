@@ -17,6 +17,10 @@ type GetClassesRequest struct {
 	ClassesLimit        *int `json:"classes_limit"`
 }
 
+type DeleteClassRequest struct {
+	ReasonMsg string `json:"reason_msg" binding:"required,min=1,max=250"` 
+}
+
 type UpdateClassRequest struct {
 	StartTime       *time.Time `json:"start_time"`
 	ClassLevel      *string    `json:"class_level"`

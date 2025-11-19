@@ -2,6 +2,7 @@ package deleteclass
 
 import (
 	"main/internal/domain/services"
+	"main/internal/interfaces/http/api/dto"
 	"main/internal/interfaces/http/api/errs"
 	"net/http"
 
@@ -25,6 +26,15 @@ func NewHandler(
 }
 
 func (h *Handler) Handle(c *gin.Context) {
+	var dtoDeleteClassRequest dto.DeleteClassRequest
+
+	err := c.ShouldBindJSON(&dtoDeleteClassRequest)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+
+		return
+	}
+
 	classIDStr := c.Param("class_id")
 
 	classID, err := uuid.Parse(classIDStr)
@@ -36,7 +46,7 @@ func (h *Handler) Handle(c *gin.Context) {
 
 	ctx := c.Request.Context()
 
-	err = h.classesService.DeleteClass(ctx, classID)
+	err = h.classesService.DeleteClass(ctx, classID, dtoDeleteClassRequest.ReasonMsg)
 	if err != nil {
 		h.apiErrorHandler.Handle(c, err)
 

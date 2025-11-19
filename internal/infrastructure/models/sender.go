@@ -35,6 +35,7 @@ type ClassCancellationTmplData struct {
 	Hour               string
 	Date               string
 	Location           string
+	ReasonMsg          string
 }
 
 type BookingCancellationTmplData struct {

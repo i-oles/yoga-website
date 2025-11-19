@@ -101,10 +101,10 @@ func (s *Service) CreateClasses(ctx context.Context, classes []models.Class) ([]
 	return insertedClasses, nil
 }
 
-func (s *Service) DeleteClass(ctx context.Context, class_id uuid.UUID) error {
-	bookings, err := s.bookingsRepo.ListByClassID(ctx, class_id)
+func (s *Service) DeleteClass(ctx context.Context, classID uuid.UUID, reasonMsg string) error {
+	bookings, err := s.bookingsRepo.ListByClassID(ctx, classID)
 	if err != nil {
-		return fmt.Errorf("could not get classes for classID %v: %w", class_id, err)
+		return fmt.Errorf("could not get classes for classID %v: %w", classID, err)
 	}
 
 	for _, booking := range bookings {
@@ -112,22 +112,23 @@ func (s *Service) DeleteClass(ctx context.Context, class_id uuid.UUID) error {
 			return fmt.Errorf("class field should not be empty")
 		}
 
+		err = s.bookingsRepo.Delete(ctx, booking.ID)
+		if err != nil {
+			return fmt.Errorf("could not delete booking for id %v: %w", booking.ID, err)
+		}
+
 		err := s.MessageSender.SendInfoAboutClassCancellation(
 			booking.Email,
 			booking.FirstName,
+			reasonMsg,
 			*booking.Class,
 		)
 		if err != nil {
 			return fmt.Errorf("could not send info about class cancellation: %w", err)
 		}
-
-		err = s.bookingsRepo.Delete(ctx, booking.ID)
-		if err != nil {
-			return fmt.Errorf("could not delete booking for id %v: %w", booking.ID, err)
-		}
 	}
 
-	err = s.classesRepo.Delete(ctx, class_id)
+	err = s.classesRepo.Delete(ctx, classID)
 	if err != nil {
 		return fmt.Errorf("could not delete class: %w", err)
 	}
