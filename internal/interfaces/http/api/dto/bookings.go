@@ -49,6 +49,7 @@ func ToBookingResponse(booking domainModels.Booking) (BookingResponse, error) {
 
 func ToBookingsListResponse(bookings []domainModels.Booking) ([]BookingResponse, error) {
 	bookingsListResponse := make([]BookingResponse, len(bookings))
+
 	for i, booking := range bookings {
 		bookingResponse, err := ToBookingResponse(booking)
 		if err != nil {

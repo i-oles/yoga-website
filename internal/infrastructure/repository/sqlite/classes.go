@@ -45,6 +45,7 @@ func (c ClassesRepo) Get(ctx context.Context, id uuid.UUID) (models.Class, error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return models.Class{}, errs.ErrNotFound
 		}
+
 		return models.Class{}, fmt.Errorf("could not get class: %w", err)
 	}
 
@@ -61,6 +62,7 @@ func (c ClassesRepo) Insert(ctx context.Context, classes []models.Class) ([]mode
 		if err := tx.Create(&sqlClass).Error; err != nil {
 			return err
 		}
+
 		return nil
 	})
 	if err != nil {
@@ -93,7 +95,10 @@ func (c ClassesRepo) Delete(ctx context.Context, id uuid.UUID) error {
 }
 
 func (c ClassesRepo) Update(ctx context.Context, id uuid.UUID, update map[string]any) error {
-	if err := c.db.WithContext(ctx).Model(&db.SQLClass{}).Where("id = ?", id).Updates(update).Error; err != nil {
+	if err := c.db.WithContext(ctx).
+		Model(&db.SQLClass{}).
+		Where("id = ?", id).
+		Updates(update).Error; err != nil {
 		return fmt.Errorf("could not update class: %v with data: %v, %w", id, update, err)
 	}
 

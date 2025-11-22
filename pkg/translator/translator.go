@@ -1,7 +1,7 @@
 package translator
 
 import (
-	"fmt"
+	"errors"
 	"time"
 )
 
@@ -22,6 +22,6 @@ func TranslateToWeekDayToPolish(weekDay time.Weekday) (string, error) {
 	case time.Sunday:
 		return "niedziela", nil
 	default:
-		return "", fmt.Errorf("unknown weekday")
+		return "", errors.New("unknown weekday")
 	}
 }

@@ -31,12 +31,14 @@ func (h *Handler) Handle(c *gin.Context) {
 	var form dto.PendingBookingForm
 	if err := c.ShouldBind(&form); err != nil {
 		viewErrs.ErrBadRequest(c, "pending_booking_form.tmpl", err)
+
 		return
 	}
 
 	parsedUUID, err := uuid.Parse(form.ClassID)
 	if err != nil {
 		viewErrs.ErrBadRequest(c, "pending_booking_form.tmpl", err)
+
 		return
 	}
 

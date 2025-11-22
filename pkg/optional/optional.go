@@ -18,7 +18,7 @@ func Of[T any](value T) Optional[T] {
 	return Optional[T]{value, true}
 }
 
-// Exists returns true if the optional value has been set
+// Exists returns true if the optional value has been set.
 func (o Optional[T]) Exists() bool {
 	return o.exists
 }
