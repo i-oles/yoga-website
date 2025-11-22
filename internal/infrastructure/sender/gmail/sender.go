@@ -65,6 +65,7 @@ func (s Sender) SendLinkToConfirmation(
 	}
 
 	var msgContent strings.Builder
+
 	err = tmpl.Execute(&msgContent, tmplData)
 	if err != nil {
 		return fmt.Errorf("could not execute template: %w", err)
@@ -107,6 +108,7 @@ func (s Sender) SendConfirmations(msg models.ConfirmationMsg) error {
 	}
 
 	var msgContent strings.Builder
+
 	err = tmpl.Execute(&msgContent, tmplData)
 	if err != nil {
 		return fmt.Errorf("could not execute template: %w", err)
@@ -218,6 +220,7 @@ func (s Sender) SendInfoAboutClassCancellation(
 	}
 
 	var msgContent strings.Builder
+	
 	err = tmpl.Execute(&msgContent, tmplData)
 	if err != nil {
 		return fmt.Errorf("could not execute template: %w", err)
@@ -262,6 +265,7 @@ func (s Sender) SendInfoAboutUpdate(
 	}
 
 	var msgContent strings.Builder
+
 	err = tmpl.Execute(&msgContent, tmplData)
 	if err != nil {
 		return fmt.Errorf("could not execute template: %w", err)
@@ -305,6 +309,7 @@ func (s Sender) SendInfoAboutBookingCancellation(
 	}
 
 	var msgContent strings.Builder
+
 	err = tmpl.Execute(&msgContent, tmplData)
 	if err != nil {
 		return fmt.Errorf("could not execute template: %w", err)

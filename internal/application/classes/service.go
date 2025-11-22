@@ -8,8 +8,8 @@ import (
 	"main/internal/domain/models"
 	"main/internal/domain/repositories"
 	"main/internal/domain/services"
-	"time"
 	repositoryError "main/internal/infrastructure/errs"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -49,6 +49,7 @@ func (s *Service) ListClasses(
 	}
 
 	result := make([]models.ClassWithCurrentCapacity, 0, len(classes))
+
 	for _, class := range classes {
 		bookingCount, err := s.bookingsRepo.CountForClassID(ctx, class.ID)
 		if err != nil {
@@ -56,18 +57,19 @@ func (s *Service) ListClasses(
 		}
 
 		result = append(result, models.ClassWithCurrentCapacity{
-			ID: class.ID,
-			StartTime: class.StartTime,
-			ClassLevel: class.ClassLevel,
-			ClassName: class.ClassName,
+			ID:              class.ID,
+			StartTime:       class.StartTime,
+			ClassLevel:      class.ClassLevel,
+			ClassName:       class.ClassName,
 			CurrentCapacity: class.MaxCapacity - bookingCount,
-			MaxCapacity: class.MaxCapacity,
-			Location: class.Location,
-		})		
+			MaxCapacity:     class.MaxCapacity,
+			Location:        class.Location,
+		})
 	}
 
 	if onlyUpcomingClasses {
-		filtered := make([]models.ClassWithCurrentCapacity, 0, len(result)) 
+		filtered := make([]models.ClassWithCurrentCapacity, 0, len(result))
+
 		now := time.Now()
 		for _, class := range result {
 			if class.StartTime.After(now) {
@@ -86,7 +88,9 @@ func (s *Service) ListClasses(
 	return result, nil
 }
 
-func (s *Service) CreateClasses(ctx context.Context, classes []models.Class) ([]models.Class, error) {
+func (s *Service) CreateClasses(
+	ctx context.Context, classes []models.Class,
+) ([]models.Class, error) {
 	err := validateClasses(classes)
 	if err != nil {
 		return nil, errs.ErrClassValidation(err)
@@ -96,7 +100,6 @@ func (s *Service) CreateClasses(ctx context.Context, classes []models.Class) ([]
 	if err != nil {
 		return nil, fmt.Errorf("could not insert classes: %w", err)
 	}
-
 
 	return insertedClasses, nil
 }
@@ -109,7 +112,7 @@ func (s *Service) DeleteClass(ctx context.Context, classID uuid.UUID, reasonMsg 
 
 	for _, booking := range bookings {
 		if booking.Class == nil {
-			return fmt.Errorf("class field should not be empty")
+			return errors.New("class field should not be empty")
 		}
 
 		err = s.bookingsRepo.Delete(ctx, booking.ID)
@@ -136,8 +139,10 @@ func (s *Service) DeleteClass(ctx context.Context, classID uuid.UUID, reasonMsg 
 	return nil
 }
 
-func (s *Service) UpdateClass(ctx context.Context, id uuid.UUID, update models.UpdateClass) (models.Class, error) {
-	err := s.validateClassUpdate(ctx, id, update)
+func (s *Service) UpdateClass(
+	ctx context.Context, id uuid.UUID, update models.UpdateClass,
+) (models.Class, error) {
+	err := validateClassUpdate(update)
 	if err != nil {
 		return models.Class{}, errs.ErrClassValidation(err)
 	}
@@ -145,10 +150,10 @@ func (s *Service) UpdateClass(ctx context.Context, id uuid.UUID, update models.U
 	_, err = s.classesRepo.Get(ctx, id)
 	if err != nil {
 		if errors.Is(err, repositoryError.ErrNotFound) {
-			return models.Class{}, errs.ErrClassNotFound(err) 
+			return models.Class{}, errs.ErrClassNotFound(err)
 		}
 
-		return models.Class{}, fmt.Errorf("could not get class for class_id %v: %w", id, err) 
+		return models.Class{}, fmt.Errorf("could not get class for class_id %v: %w", id, err)
 	}
 
 	updateData, err := getDataForClassUpdate(update)
@@ -166,18 +171,29 @@ func (s *Service) UpdateClass(ctx context.Context, id uuid.UUID, update models.U
 		return models.Class{}, fmt.Errorf("could not get class after update: %w", err)
 	}
 
+	err = s.sendInformationAboutClassUpdateToUsers(ctx, update, updatedClass)
+	if err != nil {
+		return models.Class{}, fmt.Errorf("could not get class after update: %w", err)
+	}
+
+	return updatedClass, nil
+}
+
+func (s *Service) sendInformationAboutClassUpdateToUsers(
+	ctx context.Context, update models.UpdateClass, updatedClass models.Class,
+) error {
 	if update.Location == nil && update.StartTime == nil {
-		return updatedClass, nil
+		return nil
 	}
 
 	bookings, err := s.bookingsRepo.ListByClassID(ctx, updatedClass.ID)
 	if err != nil {
-		return models.Class{}, fmt.Errorf("could not get bookings for class %v: %w", updatedClass.ID, err)
+		return fmt.Errorf("could not get bookings for class %v: %w", updatedClass.ID, err)
 	}
 
 	msg, err := setMessageForNotification(update.StartTime, update.Location)
 	if err != nil {
-		return models.Class{}, fmt.Errorf("could not set msg for notification: %w", err)
+		return fmt.Errorf("could not set msg for notification: %w", err)
 	}
 
 	for _, booking := range bookings {
@@ -188,11 +204,11 @@ func (s *Service) UpdateClass(ctx context.Context, id uuid.UUID, update models.U
 			updatedClass,
 		)
 		if err != nil {
-			return models.Class{}, fmt.Errorf("could not send info about class update to %s: %w", booking.Email, err)
+			return fmt.Errorf("could not send info about class update to %s: %w", booking.Email, err)
 		}
 	}
 
-	return updatedClass, nil
+	return nil
 }
 
 func getDataForClassUpdate(update models.UpdateClass) (map[string]interface{}, error) {
@@ -200,21 +216,25 @@ func getDataForClassUpdate(update models.UpdateClass) (map[string]interface{}, e
 	if update.StartTime != nil {
 		updateData["start_time"] = *update.StartTime
 	}
+
 	if update.ClassLevel != nil {
 		updateData["class_level"] = *update.ClassLevel
 	}
+
 	if update.ClassName != nil {
 		updateData["class_name"] = *update.ClassName
 	}
+
 	if update.MaxCapacity != nil {
 		updateData["max_capacity"] = *update.MaxCapacity
 	}
+
 	if update.Location != nil {
 		updateData["location"] = *update.Location
 	}
 
 	if len(updateData) == 0 {
-		return nil, fmt.Errorf("no fields to update class")
+		return nil, errors.New("no fields to update class")
 	}
 
 	return updateData, nil
@@ -239,9 +259,7 @@ func setMessageForNotification(
 	return "", errors.New("message for notification should not be empty")
 }
 
-func (s *Service) validateClassUpdate(
-	ctx context.Context,
-	id uuid.UUID,
+func validateClassUpdate(
 	update models.UpdateClass,
 ) error {
 	if update.StartTime != nil {

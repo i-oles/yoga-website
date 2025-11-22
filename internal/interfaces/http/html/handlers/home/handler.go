@@ -9,6 +9,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+const classViewLimit = 4
+
 type Handler struct {
 	classesService   services.IClassesService
 	viewErrorHandler viewErrs.IErrorHandler
@@ -30,7 +32,8 @@ func NewHandler(
 func (h *Handler) Handle(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	limit := 6
+	limit := classViewLimit
+
 	classes, err := h.classesService.ListClasses(ctx, true, &limit)
 	if err != nil {
 		h.viewErrorHandler.Handle(c, "err.tmpl", err)

@@ -80,6 +80,7 @@ func (r BookingsRepo) List(ctx context.Context) ([]models.Booking, error) {
 
 func (r BookingsRepo) CountForClassID(ctx context.Context, classID uuid.UUID) (int, error) {
 	var count int64
+
 	var SQLBooking db.SQLBooking
 
 	if err := r.db.WithContext(ctx).
@@ -92,7 +93,10 @@ func (r BookingsRepo) CountForClassID(ctx context.Context, classID uuid.UUID) (i
 	return int(count), nil
 }
 
-func (r BookingsRepo) ListByClassID(ctx context.Context, classID uuid.UUID) ([]models.Booking, error) {
+func (r BookingsRepo) ListByClassID(
+	ctx context.Context,
+	classID uuid.UUID,
+) ([]models.Booking, error) {
 	var SQLBookings []db.SQLBooking
 
 	if err := r.db.WithContext(ctx).

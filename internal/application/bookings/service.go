@@ -5,12 +5,13 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
+
 	domainErrors "main/internal/domain/errs"
 	"main/internal/domain/models"
 	"main/internal/domain/repositories"
 	"main/internal/domain/services"
 	"main/internal/infrastructure/errs"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -39,10 +40,8 @@ func NewService(
 	}
 }
 
-// TODO: this should return models.Booking with class field taken from relation
-func (s *Service) CreateBooking(
-	ctx context.Context, token string,
-) (models.Class, error) {
+// CreateBooking TODO: this should return models.Booking with class field taken from relation.
+func (s *Service) CreateBooking(ctx context.Context, token string) (models.Class, error) {
 	pendingBooking, err := s.PendingBookingsRepo.GetByConfirmationToken(ctx, token)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -54,9 +53,19 @@ func (s *Service) CreateBooking(
 		return models.Class{}, fmt.Errorf("could not get pending booking: %w", err)
 	}
 
+	_, err = s.BookingsRepo.GetByEmailAndClassID(ctx, pendingBooking.ClassID, pendingBooking.Email)
+	if err == nil {
+		return models.Class{},
+			domainErrors.ErrBookingAlreadyExists(pendingBooking.ClassID, pendingBooking.Email,
+				err,
+			)
+	}
+
 	class, err := s.ClassesRepo.Get(ctx, pendingBooking.ClassID)
 	if err != nil {
-		return models.Class{}, fmt.Errorf("could not get class with id: %s, %w", pendingBooking.ClassID, err)
+		return models.Class{}, fmt.Errorf(
+			"could not get class with id: %s, %w", pendingBooking.ClassID, err,
+		)
 	}
 
 	if class.StartTime.Before(time.Now()) {
@@ -68,7 +77,9 @@ func (s *Service) CreateBooking(
 
 	bookingCount, err := s.BookingsRepo.CountForClassID(ctx, class.ID)
 	if err != nil {
-		return models.Class{}, fmt.Errorf("could not count bookings for class %v: %w ", class.ID, err)
+		return models.Class{}, fmt.Errorf(
+			"could not count bookings for class %v: %w ", class.ID, err,
+		)
 	}
 
 	if bookingCount == class.MaxCapacity {
@@ -97,10 +108,7 @@ func (s *Service) CreateBooking(
 		return models.Class{}, fmt.Errorf("could not delete pending booking: %w", err)
 	}
 
-	class, err = s.ClassesRepo.Get(ctx, pendingBooking.ClassID)
-	if err != nil {
-		return models.Class{}, fmt.Errorf("could not get class: %w", err)
-	}
+	link := fmt.Sprintf("%s/bookings/%s/cancel_form?token=%s", s.DomainAddr, bookingID, token)
 
 	msg := models.ConfirmationMsg{
 		RecipientEmail:     pendingBooking.Email,
@@ -110,7 +118,7 @@ func (s *Service) CreateBooking(
 		ClassLevel:         class.ClassLevel,
 		StartTime:          class.StartTime,
 		Location:           class.Location,
-		CancellationLink:   fmt.Sprintf("%s/bookings/%s/cancel_form?token=%s", s.DomainAddr, bookingID, token),
+		CancellationLink:   link,
 	}
 
 	err = s.MessageSender.SendConfirmations(msg)
@@ -127,12 +135,15 @@ func (s *Service) CancelBooking(ctx context.Context, bookingID uuid.UUID, token 
 		return fmt.Errorf("could not get booking for id %s: %w", bookingID, err)
 	}
 
+	// TODO: do I need this check?
 	if booking.ConfirmationToken != token {
-		//TODO: handle error
+		return domainErrors.ErrInvalidCancellationLink(
+			fmt.Errorf("cancel booking failed due to invalid token: %s for email: %s", booking.Email, token),
+		)
 	}
 
 	if booking.Class == nil {
-		return fmt.Errorf("booking.Class field should not be empty")
+		return errors.New("booking.Class field should not be empty")
 	}
 
 	if booking.Class.StartTime.Before(time.Now()) {
@@ -172,14 +183,15 @@ func (s *Service) CancelBooking(ctx context.Context, bookingID uuid.UUID, token 
 	return nil
 }
 
-func (s *Service) GetBookingForCancellation(ctx context.Context, bookingID uuid.UUID, token string) (models.Booking, error) {
+func (s *Service) GetBookingForCancellation(
+	ctx context.Context, bookingID uuid.UUID, token string,
+) (models.Booking, error) {
 	booking, err := s.BookingsRepo.GetByID(ctx, bookingID)
 	if err != nil {
 		return models.Booking{}, fmt.Errorf("could not get booking for id %s: %w", bookingID, err)
 	}
 
 	if booking.ConfirmationToken != token {
-		//TODO: is it correct name for this error?
 		return models.Booking{}, domainErrors.ErrInvalidCancellationLink(err)
 	}
 
@@ -202,10 +214,12 @@ func (s *Service) DeleteBooking(ctx context.Context, bookingID uuid.UUID) error 
 	}
 
 	if booking.Class.StartTime.After(time.Now()) {
-		err = s.MessageSender.SendInfoAboutBookingCancellation(booking.Email, booking.FirstName, *booking.Class)
+		err = s.MessageSender.SendInfoAboutBookingCancellation(
+			booking.Email, booking.FirstName, *booking.Class,
+		)
 		if err != nil {
 			return fmt.Errorf("could not send info about booking cancellation to %s: %w", booking.Email, err)
-		}	
+		}
 	}
 
 	return nil

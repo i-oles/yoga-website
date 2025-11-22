@@ -45,23 +45,30 @@ func (s *Service) CreatePendingBooking(
 	ctx context.Context,
 	pendingBookingParams models.PendingBookingParams,
 ) (uuid.UUID, error) {
-	_, err := s.BookingsRepo.GetByEmailAndClassID(ctx, pendingBookingParams.ClassID, pendingBookingParams.Email)
+	_, err := s.BookingsRepo.GetByEmailAndClassID(
+		ctx, pendingBookingParams.ClassID, pendingBookingParams.Email,
+	)
 	if err == nil {
-		return uuid.Nil, domainErrors.ErrBookingAlreadyExists(pendingBookingParams.ClassID, pendingBookingParams.Email, err)
+		return uuid.Nil, domainErrors.ErrBookingAlreadyExists(
+			pendingBookingParams.ClassID, pendingBookingParams.Email, err,
+		)
 	}
 
 	if !errors.Is(err, errs.ErrNotFound) {
 		return uuid.Nil, fmt.Errorf("could not get booking: %w", err)
 	}
 
-	err = s.validatePendingBookingsPerUser(ctx, pendingBookingParams.ClassID, pendingBookingParams.Email)
+	err = s.validatePendingBookingsPerUser(
+		ctx, pendingBookingParams.ClassID, pendingBookingParams.Email,
+	)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("validation failed for pending booking: %w", err)
 	}
 
 	bookingCount, err := s.BookingsRepo.CountForClassID(ctx, pendingBookingParams.ClassID)
 	if err != nil {
-		return uuid.Nil, fmt.Errorf("could not count bookings for class %v: %w ", pendingBookingParams.ClassID, err)
+		return uuid.Nil,
+			fmt.Errorf("could not count bookings for class %v: %w ", pendingBookingParams.ClassID, err)
 	}
 
 	class, err := s.ClassesRepo.Get(ctx, pendingBookingParams.ClassID)

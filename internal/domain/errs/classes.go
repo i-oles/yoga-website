@@ -26,13 +26,14 @@ func ErrClassValidation(err error) *ClassError {
 func ErrClassNotEmpty(err error) *ClassError {
 	return &ClassError{
 		Code: ConflictCode,
-		Err: err, 
+		Err:  err,
 	}
 }
 
 func ErrClassNotFound(err error) *ClassError {
 	return &ClassError{
 		Code: NotFoundCode,
-		Err: err, 
+		Err:  err,
 	}
 }
+

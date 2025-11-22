@@ -47,6 +47,7 @@ func ToClassWithCurrentCapacityDTO(class models.ClassWithCurrentCapacity) (Class
 
 func ToClassesWithCurrentCapacityDTO(classes []models.ClassWithCurrentCapacity) ([]ClassWithCurrentCapacityDTO, error) {
 	classesResponse := make([]ClassWithCurrentCapacityDTO, len(classes))
+
 	for i, class := range classes {
 		classResponse, err := ToClassWithCurrentCapacityDTO(class)
 		if err != nil {
@@ -95,6 +96,7 @@ func ToClassDTO(class models.Class) (ClassDTO, error) {
 
 func ToClassesDTO(classes []models.Class) ([]ClassDTO, error) {
 	classesResponse := make([]ClassDTO, len(classes))
+
 	for i, class := range classes {
 		classResponse, err := ToClassDTO(class)
 		if err != nil {

@@ -21,14 +21,15 @@ type mockClassesRepo struct {
 	err     error
 }
 
-func (m *mockClassesRepo) Get(ctx context.Context, id uuid.UUID) (models.Class, error) {
+func (m *mockClassesRepo) Get(_ context.Context, _ uuid.UUID) (models.Class, error) {
 	return models.Class{}, nil
 }
 
-func (m *mockClassesRepo) GetAll(ctx context.Context) ([]models.Class, error) {
+func (m *mockClassesRepo) List(_ context.Context) ([]models.Class, error) {
 	if m.err != nil {
 		return nil, m.err
 	}
+
 	return m.classes, nil
 }
 
@@ -58,7 +59,7 @@ func (m *mockSender) SendInfoAboutCancellationToOwner(recipientFirstName, recipi
 	return nil
 }
 
-func (m *mockSender) SendInfoAboutClassCancellation(recipientEmail, recipientFirstName string, class models.Class) error {
+func (m *mockSender) SendInfoAboutClassCancellation(recipientEmail, recipientFirstName, reason_msg string, class models.Class) error {
 	return nil
 }
 
@@ -71,6 +72,10 @@ func (m *mockSender) SendInfoAboutUpdate(recipientEmail, recipientFirstName, mes
 }
 
 type mockBookingsRepo struct{}
+
+func (m *mockBookingsRepo) GetByID(ctx context.Context, id uuid.UUID) (models.Booking, error) {
+	return models.Booking{}, nil
+}
 
 func (m *mockBookingsRepo) GetByEmailAndClassID(ctx context.Context, classID uuid.UUID, email string) (models.Booking, error) {
 	return models.Booking{}, nil
@@ -85,11 +90,7 @@ func (m *mockBookingsRepo) ListByClassID(ctx context.Context, classID uuid.UUID)
 }
 
 func (m *mockBookingsRepo) CountForClassID(ctx context.Context, classID uuid.UUID) (int, error) {
-	return 0, nil
-}
-
-func (m *mockBookingsRepo) Get(ctx context.Context, id uuid.UUID) (models.Booking, error) {
-	return models.Booking{}, nil
+	return 2, nil
 }
 
 func (m *mockBookingsRepo) Insert(ctx context.Context, confirmedBooking models.Booking) (uuid.UUID, error) {
@@ -458,25 +459,24 @@ func TestService_GetClasses(t *testing.T) {
 			if tt.wantError {
 				if err == nil {
 					t.Errorf("Expected error, got nil")
-				} else {
-					if tt.classesLimit != nil && *tt.classesLimit < 0 {
-						errorMsg := err.Error()
-						if !strings.Contains(errorMsg, "classes_limit") && !strings.Contains(errorMsg, "greater than or equal to 0") {
-							t.Errorf("Expected error message about classes_limit validation, got: %v", err)
-						}
+				} else if tt.classesLimit != nil && *tt.classesLimit < 0 {
+					errorMsg := err.Error()
+					if !strings.Contains(errorMsg, "classes_limit") && !strings.Contains(errorMsg, "greater than or equal to 0") {
+						t.Errorf("Expected error message about classes_limit validation, got: %v", err)
+					}
 
-						var classError *errs.ClassError
-						if !errors.As(err, &classError) {
-							t.Errorf("Expected ClassError, got: %T", err)
-						} else if classError.Code != errs.BadRequestCode {
-							t.Errorf("Expected BadRequestCode, got: %d", classError.Code)
-						}
+					var classError *errs.ClassError
+					if !errors.As(err, &classError) {
+						t.Errorf("Expected ClassError, got: %T", err)
+					} else if classError.Code != errs.BadRequestCode {
+						t.Errorf("Expected BadRequestCode, got: %d", classError.Code)
 					}
 				}
 			} else {
 				if err != nil {
 					t.Errorf("Unexpected error: %v", err)
 				}
+
 				if len(classes) != tt.wantCount {
 					t.Errorf("Expected %d classes, got %d", tt.wantCount, len(classes))
 				}

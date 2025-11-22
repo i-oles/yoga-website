@@ -98,7 +98,4 @@ func ErrInvalidCancellationLink(err error) *BookingError {
 		Message: "Twój link do odwołania rezerwacji wygasł albo jest nieprawidłowy, skontaktuj się ze mną...",
 		Err:     err,
 	}
-
 }
-
-
