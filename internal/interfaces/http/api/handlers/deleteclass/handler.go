@@ -1,10 +1,11 @@
 package deleteclass
 
 import (
+	"net/http"
+
 	"main/internal/domain/services"
 	"main/internal/interfaces/http/api/dto"
-	"main/internal/interfaces/http/api/errs"
-	"net/http"
+	apiErrs "main/internal/interfaces/http/api/errs"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -53,5 +54,5 @@ func (h *Handler) Handle(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"class_id" : classID})
+	c.JSON(http.StatusOK, gin.H{"class_id": classID})
 }

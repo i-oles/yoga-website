@@ -17,7 +17,7 @@ type IClassesService interface {
 	) ([]models.ClassWithCurrentCapacity, error)
 	CreateClasses(ctx context.Context, classes []models.Class) ([]models.Class, error)
 	UpdateClass(ctx context.Context, id uuid.UUID, update models.UpdateClass) (models.Class, error)
-	DeleteClass(ctx context.Context, classID uuid.UUID, reasonMsg string) error
+	DeleteClass(ctx context.Context, classID uuid.UUID, reasonMsg *string) error
 }
 
 type IBookingsService interface {

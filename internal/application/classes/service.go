@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
+
 	"main/internal/domain/errs"
 	"main/internal/domain/models"
 	"main/internal/domain/repositories"
 	"main/internal/domain/services"
 	repositoryError "main/internal/infrastructure/errs"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -104,10 +105,16 @@ func (s *Service) CreateClasses(
 	return insertedClasses, nil
 }
 
-func (s *Service) DeleteClass(ctx context.Context, classID uuid.UUID, reasonMsg string) error {
+func (s *Service) DeleteClass(ctx context.Context, classID uuid.UUID, reasonMsg *string) error {
 	bookings, err := s.bookingsRepo.ListByClassID(ctx, classID)
 	if err != nil {
 		return fmt.Errorf("could not get classes for classID %v: %w", classID, err)
+	}
+
+	if len(bookings) > 0 && reasonMsg == nil {
+		return errs.ErrClassValidation(
+			errors.New("reason msg can not be empty, when classes has bookings"),
+		)
 	}
 
 	for _, booking := range bookings {
@@ -123,7 +130,7 @@ func (s *Service) DeleteClass(ctx context.Context, classID uuid.UUID, reasonMsg 
 		err := s.MessageSender.SendInfoAboutClassCancellation(
 			booking.Email,
 			booking.FirstName,
-			reasonMsg,
+			*reasonMsg,
 			*booking.Class,
 		)
 		if err != nil {
