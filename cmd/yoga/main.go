@@ -29,6 +29,7 @@ import (
 	"main/internal/interfaces/http/api/handlers/listbookings"
 	"main/internal/interfaces/http/api/handlers/listbookingsbyclass"
 	"main/internal/interfaces/http/api/handlers/listclasses"
+	"main/internal/interfaces/http/api/handlers/listpendingbookings"
 	"main/internal/interfaces/http/api/handlers/updateclass"
 	viewErrs "main/internal/interfaces/http/html/errs"
 	viewErrHandler "main/internal/interfaces/http/html/errs/handler"
@@ -176,12 +177,12 @@ func setupRouter(db *gorm.DB, cfg *configuration.Configuration) *gin.Engine {
 	listBookingsHandler := listbookings.NewHandler(bookingsRepo, apiErrorHandler)
 	listBookingsByClassHandler := listbookingsbyclass.NewHandler(bookingsRepo, apiErrorHandler)
 	deleteBookingHandler := deletebooking.NewHandler(bookingsService, apiErrorHandler)
-	// getAllPendingBookingsHandler := allpendingbookings.NewHandler(bookingsRepo, apiErrorHandler)
+	listPendingBookingsHandler := listpendingbookings.NewHandler(pendingBookingsRepo, apiErrorHandler)
 
 	{
 		api.GET("/api/v1/bookings", authMiddleware, listBookingsHandler.Handle)
 		api.DELETE("/api/v1/bookings/:booking_id", authMiddleware, deleteBookingHandler.Handle)
-		// api.GET("api/v1/bookings/pending", authMiddleware, getAllPendingBookingsHandler.Handle)
+		api.GET("api/v1/pending_bookings", authMiddleware, listPendingBookingsHandler.Handle)
 		api.POST("/api/v1/classes", authMiddleware, createClassHandler.Handle)
 		api.GET("/api/v1/classes", authMiddleware, getClassesHandler.Handle)
 		api.PATCH("/api/v1/classes/:class_id", authMiddleware, updateClassHandler.Handle)

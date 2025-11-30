@@ -2,7 +2,7 @@ run:
 	go run cmd/yoga/main.go
 
 lint:
-	golangci-lint run
+	golangci-lint run ./...
 
 test:
 	go test -v ./...

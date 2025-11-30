@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+
 	"main/internal/domain/models"
 
 	"github.com/google/uuid"
@@ -30,4 +31,5 @@ type IPendingBookings interface {
 	Insert(ctx context.Context, booking models.PendingBooking) error
 	Delete(ctx context.Context, id uuid.UUID) error
 	CountPendingBookingsPerUser(ctx context.Context, email string, classID uuid.UUID) (int8, error)
+	List(ctx context.Context) ([]models.PendingBooking, error)
 }

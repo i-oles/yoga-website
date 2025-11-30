@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"main/internal/domain/models"
 	"main/internal/infrastructure/errs"
 	"main/internal/infrastructure/models/db"
@@ -66,7 +67,7 @@ func (r BookingsRepo) List(ctx context.Context) ([]models.Booking, error) {
 	var SQLBookings []db.SQLBooking
 
 	if err := r.db.WithContext(ctx).Preload("Class").Find(&SQLBookings).Error; err != nil {
-		return nil, fmt.Errorf("could not get all bookings: %w", err)
+		return nil, fmt.Errorf("could not list bookings: %w", err)
 	}
 
 	result := make([]models.Booking, len(SQLBookings))

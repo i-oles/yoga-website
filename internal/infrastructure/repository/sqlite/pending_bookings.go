@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"main/internal/domain/models"
 	"main/internal/infrastructure/errs"
 	"main/internal/infrastructure/models/db"
@@ -84,4 +85,20 @@ func (r PendingBookingsRepo) Delete(ctx context.Context, id uuid.UUID) error {
 	}
 
 	return nil
+}
+
+func (r PendingBookingsRepo) List(ctx context.Context) ([]models.PendingBooking, error) {
+	var SQLPendingBookings []db.SQLPendingBooking
+
+	if err := r.db.WithContext(ctx).Find(&SQLPendingBookings).Error; err != nil {
+		return nil, fmt.Errorf("could not list all pending bookings: %w", err)
+	}
+
+	result := make([]models.PendingBooking, len(SQLPendingBookings))
+
+	for i, SQLPendingBooking := range SQLPendingBookings {
+		result[i] = SQLPendingBooking.ToDomain()
+	}
+
+	return result, nil
 }
