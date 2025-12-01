@@ -2,10 +2,11 @@ package dto
 
 import (
 	"fmt"
+	"time"
+
 	domainModels "main/internal/domain/models"
 	"main/internal/interfaces/http/shared/dto"
 	"main/pkg/converter"
-	"time"
 
 	"github.com/google/uuid"
 )

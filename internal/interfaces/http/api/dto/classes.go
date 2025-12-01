@@ -8,8 +8,8 @@ type CreateClassRequest struct {
 	StartTime   time.Time `binding:"required" time_format:"2006-01-02T15:04:05Z07:00" json:"start_time"`
 	ClassLevel  string    `binding:"required,min=3,max=40" json:"class_level"`
 	ClassName   string    `binding:"required,min=3,max=40" json:"class_name"`
-	MaxCapacity int       `binding:"gte=1"					json:"max_capacity"`
-	Location    string    `binding:"required" json:"max_capacity" `
+	MaxCapacity int       `binding:"gte=1" json:"max_capacity"`
+	Location    string    `binding:"required" json:"location"`
 }
 
 type GetClassesRequest struct {

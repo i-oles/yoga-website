@@ -44,6 +44,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
+	"golang.org/x/time/rate"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -142,6 +143,8 @@ func setupRouter(db *gorm.DB, cfg *configuration.Configuration) *gin.Engine {
 	viewErrorHandler = logWrapper.NewErrorHandler(viewErrorHandler, cfg.LogBusinessErrors)
 
 	// HTML
+	rateLimiterMiddleware := middleware.GlobalRateLimit
+
 	homeHandler := home.NewHandler(classesService, viewErrorHandler, cfg.IsVacation)
 	createBookingHandler := createbooking.NewHandler(bookingsService, viewErrorHandler)
 	cancelBookingHandler := cancelbooking.NewHandler(bookingsService, viewErrorHandler)
@@ -160,7 +163,9 @@ func setupRouter(db *gorm.DB, cfg *configuration.Configuration) *gin.Engine {
 
 		// pending_bookings
 		api.GET("/classes/:class_id/pending_bookings/form", pendingBookingFormHandler.Handle)
-		api.POST("/pending_bookings", createPendingBookingHandler.Handle)
+
+		requestLimiter := rate.NewLimiter(1, 2)
+		api.POST("/pending_bookings", rateLimiterMiddleware(requestLimiter), createPendingBookingHandler.Handle)
 	}
 
 	var apiErrorHandler apiErrs.IErrorHandler
@@ -170,6 +175,7 @@ func setupRouter(db *gorm.DB, cfg *configuration.Configuration) *gin.Engine {
 
 	// API
 	authMiddleware := middleware.Auth(cfg.AuthSecret)
+
 	createClassHandler := createclasses.NewHandler(classesService, apiErrorHandler)
 	getClassesHandler := listclasses.NewHandler(classesService, apiErrorHandler)
 	updateClassHandler := updateclass.NewHandler(classesService, apiErrorHandler)
