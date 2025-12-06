@@ -4,12 +4,13 @@ import (
 	"crypto/tls"
 	"fmt"
 	"html/template"
+	"strings"
+	"time"
+
 	"main/internal/domain/models"
 	infrastructureModels "main/internal/infrastructure/models"
 	"main/pkg/converter"
 	"main/pkg/translator"
-	"strings"
-	"time"
 
 	"gopkg.in/gomail.v2"
 )
@@ -220,7 +221,7 @@ func (s Sender) SendInfoAboutClassCancellation(
 	}
 
 	var msgContent strings.Builder
-	
+
 	err = tmpl.Execute(&msgContent, tmplData)
 	if err != nil {
 		return fmt.Errorf("could not execute template: %w", err)

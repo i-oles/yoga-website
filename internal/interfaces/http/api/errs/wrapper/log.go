@@ -2,7 +2,8 @@ package wrapper
 
 import (
 	"log/slog"
-	"main/internal/interfaces/http/api/errs"
+
+	apiErrs "main/internal/interfaces/http/api/errs"
 
 	"github.com/gin-gonic/gin"
 )

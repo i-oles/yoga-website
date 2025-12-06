@@ -13,7 +13,7 @@ type IClasses interface {
 	List(ctx context.Context) ([]models.Class, error)
 	Insert(ctx context.Context, classes []models.Class) ([]models.Class, error)
 	Delete(ctx context.Context, id uuid.UUID) error
-	Update(ctx context.Context, id uuid.UUID, update map[string]interface{}) error
+	Update(ctx context.Context, id uuid.UUID, update map[string]any) error
 }
 
 type IBookings interface {

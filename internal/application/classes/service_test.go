@@ -3,11 +3,15 @@ package classes
 import (
 	"context"
 	"errors"
-	"main/internal/domain/errs"
-	"main/internal/domain/models"
+	"fmt"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
+
+	"main/internal/domain/errs"
+	"main/internal/domain/models"
+	"main/internal/domain/repositories"
 
 	"github.com/google/uuid"
 )
@@ -18,130 +22,167 @@ func intPtr(v int) *int {
 
 type mockClassesRepo struct {
 	classes []models.Class
-	err     error
+}
+
+func newMockClassesRepo(classes []models.Class) *mockClassesRepo {
+	return &mockClassesRepo{
+		classes: classes,
+	}
 }
 
 func (m *mockClassesRepo) Get(_ context.Context, _ uuid.UUID) (models.Class, error) {
+	if len(m.classes) != 0 {
+		return m.classes[0], nil
+	}
+
 	return models.Class{}, nil
 }
 
 func (m *mockClassesRepo) List(_ context.Context) ([]models.Class, error) {
-	if m.err != nil {
-		return nil, m.err
-	}
-
 	return m.classes, nil
 }
 
-func (m *mockClassesRepo) Insert(ctx context.Context, classes []models.Class) ([]models.Class, error) {
-	return nil, nil
+func (m *mockClassesRepo) Insert(_ context.Context, classes []models.Class) ([]models.Class, error) {
+	return classes, nil
 }
 
-func (m *mockClassesRepo) Delete(ctx context.Context, id uuid.UUID) error {
+func (m *mockClassesRepo) Delete(_ context.Context, _ uuid.UUID) error {
 	return nil
 }
 
-func (m *mockClassesRepo) Update(ctx context.Context, id uuid.UUID, update map[string]any) error {
+func (m *mockClassesRepo) Update(_ context.Context, _ uuid.UUID, _ map[string]any) error {
 	return nil
 }
 
 type mockSender struct{}
 
-func (m *mockSender) SendLinkToConfirmation(recipientEmail, recipientFirstName, linkToConfirmation string) error {
+func (m *mockSender) SendLinkToConfirmation(_, _, _ string) error {
 	return nil
 }
 
-func (m *mockSender) SendConfirmations(msg models.ConfirmationMsg) error {
+func (m *mockSender) SendConfirmations(_ models.ConfirmationMsg) error {
 	return nil
 }
 
-func (m *mockSender) SendInfoAboutCancellationToOwner(recipientFirstName, recipientLastName string, startTime time.Time) error {
+func (m *mockSender) SendInfoAboutCancellationToOwner(_, _ string, _ time.Time) error {
 	return nil
 }
 
-func (m *mockSender) SendInfoAboutClassCancellation(recipientEmail, recipientFirstName, reason_msg string, class models.Class) error {
+func (m *mockSender) SendInfoAboutClassCancellation(_, _, _ string, _ models.Class) error {
 	return nil
 }
 
-func (m *mockSender) SendInfoAboutBookingCancellation(recipientEmail, recipientFirstName string, class models.Class) error {
+func (m *mockSender) SendInfoAboutBookingCancellation(_, _ string, _ models.Class) error {
 	return nil
 }
 
-func (m *mockSender) SendInfoAboutUpdate(recipientEmail, recipientFirstName, message string, class models.Class) error {
+func (m *mockSender) SendInfoAboutUpdate(_, _, _ string, _ models.Class) error {
 	return nil
 }
 
-type mockBookingsRepo struct{}
+type mockBookingsRepo struct {
+	count int
+}
 
-func (m *mockBookingsRepo) GetByID(ctx context.Context, id uuid.UUID) (models.Booking, error) {
+func newMockBookingsRepoWithOneBooking() *mockBookingsRepo {
+	return &mockBookingsRepo{count: 1}
+}
+
+func (m *mockBookingsRepo) GetByID(_ context.Context, _ uuid.UUID) (models.Booking, error) {
 	return models.Booking{}, nil
 }
 
-func (m *mockBookingsRepo) GetByEmailAndClassID(ctx context.Context, classID uuid.UUID, email string) (models.Booking, error) {
+func (m *mockBookingsRepo) GetByEmailAndClassID(_ context.Context, _ uuid.UUID, _ string) (models.Booking, error) {
 	return models.Booking{}, nil
 }
 
-func (m *mockBookingsRepo) List(ctx context.Context) ([]models.Booking, error) {
-	return nil, nil
+func (m *mockBookingsRepo) List(_ context.Context) ([]models.Booking, error) {
+	return []models.Booking{}, nil
 }
 
-func (m *mockBookingsRepo) ListByClassID(ctx context.Context, classID uuid.UUID) ([]models.Booking, error) {
-	return nil, nil
+func (m *mockBookingsRepo) ListByClassID(_ context.Context, classID uuid.UUID) ([]models.Booking, error) {
+	return []models.Booking{}, nil
 }
 
-func (m *mockBookingsRepo) CountForClassID(ctx context.Context, classID uuid.UUID) (int, error) {
-	return 2, nil
+func (m *mockBookingsRepo) CountForClassID(_ context.Context, _ uuid.UUID) (int, error) {
+	return m.count, nil
 }
 
-func (m *mockBookingsRepo) Insert(ctx context.Context, confirmedBooking models.Booking) (uuid.UUID, error) {
+func (m *mockBookingsRepo) Insert(_ context.Context, _ models.Booking) (uuid.UUID, error) {
 	return uuid.Nil, nil
 }
 
-func (m *mockBookingsRepo) Delete(ctx context.Context, id uuid.UUID) error {
+func (m *mockBookingsRepo) Delete(_ context.Context, _ uuid.UUID) error {
 	return nil
 }
 
-func TestService_GetClasses(t *testing.T) {
+type mockClassesRepoError struct{}
+
+func (m *mockClassesRepoError) Get(_ context.Context, _ uuid.UUID) (models.Class, error) {
+	return models.Class{}, errors.New("db error")
+}
+
+func (m *mockClassesRepoError) List(_ context.Context) ([]models.Class, error) {
+	return nil, errors.New("db error")
+}
+
+func (m *mockClassesRepoError) Insert(_ context.Context, _ []models.Class) ([]models.Class, error) {
+	return nil, errors.New("db error")
+}
+
+func (m *mockClassesRepoError) Delete(_ context.Context, _ uuid.UUID) error {
+	return errors.New("db error")
+}
+
+func (m *mockClassesRepoError) Update(_ context.Context, _ uuid.UUID, _ map[string]any) error {
+	return errors.New("db error")
+}
+
+func TestService_ListClasses(t *testing.T) {
 	now := time.Now()
 	pastTime := now.Add(-2 * time.Hour)
 	futureTime1 := now.Add(1 * time.Hour)
 	futureTime2 := now.Add(2 * time.Hour)
 	futureTime3 := now.Add(3 * time.Hour)
+	testID1 := uuid.New()
+	testID2 := uuid.New()
+	testID3 := uuid.New()
+	testID4 := uuid.New()
 
 	testClassesWithCurrentCap := []models.ClassWithCurrentCapacity{
 		{
-			ID:              uuid.New(),
+			ID:              testID1,
 			StartTime:       pastTime,
 			ClassLevel:      "Beginner",
 			ClassName:       "Morning Yoga",
-			CurrentCapacity: 5,
+			CurrentCapacity: 9,
 			MaxCapacity:     10,
 			Location:        "Studio A",
 		},
 		{
-			ID:              uuid.New(),
+			ID:              testID2,
 			StartTime:       futureTime1,
 			ClassLevel:      "Intermediate",
 			ClassName:       "Afternoon Yoga",
-			CurrentCapacity: 8,
+			CurrentCapacity: 14,
 			MaxCapacity:     15,
 			Location:        "Studio B",
 		},
 		{
-			ID:              uuid.New(),
+			ID:              testID3,
 			StartTime:       futureTime2,
 			ClassLevel:      "Advanced",
 			ClassName:       "Evening Yoga",
-			CurrentCapacity: 10,
+			CurrentCapacity: 11,
 			MaxCapacity:     12,
 			Location:        "Studio C",
 		},
 		{
-			ID:              uuid.New(),
+			ID:              testID4,
 			StartTime:       futureTime3,
 			ClassLevel:      "Beginner",
 			ClassName:       "Night Yoga",
-			CurrentCapacity: 3,
+			CurrentCapacity: 19,
 			MaxCapacity:     20,
 			Location:        "Studio D",
 		},
@@ -149,7 +190,7 @@ func TestService_GetClasses(t *testing.T) {
 
 	testClasses := []models.Class{
 		{
-			ID:          uuid.New(),
+			ID:          testID1,
 			StartTime:   pastTime,
 			ClassLevel:  "Beginner",
 			ClassName:   "Morning Yoga",
@@ -157,7 +198,7 @@ func TestService_GetClasses(t *testing.T) {
 			Location:    "Studio A",
 		},
 		{
-			ID:          uuid.New(),
+			ID:          testID2,
 			StartTime:   futureTime1,
 			ClassLevel:  "Intermediate",
 			ClassName:   "Afternoon Yoga",
@@ -165,7 +206,7 @@ func TestService_GetClasses(t *testing.T) {
 			Location:    "Studio B",
 		},
 		{
-			ID:          uuid.New(),
+			ID:          testID3,
 			StartTime:   futureTime2,
 			ClassLevel:  "Advanced",
 			ClassName:   "Evening Yoga",
@@ -173,7 +214,7 @@ func TestService_GetClasses(t *testing.T) {
 			Location:    "Studio C",
 		},
 		{
-			ID:          uuid.New(),
+			ID:          testID4,
 			StartTime:   futureTime3,
 			ClassLevel:  "Beginner",
 			ClassName:   "Night Yoga",
@@ -184,306 +225,180 @@ func TestService_GetClasses(t *testing.T) {
 
 	tests := []struct {
 		name                string
-		classesWithCurrCap  []models.ClassWithCurrentCapacity
-		classes             []models.Class
-		repoError           error
 		onlyUpcomingClasses bool
 		classesLimit        *int
-		wantCount           int
+		classesRepo         repositories.IClasses
+		bookingsRepo        repositories.IBookings
+		wantClasses         []models.ClassWithCurrentCapacity
 		wantError           bool
-		validateResult      func(t *testing.T, classes []models.ClassWithCurrentCapacity)
+		error               error
 	}{
 		{
-			name:                "Get all classes without filters",
-			classesWithCurrCap:  testClassesWithCurrentCap,
-			classes:             testClasses,
+			name:                "List classes without filters",
 			onlyUpcomingClasses: false,
 			classesLimit:        nil,
-			wantCount:           4,
-			wantError:           false,
-			validateResult: func(t *testing.T, classes []models.ClassWithCurrentCapacity) {
-				if len(classes) != 4 {
-					t.Errorf("Expected 4 classes, got %d", len(classes))
-				}
-			},
+			classesRepo:         newMockClassesRepo(testClasses),
+			bookingsRepo:        newMockBookingsRepoWithOneBooking(),
+			wantClasses:         testClassesWithCurrentCap,
 		},
 		{
-			name:                "Get only upcoming classes",
-			classesWithCurrCap:  testClassesWithCurrentCap,
-			classes:             testClasses,
+			name:                "List only upcoming classes",
 			onlyUpcomingClasses: true,
 			classesLimit:        nil,
-			wantCount:           3,
-			wantError:           false,
-			validateResult: func(t *testing.T, classes []models.ClassWithCurrentCapacity) {
-				if len(classes) != 3 {
-					t.Errorf("Expected 3 upcoming classes, got %d", len(classes))
-				}
-				for _, class := range classes {
-					if class.StartTime.Before(now) {
-						t.Errorf("Expected only upcoming classes, got class with start time: %v", class.StartTime)
-					}
-				}
+			classesRepo:         newMockClassesRepo(testClasses),
+			bookingsRepo:        newMockBookingsRepoWithOneBooking(),
+			wantClasses: []models.ClassWithCurrentCapacity{
+				testClassesWithCurrentCap[1],
+				testClassesWithCurrentCap[2],
+				testClassesWithCurrentCap[3],
 			},
 		},
 		{
-			name:                "Get all classes with limit",
-			classesWithCurrCap:  testClassesWithCurrentCap,
-			classes:             testClasses,
+			name:                "List all classes with limit",
 			onlyUpcomingClasses: false,
 			classesLimit:        intPtr(2),
-			wantCount:           2,
-			wantError:           false,
-			validateResult: func(t *testing.T, classes []models.ClassWithCurrentCapacity) {
-				if len(classes) != 2 {
-					t.Errorf("Expected 2 classes, got %d", len(classes))
-				}
-
-				hasPastClass := false
-				hasFutureClass := false
-				currentTime := time.Now()
-
-				for _, class := range classes {
-					if class.StartTime.Before(currentTime) {
-						hasPastClass = true
-					} else {
-						hasFutureClass = true
-					}
-				}
-
-				if !hasPastClass {
-					t.Errorf("Expected at least one past class in the result, but none found")
-				}
-
-				if !hasFutureClass {
-					t.Errorf("Expected at least one future class in the result, but none found")
-				}
+			classesRepo:         newMockClassesRepo(testClasses),
+			bookingsRepo:        newMockBookingsRepoWithOneBooking(),
+			wantClasses: []models.ClassWithCurrentCapacity{
+				testClassesWithCurrentCap[0],
+				testClassesWithCurrentCap[1],
 			},
 		},
 		{
-			name:               "Get upcoming classes with limit",
-			classesWithCurrCap: testClassesWithCurrentCap,
-
+			name:                "List upcoming classes with limit",
 			onlyUpcomingClasses: true,
 			classesLimit:        intPtr(2),
-			wantCount:           2,
-			wantError:           false,
-			validateResult: func(t *testing.T, classes []models.ClassWithCurrentCapacity) {
-				if len(classes) != 2 {
-					t.Errorf("Expected 2 classes, got %d", len(classes))
-				}
-				for _, class := range classes {
-					if class.StartTime.Before(now) {
-						t.Errorf("Expected only upcoming classes, got class with start time: %v", class.StartTime)
-					}
-				}
+			classesRepo:         newMockClassesRepo(testClasses),
+			bookingsRepo:        newMockBookingsRepoWithOneBooking(),
+			wantClasses: []models.ClassWithCurrentCapacity{
+				testClassesWithCurrentCap[1],
+				testClassesWithCurrentCap[2],
 			},
 		},
 		{
-			name:                "Get upcoming classes with limit larger than available",
-			classesWithCurrCap:  testClassesWithCurrentCap,
+			name:                "List upcoming classes with limit larger than available",
 			onlyUpcomingClasses: true,
 			classesLimit:        intPtr(10),
-			wantCount:           3,
-			wantError:           false,
-			validateResult: func(t *testing.T, classes []models.ClassWithCurrentCapacity) {
-				if len(classes) != 3 {
-					t.Errorf("Expected 3 classes (limit larger than available), got %d", len(classes))
-				}
+			classesRepo:         newMockClassesRepo(testClasses),
+			bookingsRepo:        newMockBookingsRepoWithOneBooking(),
+			wantClasses: []models.ClassWithCurrentCapacity{
+				testClassesWithCurrentCap[1],
+				testClassesWithCurrentCap[2],
+				testClassesWithCurrentCap[3],
 			},
 		},
 		{
-			name:                "Get all classes with limit larger than available",
-			classesWithCurrCap:  testClassesWithCurrentCap,
+			name:                "List classes with limit larger than available",
 			onlyUpcomingClasses: false,
 			classesLimit:        intPtr(10),
-			wantCount:           4,
-			wantError:           false,
-			validateResult: func(t *testing.T, classes []models.ClassWithCurrentCapacity) {
-				if len(classes) != 4 {
-					t.Errorf("Expected 4 classes (limit larger than available), got %d", len(classes))
-				}
-			},
+			classesRepo:         newMockClassesRepo(testClasses),
+			bookingsRepo:        newMockBookingsRepoWithOneBooking(),
+			wantClasses:         testClassesWithCurrentCap,
 		},
 		{
-			name:                "Get upcoming classes with zero limit",
-			classesWithCurrCap:  testClassesWithCurrentCap,
+			name:                "List upcoming classes with zero limit",
 			onlyUpcomingClasses: true,
 			classesLimit:        intPtr(0),
-			wantCount:           0,
-			wantError:           false,
-			validateResult: func(t *testing.T, classes []models.ClassWithCurrentCapacity) {
-				if len(classes) != 0 {
-					t.Errorf("Expected 0 classes (limit 0), got %d", len(classes))
-				}
-			},
+			classesRepo:         newMockClassesRepo(testClasses),
+			bookingsRepo:        newMockBookingsRepoWithOneBooking(),
+			wantClasses:         []models.ClassWithCurrentCapacity{},
 		},
 		{
-			name:                "Get all classes with zero limit",
-			classesWithCurrCap:  testClassesWithCurrentCap,
+			name:                "List classes with zero limit",
 			onlyUpcomingClasses: false,
 			classesLimit:        intPtr(0),
-			wantCount:           0,
-			wantError:           false,
-			validateResult: func(t *testing.T, classes []models.ClassWithCurrentCapacity) {
-				if len(classes) != 0 {
-					t.Errorf("Expected 0 classes (limit 0), got %d", len(classes))
-				}
-			},
+			classesRepo:         newMockClassesRepo(testClasses),
+			bookingsRepo:        newMockBookingsRepoWithOneBooking(),
+			wantClasses:         []models.ClassWithCurrentCapacity{},
 		},
 		{
-			name:                "Get classes from empty repository",
-			classesWithCurrCap:  []models.ClassWithCurrentCapacity{},
+			name:                "List classes from empty repository",
 			onlyUpcomingClasses: false,
 			classesLimit:        nil,
-			wantCount:           0,
-			wantError:           false,
-			validateResult: func(t *testing.T, classes []models.ClassWithCurrentCapacity) {
-				if len(classes) != 0 {
-					t.Errorf("Expected 0 classes, got %d", len(classes))
-				}
+			classesRepo:         newMockClassesRepo([]models.Class{}),
+			bookingsRepo:        newMockBookingsRepoWithOneBooking(),
+			wantClasses:         []models.ClassWithCurrentCapacity{},
+		},
+		{
+			name:                "List upcoming classes from empty repository",
+			onlyUpcomingClasses: true,
+			classesLimit:        nil,
+			classesRepo:         newMockClassesRepo([]models.Class{}),
+			bookingsRepo:        newMockBookingsRepoWithOneBooking(),
+			wantClasses:         []models.ClassWithCurrentCapacity{},
+		},
+		{
+			name:                "try to list past classes with upcoming filter",
+			onlyUpcomingClasses: true,
+			classesLimit:        nil,
+			classesRepo:         newMockClassesRepo([]models.Class{testClasses[0]}),
+			bookingsRepo:        newMockBookingsRepoWithOneBooking(),
+			wantClasses:         []models.ClassWithCurrentCapacity{},
+		},
+		{
+			name:                "List upcoming classes with limit of one",
+			onlyUpcomingClasses: true,
+			classesLimit:        intPtr(1),
+			classesRepo:         newMockClassesRepo(testClasses),
+			bookingsRepo:        newMockBookingsRepoWithOneBooking(),
+			wantClasses: []models.ClassWithCurrentCapacity{
+				testClassesWithCurrentCap[1],
 			},
 		},
 		{
-			name:                "Get upcoming classes from empty repository",
-			classesWithCurrCap:  []models.ClassWithCurrentCapacity{},
+			name:                "List classes with negative limit - should return error",
+			onlyUpcomingClasses: false,
+			classesLimit:        intPtr(-1),
+			wantError:           true,
+			error: errs.ErrClassValidation(
+				fmt.Errorf("classes_limit must be greater than or equal to 0, got: %d", -1),
+			),
+		},
+		{
+			name:                "List upcoming classes with negative limit - should return error",
 			onlyUpcomingClasses: true,
-			classesLimit:        nil,
-			wantCount:           0,
-			wantError:           false,
-			validateResult: func(t *testing.T, classes []models.ClassWithCurrentCapacity) {
-				if len(classes) != 0 {
-					t.Errorf("Expected 0 classes, got %d", len(classes))
-				}
-			},
+			classesLimit:        intPtr(-5),
+			wantError:           true,
+			error: errs.ErrClassValidation(
+				fmt.Errorf("classes_limit must be greater than or equal to 0, got: %d", -5),
+			),
 		},
 		{
 			name:                "Repository error",
-			classesWithCurrCap:  testClassesWithCurrentCap,
-			repoError:           errors.New("database error"),
 			onlyUpcomingClasses: false,
 			classesLimit:        nil,
-			wantCount:           0,
+			classesRepo:         &mockClassesRepoError{},
 			wantError:           true,
-			validateResult: func(t *testing.T, classes []models.ClassWithCurrentCapacity) {
-				if classes != nil {
-					t.Errorf("Expected nil classes on error, got %v", classes)
-				}
-			},
-		},
-		{
-			name:                "Get only past classes with upcoming filter",
-			classesWithCurrCap:  []models.ClassWithCurrentCapacity{testClassesWithCurrentCap[0]},
-			onlyUpcomingClasses: true,
-			classesLimit:        nil,
-			wantCount:           0,
-			wantError:           false,
-			validateResult: func(t *testing.T, classes []models.ClassWithCurrentCapacity) {
-				if len(classes) != 0 {
-					t.Errorf("Expected 0 classes (all are past), got %d", len(classes))
-				}
-			},
-		},
-		{
-			name:                "Get upcoming classes with limit of one",
-			classesWithCurrCap:  testClassesWithCurrentCap,
-			onlyUpcomingClasses: true,
-			classesLimit:        intPtr(1),
-			wantCount:           1,
-			wantError:           false,
-			validateResult: func(t *testing.T, classes []models.ClassWithCurrentCapacity) {
-				if len(classes) != 1 {
-					t.Errorf("Expected 1 class, got %d", len(classes))
-				}
-				if classes[0].StartTime.Before(now) {
-					t.Errorf("Expected upcoming class, got class with start time: %v", classes[0].StartTime)
-				}
-			},
-		},
-		{
-			name:                "Get classes with negative limit - should return error",
-			classesWithCurrCap:  testClassesWithCurrentCap,
-			onlyUpcomingClasses: false,
-			classesLimit:        intPtr(-1),
-			wantCount:           0,
-			wantError:           true,
-			validateResult: func(t *testing.T, classes []models.ClassWithCurrentCapacity) {
-				if classes != nil {
-					t.Errorf("Expected nil classes on error, got %v", classes)
-				}
-			},
-		},
-		{
-			name:                "Get upcoming classes with negative limit - should return error",
-			classesWithCurrCap:  testClassesWithCurrentCap,
-			onlyUpcomingClasses: true,
-			classesLimit:        intPtr(-5),
-			wantCount:           0,
-			wantError:           true,
-			validateResult: func(t *testing.T, classes []models.ClassWithCurrentCapacity) {
-				if classes != nil {
-					t.Errorf("Expected nil classes on error, got %v", classes)
-				}
-			},
-		},
-		{
-			name:                "Get classes with large negative limit - should return error",
-			classesWithCurrCap:  testClassesWithCurrentCap,
-			onlyUpcomingClasses: false,
-			classesLimit:        intPtr(-100),
-			wantCount:           0,
-			wantError:           true,
-			validateResult: func(t *testing.T, classes []models.ClassWithCurrentCapacity) {
-				if classes != nil {
-					t.Errorf("Expected nil classes on error, got %v", classes)
-				}
-			},
+			error:               errors.New("db error"),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			classesRepo := &mockClassesRepo{
-				classes: tt.classes,
-				err:     tt.repoError,
-			}
-			bookingsRepo := &mockBookingsRepo{}
-
 			sender := &mockSender{}
 
-			service := NewService(classesRepo, bookingsRepo, sender)
+			service := NewService(tt.classesRepo, tt.bookingsRepo, sender)
 			ctx := context.Background()
 
 			classes, err := service.ListClasses(ctx, tt.onlyUpcomingClasses, tt.classesLimit)
-
 			if tt.wantError {
 				if err == nil {
-					t.Errorf("Expected error, got nil")
-				} else if tt.classesLimit != nil && *tt.classesLimit < 0 {
-					errorMsg := err.Error()
-					if !strings.Contains(errorMsg, "classes_limit") && !strings.Contains(errorMsg, "greater than or equal to 0") {
-						t.Errorf("Expected error message about classes_limit validation, got: %v", err)
-					}
-
-					var classError *errs.ClassError
-					if !errors.As(err, &classError) {
-						t.Errorf("Expected ClassError, got: %T", err)
-					} else if classError.Code != errs.BadRequestCode {
-						t.Errorf("Expected BadRequestCode, got: %d", classError.Code)
-					}
-				}
-			} else {
-				if err != nil {
-					t.Errorf("Unexpected error: %v", err)
+					t.Fatalf("expected error %v, but got nil", tt.error)
 				}
 
-				if len(classes) != tt.wantCount {
-					t.Errorf("Expected %d classes, got %d", tt.wantCount, len(classes))
+				if !strings.Contains(err.Error(), tt.error.Error()) {
+					t.Fatalf("expected error to contain %q, got %v", tt.error.Error(), err)
 				}
+
+				return
 			}
 
-			if tt.validateResult != nil {
-				tt.validateResult(t, classes)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			if !reflect.DeepEqual(classes, tt.wantClasses) {
+				t.Errorf("Expected: %v, got %v", tt.wantClasses, len(classes))
 			}
 		})
 	}

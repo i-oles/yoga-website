@@ -13,8 +13,10 @@ func GlobalRateLimit(l *rate.Limiter) gin.HandlerFunc {
 			c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{
 				"error": "Too Many Requests",
 			})
+
 			return
 		}
+
 		c.Next()
 	}
 }

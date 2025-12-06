@@ -1,11 +1,12 @@
 package listclasses
 
 import (
+	"net/http"
+
 	"main/internal/domain/services"
 	"main/internal/interfaces/http/api/dto"
 	apiErrs "main/internal/interfaces/http/api/errs"
 	sharedDTO "main/internal/interfaces/http/shared/dto"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 )

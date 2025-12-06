@@ -1,4 +1,4 @@
-version: 1
+version: "2"
 
 linters:
   enable:
@@ -96,9 +96,19 @@ linters-settings:
   funlen:
     # Checks the number of lines in a function.
     lines: 80
-    # Default: 40
     statements: 50
     ignore-comments: true
+  revive:
+    ignore-generated-header: true
+    severity: warning
+    rules:
+      - name: package-comment
+        disabled: true
+      - name: exported 
+        disabled: true
+  ST1000:
+    rules:
+      disabled: true
 
   mnd:
     ignored-numbers:
@@ -115,11 +125,10 @@ formatters:
     - gofmt
     - gofumpt
     - goimports
-    - golines
 
 issues:
   exclude-rules:
-    - path: "_test\\.go"
+    - path: '_test\.go'
       linters:
         - dupl
         - funlen
@@ -133,4 +142,3 @@ issues:
 
 run:
   timeout: 5m
-
