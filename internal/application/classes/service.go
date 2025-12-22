@@ -9,7 +9,7 @@ import (
 	"main/internal/domain/errs"
 	"main/internal/domain/models"
 	"main/internal/domain/repositories"
-	"main/internal/domain/services"
+	"main/internal/domain/sender"
 	repositoryError "main/internal/infrastructure/errs"
 
 	"github.com/google/uuid"
@@ -18,13 +18,13 @@ import (
 type Service struct {
 	classesRepo   repositories.IClasses
 	bookingsRepo  repositories.IBookings
-	MessageSender services.ISender
+	MessageSender sender.ISender
 }
 
 func NewService(
 	classesRepo repositories.IClasses,
 	bookingsRepo repositories.IBookings,
-	messageSender services.ISender,
+	messageSender sender.ISender,
 ) *Service {
 	return &Service{
 		classesRepo:   classesRepo,

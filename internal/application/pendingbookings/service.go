@@ -4,12 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
+
 	domainErrors "main/internal/domain/errs"
 	"main/internal/domain/models"
 	"main/internal/domain/repositories"
+	"main/internal/domain/sender"
 	"main/internal/domain/services"
 	"main/internal/infrastructure/errs"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -19,7 +21,7 @@ type Service struct {
 	PendingBookingsRepo repositories.IPendingBookings
 	BookingsRepo        repositories.IBookings
 	TokenGenerator      services.ITokenGenerator
-	MessageSender       services.ISender
+	MessageSender       sender.ISender
 	DomainAddr          string
 }
 
@@ -28,7 +30,7 @@ func NewService(
 	pendingBookingsRepo repositories.IPendingBookings,
 	bookingsRepo repositories.IBookings,
 	tokenGenerator services.ITokenGenerator,
-	messageSender services.ISender,
+	messageSender sender.ISender,
 	domainAddr string,
 ) *Service {
 	return &Service{

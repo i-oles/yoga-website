@@ -10,7 +10,7 @@ import (
 	domainErrors "main/internal/domain/errs"
 	"main/internal/domain/models"
 	"main/internal/domain/repositories"
-	"main/internal/domain/services"
+	"main/internal/domain/sender"
 	"main/internal/infrastructure/errs"
 
 	"github.com/google/uuid"
@@ -20,7 +20,7 @@ type Service struct {
 	ClassesRepo         repositories.IClasses
 	BookingsRepo        repositories.IBookings
 	PendingBookingsRepo repositories.IPendingBookings
-	MessageSender       services.ISender
+	MessageSender       sender.ISender
 	DomainAddr          string
 }
 
@@ -28,7 +28,7 @@ func NewService(
 	classesRepo repositories.IClasses,
 	bookingsRepo repositories.IBookings,
 	pendingBookingsRepo repositories.IPendingBookings,
-	messageSender services.ISender,
+	messageSender sender.ISender,
 	domainAddr string,
 ) *Service {
 	return &Service{
