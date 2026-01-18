@@ -13,75 +13,111 @@
 </head>
 <body>
 <br>
-<div id="main-container">
-    {{ if .IsVacation }}
+<div id="page-grid">
+    <div id="main-container">
+        <p id="info-header">harmonogram</p> 
+        {{ if .IsVacation }}
+            <div class="class-container">
+                <div class="vacation-info">
+                    w terminie <br>
+                    10.09 - 06.10 <br>
+                    jestem na urlopie
+                    <br><br>
+                    :)
+                </div>
+            </div>
+        {{ end }}
+        {{ range .Classes }}
         <div class="class-container">
-            <div class="vacation-info">
-                w terminie <br>
-                10.09 - 06.10 <br>
-                jestem na urlopie
-                <br><br>
-                :)
-            </div>
+            <form id="form-{{ .ID }}">
+                <div class="class-info">
+                    <table style="border-collapse: collapse; margin-top: 15px;">
+                        <tr>
+                            <td style="font-weight:300;">zajęcia:</td>
+                            <td style="font-weight:500;">{{ .ClassName }}</td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight:300;">poziom:</td>
+                            <td style="font-weight:500;">{{ .ClassLevel }}</td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight:300;">dzień:</td>
+                            <td style="font-weight:500;">{{ .WeekDay }}</td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight:300;">data:</td>
+                            <td style="font-weight:500;">{{ .StartDate }}</td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight:300;">godzina:</td>
+                            <td style="font-weight:500;">{{ .StartHour }}</td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight:300;">gdzie:</td>
+                            <td style="font-weight:500;">{{ .Location }}</td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight:300;">wolne miejsca:</td>
+                            <td style="font-weight:500;">{{ .CurrentCapacity }}</td>
+                        </tr>
+                    </table>
+                </div>
+                <div id="booking-form-{{ .ID }}">
+                {{ if eq .CurrentCapacity 0 }}
+                <div id="book-button-{{ .ID }}">
+                    <button class="btn-book" disabled>rezerwuj</button>
+                </div>
+                {{ else }}
+                <div id="book-button-{{ .ID }}">
+                    <button class="btn-book"
+                            hx-get="/classes/{{ .ID }}/pending_bookings/form"
+                            hx-swap="outerHTML"
+                            hx-target="#booking-form-{{ .ID }}"
+                            hx-trigger="click">
+                        rezerwuj
+                    </button>
+                </div>
+                {{ end }}
+                </div>
+            </form>
         </div>
-    {{ end }}
-    {{ range .Classes }}
-    <div class="class-container">
-        <form id="form-{{ .ID }}">
-            <div class="class-info">
-                <table style="border-collapse: collapse; margin-top: 15px;">
-                    <tr>
-                        <td style="font-weight:300;">zajęcia:</td>
-                        <td style="font-weight:500;">{{ .ClassName }}</td>
-                    </tr>
-                    <tr>
-                        <td style="font-weight:300;">poziom:</td>
-                        <td style="font-weight:500;">{{ .ClassLevel }}</td>
-                    </tr>
-                    <tr>
-                        <td style="font-weight:300;">dzień:</td>
-                        <td style="font-weight:500;">{{ .WeekDay }}</td>
-                    </tr>
-                    <tr>
-                        <td style="font-weight:300;">data:</td>
-                        <td style="font-weight:500;">{{ .StartDate }}</td>
-                    </tr>
-                    <tr>
-                        <td style="font-weight:300;">godzina:</td>
-                        <td style="font-weight:500;">{{ .StartHour }}</td>
-                    </tr>
-                    <tr>
-                        <td style="font-weight:300;">gdzie:</td>
-                        <td style="font-weight:500;">{{ .Location }}</td>
-                    </tr>
-                    <tr>
-                        <td style="font-weight:300;">wolne miejsca:</td>
-                        <td style="font-weight:500;">{{ .CurrentCapacity }}</td>
-                    </tr>
-                </table>
-            </div>
-            <div id="booking-form-{{ .ID }}">
-            {{ if eq .CurrentCapacity 0 }}
-            <div id="book-button-{{ .ID }}">
-                <button class="btn-book" disabled>rezerwuj</button>
-            </div>
-            {{ else }}
-            <div id="book-button-{{ .ID }}">
-                <button class="btn-book"
-                        hx-get="/classes/{{ .ID }}/pending_bookings/form"
-                        hx-swap="outerHTML"
-                        hx-target="#booking-form-{{ .ID }}"
-                        hx-trigger="click">
-                    rezerwuj
-                </button>
-            </div>
-            {{ end }}
-            </div>
-        </form>
+        {{ end }}
     </div>
-    {{ end }}
+    <div id="info-container">
+        <p id="info-header">cennik</p> 
+        <div class="info-box-price">
+            <p>
+                40 zł – zajęcia<br>
+                20 zł – pierwszy raz
+            </p>
+            <p>
+                180 zł - karnet (5)
+            </p>
+        </div>
+        <p id="info-header">o mnie</p>
+        <div class="info-box-about">
+            <p>
+                jestem uczniem wspaniałej<br>
+                joginki Rachele Faiella.<br><br>
+                Ukończyłem kurs instruktora <br>
+                vinyasa yoga i ashtanga yoga<br>
+                RYT 200h (Rishikesh, India)<br><br>
+                jogi uczę u siebie w domu.<br><br>
+                joga to dla mnie praktyka duchowa<br>
+                i nauka kontaktu ze swoim ciałem.
+            </p>
+        </div>
+        <p id="info-header">kontakt</p>
+        <div class="info-box-contact">
+            <p>
+                Igor Oleś<br>
+                +48 505 082 655<br>
+                gore.pakore.yogi@gmail.com
+            </p>
+        </div>
+    </div>
 </div>
-<script>
+</p><script>
     document.addEventListener('htmx:beforeSwap', function(event) {
         // handle status 409 (Conflict) and 400 (Bad Request)
         if ([409, 400].includes(event.detail.xhr.status)) {

@@ -8,9 +8,7 @@ body {
     font-family: 'Inter', 'Helvetica Neue', sans-serif;
     line-height: 1.5;
     color: #000;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
+    max-width: 100%;
     background-color: #fff;
     position: relative;
     min-height: 100vh;
@@ -50,25 +48,6 @@ body::before {
     }
 }
 
-/* Responsive background images */
-@media (max-width: 768px) {
-    body::before {
-        background-image: url('/web/static/images/mobile/yoga-bg.jpeg');
-        opacity: 1; /* Zwiększamy przezroczystość na mobile */
-        touch-action: pan-y;
-        overscroll-behavior-y: none;
-    }
-}
-
-@media (min-width: 769px) and (max-width: 1024px) {
-    body::before {
-        background-image: url('/web/static/images/tablet/yoga-bg.jpeg');
-        opacity: 1;
-        touch-action: pan-y;
-        overscroll-behavior-y: none;
-    }
-}
-
 h1 {
     text-align: center;
     color: #000;
@@ -77,49 +56,139 @@ h1 {
     font-weight: 600;
 }
 
-div#main-container {
+#page-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 24px;
-    padding: 10px;
+    grid-template-columns: 0.7fr 0.7fr 1.6fr 0.8fr;
+    gap: 20px;
+    padding-left: 100px; 
+    padding-right: 50px;
+    align-items: start;
+    grid-auto-rows: 1fr; 
 }
 
-/* Desktop - media */
-@media (min-width: 1025px) {
-    div#main-container {
-        grid-template-columns: repeat(2, 1fr); /* Dokładnie 2 kolumny */
-        max-width: 500px; /* Ograniczamy szerokość żeby karty nie były za szerokie */
-        margin: left; /* Przesuwamy jeszcze bardziej w lewo */
-    }
-
-    .class-container {
-        font-size: 0.7rem;
-    }
-
-    .btn-return,
-    .btn-cancel,
-    .btn-book {
-        font-size: 0.6rem;
-    }
-
-    .form-input {
-        height: 35px;
-        border-radius: 20px;
-        font-size: 0.7rem;
-    }
+#main-container {
+    grid-column: 1 / span 2;
+    display: grid;
+    gap: 20px;
 }
 
-/* Class Cards */
 .class-container {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+#info-container {
+    grid-column: 4;
+    display: grid;
+    font-size: 0.8rem;
+    gap: 20px;
+    height: 0;
+    padding-bottom: 0px;
+}
+
+#info-header {
+    grid-column: 1 / span 2;
+    display: grid;
+    color: white;
+    opacity: 0.5;
+    font-size: 1.5rem;
+    height: 0px;
+    padding-top: 0;
+    padding-bottom: 3px;
+    margin-top: 0;
+}
+
+/* Tablet */
+@media (min-width: 761px) and (max-width: 1024px) {
+    #page-grid {
+        grid-template-columns: 1.8fr 1.8fr 0.7fr 1.5fr;
+        display: grid;
+        padding-left: 15px;
+        padding-right: 0px;
+        padding-top: 100px;
+        gap: 15px;
+    }
+
+    #main-container {
+        grid-column: 1 / 3;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+    }
+
+    #info-container {
+        grid-column: 4 / 5;
+        display: grid;
+        grid-template-columns: 1.5fr;
+        gap: 15px;
+    }
+
+    body::before {
+        background-image: url('/web/static/images/tablet/yoga-bg.jpeg');
+    }
+}
+
+/* Mobile */
+@media (max-width: 760px) {
+    #page-grid {
+        grid-template-columns: 1fr;
+        display: grid;
+        padding-left: 15px;
+        padding-right: 15px;
+        padding-top: 40px;
+        gap: 15px;
+        max-height: calc(100vh - 100px);
+        overflow-y: auto;
+    }
+
+    #info-header,
+    #main-container,
+    #info-container {
+        grid-template-columns: 1fr;
+        grid-column: 1;
+        gap: 15px
+    }
+
+    .info-box-price,
+    .info-box-about,
+    .info-box-contact {
+        font-size: 0.7rem;
+    }
+
+    #info-container {
+        padding-bottom: 40px;
+    }
+
+    input, textarea, select {
+        touch-action: manipulation;
+    }
+
+    body::before {
+        background-image: url('/web/static/images/mobile/yoga-bg.jpeg');
+        opacity: 1; /* Zwiększamy przezroczystość na mobile */
+        touch-action: pan-y;
+        overscroll-behavior-y: none;
+    }
+}
+
+.class-container, .info-box-price, .info-box-about, .info-box-contact {
     background-color: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(224, 224, 224, 0.8);
-    padding: 24px;
-    opacity: 0.7;
+    padding: 20px;
+    padding-top: 5px;
+    opacity: 0.8;
     transition: all 0.2s ease;
-    margin-left: 0;
     border-radius: 4px;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.class-container { 
+    font-size: 0.7rem;
+    padding-bottom: 25px;
+}
+
+.info-box-price, .info-box-about, .info-box-contact {
+    padding-bottom: 10px;
 }
 
 .class-container:hover {
@@ -128,6 +197,25 @@ div#main-container {
     transform: translateY(-2px);
 }
 
+.form-input {
+    background-color: #fff;
+    border: 1px solid #e0e0e0;
+    margin-top: 5px;
+    margin-bottom: 10px;
+    width: 100%;
+    padding: 12px;
+    border-radius: 0;
+    box-sizing: border-box;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    height: 35px;
+    font-size: 0.7rem;
+}
+
+.form-input:focus {
+    border-color: #989898;
+    outline: none;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.1);
+}
 .vacation-info {
     margin-top: 15px;
     margin-left: -10px;
@@ -207,6 +295,7 @@ button:disabled {
     min-height: 35px;
     color: #000;
     font-weight: 300;
+    font-size: 0.6rem;
     display: flex;
     align-items: center; /* wyśrodkowanie pionowe */
     justify-content: center; /* wyśrodkowanie poziome */
@@ -236,46 +325,6 @@ button:disabled {
 
 .text-gray {
     color: #757575;
-}
-
-/* Phone - Media */
-@media (max-width: 768px) {
-    div#main-container {
-        grid-template-columns: 1fr;
-        margin-top: 48vh; 
-        padding: 8px;
-    }
-
-    .form-input {
-        font-size: 1.1rem;
-    }
-
-    input, textarea, select {
-        touch-action: manipulation;
-    }
-}
-
-.form-input {
-    background-color: #fff;
-    border: 1px solid #e0e0e0;
-    margin-top: 5px;
-    margin-bottom: 10px;
-    width: 100%;
-    padding: 12px;
-    border-radius: 0;
-    box-sizing: border-box;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-
-.form-input:focus {
-    border-color: #989898;
-    outline: none;
-    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.1);
-}
-
-* {
-    font-family: "Alegreya Sans SC", sans-serif;
-    font-style: normal;
 }
 
 .cancel-booking-card, .confirmation-card, .error-card {
@@ -315,28 +364,6 @@ button:disabled {
 
 .booking-info {
     margin-bottom: 40px;
-}
-
-
-/* mobile responsive */
-@media (max-width: 480px) {
-    .cancel-booking-card,
-    .confirmation-card, .error-card {
-        max-width: 90%; /* Mniejsza szerokość na małych ekranach */
-        padding: 16px;
-    }
-
-    .cancel-booking-container,
-    .confirmation-container, .error-container {
-        min-height: 300px;
-        padding: 16px;
-    }
-
-    .cancel-booking-card,
-    .confirmation-card .error-card {
-        padding: 15px;
-        font-size: 1.5rem;
-    }
 }
 
 @keyframes spin {

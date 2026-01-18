@@ -181,30 +181,36 @@ func (m *mockClassesRepo) Update(_ context.Context, _ uuid.UUID, _ map[string]an
 	return m.error
 }
 
-type mockSender struct{}
+type mockSender struct {
+	err error
+}
+
+func newMockErrorSender(err error) *mockSender {
+	return &mockSender{err: err}
+}
 
 func (m *mockSender) SendLinkToConfirmation(_, _, _ string) error {
-	return nil
+	return m.err
 }
 
 func (m *mockSender) SendConfirmations(_ models.ConfirmationMsg) error {
-	return nil
+	return m.err
 }
 
 func (m *mockSender) SendInfoAboutCancellationToOwner(_, _ string, _ time.Time) error {
-	return nil
+	return m.err
 }
 
 func (m *mockSender) SendInfoAboutClassCancellation(_, _, _ string, _ models.Class) error {
-	return nil
+	return m.err
 }
 
 func (m *mockSender) SendInfoAboutBookingCancellation(_, _ string, _ models.Class) error {
-	return nil
+	return m.err
 }
 
 func (m *mockSender) SendInfoAboutUpdate(_, _, _ string, _ models.Class) error {
-	return nil
+	return m.err
 }
 
 var testBooking = models.Booking{
@@ -546,7 +552,7 @@ func TestService_DeleteClass(t *testing.T) {
 		error         error
 	}{
 		{
-			name:          "delete class success",
+			name:          "delete class: success",
 			classID:       testID1,
 			reasonMsg:     anyValuePtr("testReason"),
 			classesRepo:   newMockClassesRepo(futureClasses, nil),
@@ -554,7 +560,14 @@ func TestService_DeleteClass(t *testing.T) {
 			messageSender: &mockSender{},
 		},
 		{
-			name:          "delete class error message empty",
+			name:          "delete class: success with no bookings and no reason msg",
+			classID:       testID2,
+			classesRepo:   newMockClassesRepo(futureClasses, nil),
+			bookingsRepo:  newMockBookingsRepo(testBooking, nil),
+			messageSender: &mockSender{},
+		},
+		{
+			name:          "delete class: error reasonMsg empty",
 			classID:       testID1,
 			classesRepo:   newMockClassesRepo(futureClasses, nil),
 			bookingsRepo:  newMockBookingsRepo(testBooking, nil),
@@ -565,7 +578,7 @@ func TestService_DeleteClass(t *testing.T) {
 			),
 		},
 		{
-			name:          "delete class error class empty",
+			name:          "delete class: error class not empty",
 			classID:       testID1,
 			classesRepo:   newMockClassesRepo(futureClasses, nil),
 			bookingsRepo:  newMockBookingsRepo(testBookingWithoutClass, nil),
@@ -575,7 +588,36 @@ func TestService_DeleteClass(t *testing.T) {
 			error:         errors.New("class field should not be empty"),
 		},
 		{
-			name:          "delete class repository error",
+			name:          "delete class: messageSender error",
+			classID:       testID1,
+			classesRepo:   newMockClassesRepo(futureClasses, nil),
+			bookingsRepo:  newMockBookingsRepo(testBooking, nil),
+			reasonMsg:     anyValuePtr("testReason"),
+			messageSender: newMockErrorSender(errors.New("msgSender error")),
+			wantError:     true,
+			error:         errors.New("msgSender error"),
+		},
+		{
+			name:          "delete class: no bookings and no reason msg, classRepo.Delete() error",
+			classID:       testID2,
+			classesRepo:   newMockClassesRepo(futureClasses, errors.New("db error")),
+			bookingsRepo:  newMockBookingsRepo(testBooking, nil),
+			messageSender: &mockSender{},
+			wantError:     true,
+			error:         errors.New("db error"),
+		},
+		{
+			name:          "delete class: classRepo.Delete() error",
+			classID:       testID1,
+			classesRepo:   newMockClassesRepo(futureClasses, nil),
+			bookingsRepo:  newMockBookingsRepo(testBooking, errors.New("db error")),
+			reasonMsg:     anyValuePtr("testReason"),
+			messageSender: &mockSender{},
+			wantError:     true,
+			error:         errors.New("db error"),
+		},
+		{
+			name:          "delete class: classRepo.Delete() error",
 			classID:       testID1,
 			classesRepo:   newMockClassesRepo(futureClasses, nil),
 			bookingsRepo:  newMockBookingsRepo(testBooking, errors.New("db error")),
