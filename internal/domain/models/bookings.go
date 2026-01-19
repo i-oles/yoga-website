@@ -26,4 +26,6 @@ type ConfirmationMsg struct {
 	StartTime          time.Time
 	Location           string
 	CancellationLink   string
+	PassCredits        int
+	TotalPassCredits   int
 }

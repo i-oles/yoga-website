@@ -113,6 +113,7 @@ func setupRouter(db *gorm.DB, cfg *configuration.Configuration) *gin.Engine {
 	classesRepo := sqliteRepo.NewClassesRepo(db)
 	bookingsRepo := sqliteRepo.NewBookingsRepo(db)
 	pendingBookingsRepo := sqliteRepo.NewPendingBookingsRepo(db)
+	passesRepo := sqliteRepo.NewPassesRepo(db)
 
 	tokenGenerator := token.NewGenerator()
 	emailSender := gmail.NewSender(
@@ -126,7 +127,7 @@ func setupRouter(db *gorm.DB, cfg *configuration.Configuration) *gin.Engine {
 
 	classesService := classes.NewService(classesRepo, bookingsRepo, emailSender)
 	bookingsService := bookings.NewService(
-		classesRepo, bookingsRepo, pendingBookingsRepo, emailSender, cfg.DomainAddr,
+		classesRepo, bookingsRepo, pendingBookingsRepo, passesRepo, emailSender, cfg.DomainAddr,
 	)
 	pendingBookingsService := pendingbookings.NewService(
 		classesRepo,

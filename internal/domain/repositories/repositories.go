@@ -33,3 +33,8 @@ type IPendingBookings interface {
 	CountPendingBookingsPerUser(ctx context.Context, email string, classID uuid.UUID) (int8, error)
 	List(ctx context.Context) ([]models.PendingBooking, error)
 }
+
+type IPasses interface {
+	GetByEmail(ctx context.Context, email string) (models.Pass, error)
+	Update(ctx context.Context, update map[string]any) error
+}

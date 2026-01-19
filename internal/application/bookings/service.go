@@ -20,6 +20,7 @@ type Service struct {
 	ClassesRepo         repositories.IClasses
 	BookingsRepo        repositories.IBookings
 	PendingBookingsRepo repositories.IPendingBookings
+	PassesRepo          repositories.IPasses
 	MessageSender       sender.ISender
 	DomainAddr          string
 }
@@ -28,6 +29,7 @@ func NewService(
 	classesRepo repositories.IClasses,
 	bookingsRepo repositories.IBookings,
 	pendingBookingsRepo repositories.IPendingBookings,
+	passesRepo repositories.IPasses,
 	messageSender sender.ISender,
 	domainAddr string,
 ) *Service {
@@ -35,6 +37,7 @@ func NewService(
 		ClassesRepo:         classesRepo,
 		BookingsRepo:        bookingsRepo,
 		PendingBookingsRepo: pendingBookingsRepo,
+		PassesRepo:          passesRepo,
 		MessageSender:       messageSender,
 		DomainAddr:          domainAddr,
 	}
@@ -108,7 +111,7 @@ func (s *Service) CreateBooking(ctx context.Context, token string) (models.Class
 		return models.Class{}, fmt.Errorf("could not delete pending booking: %w", err)
 	}
 
-	link := fmt.Sprintf("%s/bookings/%s/cancel_form?token=%s", s.DomainAddr, bookingID, token)
+	cancellationLink := fmt.Sprintf("%s/bookings/%s/cancel_form?token=%s", s.DomainAddr, bookingID, token)
 
 	msg := models.ConfirmationMsg{
 		RecipientEmail:     pendingBooking.Email,
@@ -118,7 +121,27 @@ func (s *Service) CreateBooking(ctx context.Context, token string) (models.Class
 		ClassLevel:         class.ClassLevel,
 		StartTime:          class.StartTime,
 		Location:           class.Location,
-		CancellationLink:   link,
+		CancellationLink:   cancellationLink,
+	}
+
+	pass, err := s.PassesRepo.GetByEmail(ctx, pendingBooking.Email)
+	if err != nil && err != errs.ErrNotFound {
+		return models.Class{}, fmt.Errorf("could not get pass: %w", err)
+	}
+
+	if pass.Credits+1 <= pass.TotalCredits {
+		newCredits := pass.Credits + 1
+		msg.PassCredits = newCredits
+		msg.TotalPassCredits = pass.TotalCredits
+
+		update := map[string]any{
+			"credits": newCredits,
+		}
+
+		err = s.PassesRepo.Update(ctx, update)
+		if err != nil {
+			return models.Class{}, fmt.Errorf("could not update pass for %s with %v", pendingBooking.Email, update)
+		}
 	}
 
 	err = s.MessageSender.SendConfirmations(msg)
