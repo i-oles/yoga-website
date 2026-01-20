@@ -103,6 +103,11 @@ func (s Sender) SendConfirmations(msg models.ConfirmationMsg) error {
 		CancellationLink:   msg.CancellationLink,
 	}
 
+	if msg.PassCredits != 0 && msg.TotalPassCredits != 0 {
+		tmplData.PassCredits = msg.PassCredits
+		tmplData.TotalPassCredits = msg.TotalPassCredits
+	}
+
 	tmpl, err := template.ParseFiles(s.BookingConfirmationTmplPath)
 	if err != nil {
 		return fmt.Errorf("could not parse template: %w", err)

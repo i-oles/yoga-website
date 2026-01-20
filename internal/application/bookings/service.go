@@ -125,7 +125,7 @@ func (s *Service) CreateBooking(ctx context.Context, token string) (models.Class
 	}
 
 	pass, err := s.PassesRepo.GetByEmail(ctx, pendingBooking.Email)
-	if err != nil && err != errs.ErrNotFound {
+	if err != nil && !errors.Is(err, errs.ErrNotFound) {
 		return models.Class{}, fmt.Errorf("could not get pass: %w", err)
 	}
 
@@ -138,7 +138,7 @@ func (s *Service) CreateBooking(ctx context.Context, token string) (models.Class
 			"credits": newCredits,
 		}
 
-		err = s.PassesRepo.Update(ctx, update)
+		err = s.PassesRepo.Update(ctx, pass.ID, update)
 		if err != nil {
 			return models.Class{}, fmt.Errorf("could not update pass for %s with %v", pendingBooking.Email, update)
 		}

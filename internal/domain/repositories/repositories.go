@@ -36,5 +36,5 @@ type IPendingBookings interface {
 
 type IPasses interface {
 	GetByEmail(ctx context.Context, email string) (models.Pass, error)
-	Update(ctx context.Context, update map[string]any) error
+	Update(ctx context.Context, id int, update map[string]any) error
 }

@@ -39,6 +39,13 @@ func (r PassesRepo) GetByEmail(ctx context.Context, email string) (models.Pass, 
 	return sqlPass.ToDomain(), nil
 }
 
-func (r PassesRepo) Update(ctx context.Context, update map[string]any) error {
-	return errors.New("passes.Update() implement me")
+func (r PassesRepo) Update(ctx context.Context, id int, update map[string]any) error {
+	if err := r.db.WithContext(ctx).
+		Model(&db.SQLPass{}).
+		Where("id = ?", id).
+		Updates(update).Error; err != nil {
+		return fmt.Errorf("could not update pass: %v with data: %v, %w", id, update, err)
+	}
+
+	return nil
 }
