@@ -95,7 +95,6 @@ h1 {
 }
 
 .class-container,
-.pass-container,
 .info-box-price,
 .info-box-about,
 .info-box-contact {
@@ -117,13 +116,7 @@ h1 {
     min-width: 190px;
 }
 
-.pass-container {
-    display: flex;
-    flex-direction: column;
-    min-width: 130px;
-}
-
-.pass-title {
+.class-title {
     font-weight: 600;
     font-size: 0.8rem;
     color: #2c3e50;
@@ -131,46 +124,6 @@ h1 {
     margin-bottom: 20px;
     padding-bottom: 10px;
     border-bottom: 1px solid rgba(224, 224, 224, 0.5);
-}
-
-.pass-visual {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    align-items: center;
-    padding-top: 7px;
-}
-
-.pass-item {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 28px;
-    position: relative;
-}
-
-.pass-circle {
-    width: 14px;
-    height: 14px;
-    border: 2px solid grey;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-}
-
-.pass-circle.used {
-    background-color: grey;
-    border-color: grey;
-}
-
-.pass-circle.used::after {
-    content: "✓";
-    color: black;
-    font-size: 0.6rem;
-    font-weight: bold;
 }
 
 .info-box-price, .info-box-about, .info-box-contact {
