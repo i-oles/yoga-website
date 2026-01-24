@@ -10,6 +10,7 @@ import (
 	"main/internal/infrastructure/models/db"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type PassesRepo struct {
@@ -48,4 +49,25 @@ func (r PassesRepo) Update(ctx context.Context, id int, update map[string]any) e
 	}
 
 	return nil
+}
+
+func (r PassesRepo) Upsert(ctx context.Context, email string, usedCredits, totalCredits int) (models.Pass, error) {
+	pass := db.SQLPass{
+		Email:        email,
+		UsedCredits:  usedCredits,
+		TotalCredits: totalCredits,
+	}
+
+	result := r.db.WithContext(ctx).
+		Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "email"}},
+			DoUpdates: clause.AssignmentColumns([]string{"used_credits", "total_credits"}),
+		}).
+		Create(&pass)
+
+	if err := result.Error; err != nil {
+		return models.Pass{}, fmt.Errorf("could not upsert pass: %w", err)
+	}
+
+	return pass.ToDomain(), nil
 }

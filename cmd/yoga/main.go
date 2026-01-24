@@ -140,7 +140,6 @@ func setupRouter(db *gorm.DB, cfg *configuration.Configuration) *gin.Engine {
 		emailSender,
 		cfg.DomainAddr,
 	)
-
 	passesService := passes.NewService(passesRepo, emailSender)
 
 	var viewErrorHandler viewErrs.IErrorHandler
@@ -201,7 +200,7 @@ func setupRouter(db *gorm.DB, cfg *configuration.Configuration) *gin.Engine {
 		api.PATCH("/api/v1/classes/:class_id", authMiddleware, updateClassHandler.Handle)
 		api.DELETE("/api/v1/classes/:class_id", authMiddleware, deleteClassHandler.Handle)
 		api.GET("/api/v1/classes/:class_id/bookings", authMiddleware, listBookingsByClassHandler.Handle)
-		api.POST("/api/v1/passes/activate", authMiddleware, activatePassHandler.Handle)
+		api.PUT("/api/v1/passes", authMiddleware, activatePassHandler.Handle)
 	}
 
 	return router

@@ -58,5 +58,5 @@ func (h *Handler) Handle(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, passResp)
+	c.JSON(http.StatusOK, passResp)
 }

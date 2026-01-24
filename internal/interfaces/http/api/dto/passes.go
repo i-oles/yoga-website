@@ -10,8 +10,8 @@ import (
 
 type ActivatePassRequest struct {
 	Email        string `binding:"required,min=3,max=40" json:"email"`
-	UsedCredits  int    `binding:"required,gte=0" json:"used_credits"`
-	TotalCredits int    `binding:"required,gte=1" json:"total_credits"`
+	UsedCredits  int    `binding:"min=0" json:"used_credits"`
+	TotalCredits int    `binding:"min=1" json:"total_credits"`
 }
 
 type PassDTO struct {
@@ -19,7 +19,7 @@ type PassDTO struct {
 	Email        string    `json:"email"`
 	UsedCredits  int       `json:"used_credits"`
 	TotalCredits int       `json:"total_credits"`
-	CreatedAt    time.Time `json:"week_day"`
+	CreatedAt    time.Time `json:"created_at"`
 }
 
 func ToPassDTO(pass models.Pass) (PassDTO, error) {

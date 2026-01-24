@@ -1,6 +1,7 @@
 package db
 
 import (
+	"fmt"
 	"time"
 
 	"main/internal/domain/models"
@@ -8,8 +9,8 @@ import (
 
 type SQLPass struct {
 	ID           int       `gorm:"primaryKey"`
-	Email        string    `gorm:"not null"`
-	Credits      int       `gorm:"not null"`
+	Email        string    `gorm:"unique;not null"`
+	UsedCredits  int       `gorm:"not null"`
 	TotalCredits int       `gorm:"not null"`
 	CreatedAt    time.Time `gorm:"autoCreateTime"`
 }
@@ -22,20 +23,12 @@ func (s SQLPass) ToDomain() models.Pass {
 	pass := models.Pass{
 		ID:           s.ID,
 		Email:        s.Email,
-		UsedCredits:  s.Credits,
+		UsedCredits:  s.UsedCredits,
 		TotalCredits: s.TotalCredits,
 		CreatedAt:    s.CreatedAt,
 	}
 
-	return pass
-}
+	fmt.Printf("toDomain pass:", pass)
 
-func SQLPassFromDomain(domain models.Pass) SQLPass {
-	return SQLPass{
-		ID:           domain.ID,
-		Email:        domain.Email,
-		Credits:      domain.UsedCredits,
-		TotalCredits: domain.TotalCredits,
-		CreatedAt:    domain.CreatedAt,
-	}
+	return pass
 }
