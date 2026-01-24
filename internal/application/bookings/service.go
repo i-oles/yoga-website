@@ -106,11 +106,6 @@ func (s *Service) CreateBooking(ctx context.Context, token string) (models.Class
 		return models.Class{}, fmt.Errorf("could not insert booking: %w", err)
 	}
 
-	err = s.PendingBookingsRepo.Delete(ctx, pendingBooking.ID)
-	if err != nil {
-		return models.Class{}, fmt.Errorf("could not delete pending booking: %w", err)
-	}
-
 	cancellationLink := fmt.Sprintf("%s/bookings/%s/cancel_form?token=%s", s.DomainAddr, bookingID, token)
 
 	msg := models.ConfirmationMsg{
@@ -129,13 +124,13 @@ func (s *Service) CreateBooking(ctx context.Context, token string) (models.Class
 		return models.Class{}, fmt.Errorf("could not get pass: %w", err)
 	}
 
-	if pass.Credits+1 <= pass.TotalCredits {
-		newCredits := pass.Credits + 1
-		msg.PassCredits = newCredits
+	if pass.UsedCredits+1 <= pass.TotalCredits {
+		updatedCredits := pass.UsedCredits + 1
+		msg.UsedPassCredits = updatedCredits
 		msg.TotalPassCredits = pass.TotalCredits
 
 		update := map[string]any{
-			"credits": newCredits,
+			"credits": updatedCredits,
 		}
 
 		err = s.PassesRepo.Update(ctx, pass.ID, update)
@@ -147,6 +142,11 @@ func (s *Service) CreateBooking(ctx context.Context, token string) (models.Class
 	err = s.MessageSender.SendConfirmations(msg)
 	if err != nil {
 		return models.Class{}, fmt.Errorf("error while sending final-confirmation: %w", err)
+	}
+
+	err = s.PendingBookingsRepo.Delete(ctx, pendingBooking.ID)
+	if err != nil {
+		return models.Class{}, fmt.Errorf("could not delete pending booking: %w", err)
 	}
 
 	return class, nil

@@ -22,7 +22,7 @@ func (s SQLPass) ToDomain() models.Pass {
 	pass := models.Pass{
 		ID:           s.ID,
 		Email:        s.Email,
-		Credits:      s.Credits,
+		UsedCredits:  s.Credits,
 		TotalCredits: s.TotalCredits,
 		CreatedAt:    s.CreatedAt,
 	}
@@ -34,7 +34,7 @@ func SQLPassFromDomain(domain models.Pass) SQLPass {
 	return SQLPass{
 		ID:           domain.ID,
 		Email:        domain.Email,
-		Credits:      domain.Credits,
+		Credits:      domain.UsedCredits,
 		TotalCredits: domain.TotalCredits,
 		CreatedAt:    domain.CreatedAt,
 	}

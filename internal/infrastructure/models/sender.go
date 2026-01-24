@@ -16,8 +16,7 @@ type ConfirmationTmplData struct {
 	Date               string
 	Location           string
 	CancellationLink   string
-	PassCredits        int
-	TotalPassCredits   int
+	PassState          []bool
 }
 
 type ConfirmationToOwnerTmplData struct {

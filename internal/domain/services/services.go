@@ -30,6 +30,10 @@ type IPendingBookingsService interface {
 	CreatePendingBooking(ctx context.Context, params models.PendingBookingParams) (uuid.UUID, error)
 }
 
+type IPassesService interface {
+	ActivatePass(ctx context.Context, params models.PassActivationParams) (models.Pass, error)
+}
+
 type ITokenGenerator interface {
 	Generate(length int) (string, error)
 }

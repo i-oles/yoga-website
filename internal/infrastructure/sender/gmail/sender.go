@@ -103,9 +103,8 @@ func (s Sender) SendConfirmations(msg models.ConfirmationMsg) error {
 		CancellationLink:   msg.CancellationLink,
 	}
 
-	if msg.PassCredits != 0 && msg.TotalPassCredits != 0 {
-		tmplData.PassCredits = msg.PassCredits
-		tmplData.TotalPassCredits = msg.TotalPassCredits
+	if msg.UsedPassCredits != 0 && msg.TotalPassCredits != 0 {
+		tmplData.PassState = getPassState(msg.UsedPassCredits, msg.TotalPassCredits)
 	}
 
 	tmpl, err := template.ParseFiles(s.BookingConfirmationTmplPath)
@@ -144,6 +143,16 @@ func (s Sender) SendConfirmations(msg models.ConfirmationMsg) error {
 	}
 
 	return nil
+}
+
+func getPassState(usedCredits, totalCredits int) []bool {
+	result := make([]bool, totalCredits)
+
+	for i := 0; i < usedCredits; i++ {
+		result[i] = true
+	}
+
+	return result
 }
 
 func (s Sender) SendInfoAboutCancellationToOwner(
