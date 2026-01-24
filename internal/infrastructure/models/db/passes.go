@@ -1,7 +1,6 @@
 package db
 
 import (
-	"fmt"
 	"time"
 
 	"main/internal/domain/models"
@@ -27,8 +26,6 @@ func (s SQLPass) ToDomain() models.Pass {
 		TotalCredits: s.TotalCredits,
 		CreatedAt:    s.CreatedAt,
 	}
-
-	fmt.Printf("toDomain pass:", pass)
 
 	return pass
 }
