@@ -19,15 +19,6 @@ type ConfirmationTmplData struct {
 	PassState          []bool
 }
 
-type ConfirmationToOwnerTmplData struct {
-	SenderName         string
-	RecipientFirstName string
-	RecipientLastName  string
-	WeekDay            string
-	Hour               string
-	Date               string
-}
-
 type ClassCancellationTmplData struct {
 	SenderName         string
 	RecipientFirstName string

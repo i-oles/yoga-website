@@ -15,6 +15,8 @@ import (
 	"gopkg.in/gomail.v2"
 )
 
+const PaymentType = "KARNET"
+
 type Sender struct {
 	SenderName                         string
 	SenderEmail                        string
@@ -105,8 +107,10 @@ func (s Sender) SendConfirmations(msg models.ConfirmationMsg) error {
 		CancellationLink:   msg.CancellationLink,
 	}
 
+	var isPass bool
 	if msg.UsedPassCredits != 0 && msg.TotalPassCredits != 0 {
 		tmplData.PassState = getPassState(msg.UsedPassCredits, msg.TotalPassCredits)
+		isPass = true
 	}
 
 	tmpl, err := template.ParseFiles(s.BookingConfirmationTmplPath)
@@ -127,9 +131,16 @@ func (s Sender) SendConfirmations(msg models.ConfirmationMsg) error {
 	msgToRecipient.SetHeader("Subject", "Yoga - Rezerwacja potwierdzona!")
 	msgToRecipient.SetBody("text/html", msgContent.String())
 
-	subject := fmt.Sprintf("%s %s booked: %s (%s) at %s.",
+	paymentType := ""
+	if isPass {
+		paymentType = PaymentType
+	}
+
+	// TODO: string builder?
+	subject := fmt.Sprintf("%s %s %s: %s (%s) at %s",
 		msg.RecipientFirstName,
 		msg.RecipientLastName,
+		paymentType,
 		startTimeDetails.weekDayInPolish,
 		startTimeDetails.startDate,
 		startTimeDetails.startHour,

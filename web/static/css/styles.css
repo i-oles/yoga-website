@@ -55,7 +55,7 @@ h1 {
 
 #page-grid {
     display: grid;
-    grid-template-columns: 0.7fr 0.7fr 1.6fr 0.8fr;
+    grid-template-columns: 0.9fr 0.9fr 1.3fr 1fr;
     gap: 20px;
     padding-left: 100px; 
     padding-right: 50px;
@@ -101,8 +101,8 @@ h1 {
     background-color: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(224, 224, 224, 0.8);
-    padding: 30px;
-    opacity: 0.8;
+    padding: 28px;
+    opacity: 0.6;
     transition: all 0.2s ease;
     border-radius: 4px;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
@@ -111,8 +111,8 @@ h1 {
 }
 
 .class-container {
-    font-size: 0.7rem;
-    padding-bottom: 25px;
+    font-size: 0.8rem;
+    padding-bottom: 30px;
     min-width: 190px;
 }
 
@@ -128,6 +128,8 @@ h1 {
 
 .info-box-price, .info-box-about, .info-box-contact {
     padding-bottom: 10px;
+    padding-top: 10px;
+    padding-bottom: 20px;
 }
 
 .class-container:hover {
@@ -261,7 +263,7 @@ h1 {
 .class-info table {
     width: 100%;
     border-collapse: collapse;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
 }
 
 .booking-info td,

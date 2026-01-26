@@ -66,15 +66,18 @@ func (s Service) ActivatePass(ctx context.Context, params models.PassActivationP
 		return models.Pass{}, fmt.Errorf("could not update pass with %+v: %w", update, err)
 	}
 
-	pass, err = s.passRepo.GetByEmail(ctx, params.Email)
-	if err != nil {
-		return models.Pass{}, fmt.Errorf("could not update pass with %+v: %w", update, err)
+	newPass := models.Pass{
+		ID:           pass.ID,
+		Email:        pass.Email,
+		UsedCredits:  params.UsedCredits,
+		TotalCredits: params.TotalCredits,
+		CreatedAt:    pass.CreatedAt,
 	}
 
-	err = s.messageSender.SendPass(pass)
+	err = s.messageSender.SendPass(newPass)
 	if err != nil {
 		return models.Pass{}, fmt.Errorf("could not send pass: %w", err)
 	}
 
-	return pass, nil
+	return newPass, nil
 }
