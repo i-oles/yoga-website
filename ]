@@ -9,7 +9,7 @@
             <td align="left">
                 <h3 style="margin: 0 0 10px 0; font-size: 18px; font-weight: 600; text-align: left;">Hej
                     {{.RecipientFirstName}}!</h3>
-                <p style="margin: 0 0 20px 0; font-size: 16px; text-align: left;">Twoją rezerwacja na poniższe zajęcia została odwołana:</p>
+                <p style="margin: 0 0 20px 0; font-size: 16px; text-align: left;">Idziesz na jogę 😊</p>
 
                 <div style="max-width: 180px; width: 100%; padding: 0;">
 
@@ -79,8 +79,17 @@
                     </div>
                     {{ end }}
                 </div>
+                <div style="margin-bottom: 20px; padding-top: 20px;">
+                    <p style="margin: 0 0 15px 0; font-size: 16px;">
+                        <b>Pamiętaj, aby zabrać ze sobą własną matę!</b>
+                    </p><br>
+                    <p style="margin: 0 0 20px 0; font-size: 16px;">
+                        Aby odwołać rezerwację, kliknij:
+                        <a href="{{.CancellationLink}}" style="color: red; text-decoration: none;">tutaj</a><br>
+                    </p>
+                </div>
                 <div>
-                    <p style="margin: 20px 0 5px 0; font-size: 16px;">Pozdrawiam,</p>
+                    <p style="margin: 20px 0 5px 0; font-size: 16px;">Do zobaczenia!</p>
                     <p style="margin: 0; font-weight: bold; font-size: 16px;">{{.SenderName}}</p>
                 </div>
                 </div>
