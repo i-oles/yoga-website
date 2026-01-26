@@ -29,3 +29,14 @@ type ConfirmationMsg struct {
 	UsedPassCredits    int
 	TotalPassCredits   int
 }
+
+type CancellationMsg struct {
+	RecipientFirstName string
+	RecipientEmail     string
+	ClassName          string
+	ClassLevel         string
+	StartTime          time.Time
+	Location           string
+	UsedPassCredits    *int
+	TotalPassCredits   *int
+}

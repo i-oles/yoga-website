@@ -10,7 +10,6 @@ import (
 	"main/internal/infrastructure/models/db"
 
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 type PassesRepo struct {
@@ -41,32 +40,25 @@ func (r PassesRepo) GetByEmail(ctx context.Context, email string) (models.Pass, 
 }
 
 func (r PassesRepo) Update(ctx context.Context, id int, update map[string]any) error {
-	if err := r.db.WithContext(ctx).
-		Model(&db.SQLPass{}).
-		Where("id = ?", id).
-		Updates(update).Error; err != nil {
-		return fmt.Errorf("could not update pass: %v with data: %v, %w", id, update, err)
+	var pass db.SQLPass
+
+	result := r.db.WithContext(ctx).Model(&pass).Where("id = ?", id).Updates(update)
+	if result.Error != nil {
+		return fmt.Errorf("could not update pass: %v with data: %v, %w", id, update, result.Error)
 	}
 
 	return nil
 }
 
-func (r PassesRepo) Upsert(ctx context.Context, email string, usedCredits, totalCredits int) (models.Pass, error) {
+func (r PassesRepo) Insert(ctx context.Context, email string, usedCredits, totalCredits int) (models.Pass, error) {
 	pass := db.SQLPass{
 		Email:        email,
 		UsedCredits:  usedCredits,
 		TotalCredits: totalCredits,
 	}
 
-	result := r.db.WithContext(ctx).
-		Clauses(clause.OnConflict{
-			Columns:   []clause.Column{{Name: "email"}},
-			DoUpdates: clause.AssignmentColumns([]string{"used_credits", "total_credits"}),
-		}).
-		Create(&pass)
-
-	if err := result.Error; err != nil {
-		return models.Pass{}, fmt.Errorf("could not upsert pass: %w", err)
+	if err := r.db.WithContext(ctx).Create(&pass).Error; err != nil {
+		return models.Pass{}, fmt.Errorf("could not insert pass: %w", err)
 	}
 
 	return pass.ToDomain(), nil

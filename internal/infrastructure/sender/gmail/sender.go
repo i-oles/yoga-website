@@ -23,6 +23,7 @@ type Sender struct {
 	ClassCancellationTmplPath          string
 	ClassUpdateTmplPath                string
 	BookingCancellationTmplPath        string
+	PassActivationTmplPath             string
 	Dialer                             *gomail.Dialer
 }
 
@@ -45,6 +46,7 @@ func NewSender(
 		ClassCancellationTmplPath:          baseSenderTmplPath + "class_cancellation.tmpl",
 		ClassUpdateTmplPath:                baseSenderTmplPath + "class_update.tmpl",
 		BookingCancellationTmplPath:        baseSenderTmplPath + "booking_cancellation.tmpl",
+		PassActivationTmplPath:             baseSenderTmplPath + "pass_activation.tmpl",
 		Dialer:                             dialer,
 	}
 }
@@ -299,23 +301,25 @@ func (s Sender) SendInfoAboutUpdate(
 	return nil
 }
 
-func (s Sender) SendInfoAboutBookingCancellation(
-	recipientEmail, recipientFirstName string, class models.Class,
-) error {
-	classTimeDetails, err := getTimeDetails(class.StartTime)
+func (s Sender) SendInfoAboutBookingCancellation(msg models.CancellationMsg) error {
+	classTimeDetails, err := getTimeDetails(msg.StartTime)
 	if err != nil {
 		return fmt.Errorf("could not get date details: %w", err)
 	}
 
 	tmplData := infrastructureModels.BookingCancellationTmplData{
 		SenderName:         s.SenderName,
-		RecipientFirstName: recipientFirstName,
-		ClassName:          class.ClassName,
-		ClassLevel:         class.ClassLevel,
+		RecipientFirstName: msg.RecipientFirstName,
+		ClassName:          msg.ClassName,
+		ClassLevel:         msg.ClassLevel,
 		Hour:               classTimeDetails.startHour,
 		WeekDay:            classTimeDetails.weekDayInPolish,
 		Date:               classTimeDetails.startDate,
-		Location:           class.Location,
+		Location:           msg.Location,
+	}
+
+	if msg.UsedPassCredits != nil && msg.TotalPassCredits != nil {
+		tmplData.PassState = getPassState(*msg.UsedPassCredits, *msg.TotalPassCredits)
 	}
 
 	tmpl, err := template.ParseFiles(s.BookingCancellationTmplPath)
@@ -332,11 +336,44 @@ func (s Sender) SendInfoAboutBookingCancellation(
 
 	m := gomail.NewMessage()
 	m.SetHeader("From", s.SenderEmail)
-	m.SetHeader("To", recipientEmail)
+	m.SetHeader("To", msg.RecipientEmail)
 	m.SetHeader("Subject", "Yoga - Rezerwacja odwołana!")
 	m.SetBody("text/html", msgContent.String())
 
 	if err = s.Dialer.DialAndSend(m); err != nil {
+		return fmt.Errorf("failed to send email: %w", err)
+	}
+
+	return nil
+}
+
+func (s Sender) SendPass(pass models.Pass) error {
+	passState := getPassState(pass.UsedCredits, pass.TotalCredits)
+
+	tmplData := infrastructureModels.PassActivationTmplData{
+		SenderName: s.SenderName,
+		PassState:  passState,
+	}
+
+	tmpl, err := template.ParseFiles(s.PassActivationTmplPath)
+	if err != nil {
+		return fmt.Errorf("could not parse template: %w", err)
+	}
+
+	var msgContent strings.Builder
+
+	err = tmpl.Execute(&msgContent, tmplData)
+	if err != nil {
+		return fmt.Errorf("could not execute template: %w", err)
+	}
+
+	msgToRecipient := gomail.NewMessage()
+	msgToRecipient.SetHeader("From", s.SenderEmail)
+	msgToRecipient.SetHeader("To", pass.Email)
+	msgToRecipient.SetHeader("Subject", "Yoga - twój karnet!")
+	msgToRecipient.SetBody("text/html", msgContent.String())
+
+	if err = s.Dialer.DialAndSend(msgToRecipient); err != nil {
 		return fmt.Errorf("failed to send email: %w", err)
 	}
 

@@ -18,7 +18,6 @@ type ISender interface {
 	SendInfoAboutUpdate(
 		recipientEmail, recipientFirstName, message string, class models.Class,
 	) error
-	SendInfoAboutBookingCancellation(
-		recipientEmail, recipientFirstName string, class models.Class,
-	) error
+	SendInfoAboutBookingCancellation(msg models.CancellationMsg) error
+	SendPass(pass models.Pass) error
 }

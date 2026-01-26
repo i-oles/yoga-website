@@ -48,6 +48,7 @@ type BookingCancellationTmplData struct {
 	Hour               string
 	Date               string
 	Location           string
+	PassState          []bool
 }
 
 type ClassUpdateTmplData struct {
@@ -60,4 +61,9 @@ type ClassUpdateTmplData struct {
 	Date               string
 	Location           string
 	Message            string
+}
+
+type PassActivationTmplData struct {
+	SenderName string
+	PassState  []bool
 }
