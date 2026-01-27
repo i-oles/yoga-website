@@ -8,7 +8,6 @@ import (
 	"main/internal/domain/models"
 	"main/internal/domain/repositories"
 	"main/internal/domain/sender"
-	"main/internal/infrastructure/errs"
 )
 
 type Service struct {
@@ -32,8 +31,8 @@ func (s Service) ActivatePass(ctx context.Context, params models.PassActivationP
 		return models.Pass{}, errors.New("bad request pass - implement me")
 	}
 
-	pass, err := s.passRepo.GetByEmail(ctx, params.Email)
-	if errors.Is(err, errs.ErrNotFound) {
+	passOpt, err := s.passRepo.GetByEmail(ctx, params.Email)
+	if !passOpt.Exists() {
 		pass, err := s.passRepo.Insert(
 			ctx,
 			params.Email,
@@ -60,6 +59,8 @@ func (s Service) ActivatePass(ctx context.Context, params models.PassActivationP
 		"used_credits":  params.UsedCredits,
 		"total_credits": params.TotalCredits,
 	}
+
+	pass := passOpt.Get()
 
 	err = s.passRepo.Update(ctx, pass.ID, update)
 	if err != nil {

@@ -6,8 +6,8 @@ import (
 	"fmt"
 
 	"main/internal/domain/models"
-	"main/internal/infrastructure/errs"
 	"main/internal/infrastructure/models/db"
+	"main/pkg/optional"
 
 	"gorm.io/gorm"
 )
@@ -22,21 +22,20 @@ func NewPassesRepo(db *gorm.DB) PassesRepo {
 	}
 }
 
-func (r PassesRepo) GetByEmail(ctx context.Context, email string) (models.Pass, error) {
+func (r PassesRepo) GetByEmail(ctx context.Context, email string) (optional.Optional[models.Pass], error) {
 	var sqlPass db.SQLPass
 
-	tx := r.db.WithContext(ctx).Where("email = ?", email).First(&sqlPass)
+	result := r.db.WithContext(ctx).Where("email = ?", email).First(&sqlPass)
 
-	if tx.Error != nil {
-		if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
-			return models.Pass{}, errs.ErrNotFound
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return optional.Empty[models.Pass](), nil
 		}
 
-		return models.Pass{},
-			fmt.Errorf("could not get pass for email %s: %w", email, tx.Error)
+		return optional.Empty[models.Pass](), fmt.Errorf("could not get pass: %w", result.Error)
 	}
 
-	return sqlPass.ToDomain(), nil
+	return optional.Of(sqlPass.ToDomain()), nil
 }
 
 func (r PassesRepo) Update(ctx context.Context, id int, update map[string]any) error {

@@ -1,18 +1,4 @@
-package models
-
-import "time"
-
-type Params struct {
-	RecipientEmail     string
-	RecipientFirstName string
-	RecipientLastName  string
-	ClassName          string
-	ClassLevel         string
-	StartTime          time.Time
-	Location           string
-	UsedPassCredits    int
-	TotalPassCredits   int
-}
+package sender
 
 type ConfirmationRequestTmplData struct {
 	SenderName         string

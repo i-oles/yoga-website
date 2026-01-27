@@ -27,20 +27,23 @@ func main() {
 		cfg.BaseSenderTmplPath,
 	)
 
-	msg := models.ConfirmationMsg{
+	three := 3
+	four := 4
+
+	senderParams := models.SenderParams{
 		RecipientEmail:     "orth.quala@gmail.com",
 		RecipientFirstName: "orth",
-		RecipientLastName:  "quala",
 		ClassName:          "vinyasa",
 		ClassLevel:         "beginner",
 		StartTime:          time.Now(),
 		Location:           "dom",
-		CancellationLink:   "http://testlink.com",
-		UsedPassCredits:    3,
-		TotalPassCredits:   4,
+		UsedPassCredits:    *three,
+		TotalPassCredits:   *four,
 	}
 
-	err = emailSender.SendConfirmations(msg)
+	cancellationLink := "http://testlink.com"
+
+	err = emailSender.SendConfirmations(senderParams, cancellationLink)
 	if err != nil {
 		slog.Error(err.Error())
 	}

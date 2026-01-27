@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"main/internal/domain/models"
+	"main/pkg/optional"
 
 	"github.com/google/uuid"
 )
@@ -35,7 +36,7 @@ type IPendingBookings interface {
 }
 
 type IPasses interface {
-	GetByEmail(ctx context.Context, email string) (models.Pass, error)
+	GetByEmail(ctx context.Context, email string) (optional.Optional[models.Pass], error)
 	Update(ctx context.Context, id int, update map[string]any) error
 	Insert(ctx context.Context, email string, usedCredits, totalCredits int) (models.Pass, error)
 }

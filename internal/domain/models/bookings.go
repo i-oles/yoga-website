@@ -16,27 +16,3 @@ type Booking struct {
 	ConfirmationToken string
 	Class             *Class
 }
-
-type ConfirmationMsg struct {
-	RecipientEmail     string
-	RecipientFirstName string
-	RecipientLastName  string
-	ClassName          string
-	ClassLevel         string
-	StartTime          time.Time
-	Location           string
-	CancellationLink   string
-	UsedPassCredits    int
-	TotalPassCredits   int
-}
-
-type CancellationMsg struct {
-	RecipientFirstName string
-	RecipientEmail     string
-	ClassName          string
-	ClassLevel         string
-	StartTime          time.Time
-	Location           string
-	UsedPassCredits    *int
-	TotalPassCredits   *int
-}

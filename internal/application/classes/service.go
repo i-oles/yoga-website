@@ -18,17 +18,20 @@ import (
 type Service struct {
 	classesRepo   repositories.IClasses
 	bookingsRepo  repositories.IBookings
+	passesRepo    repositories.IPasses
 	MessageSender sender.ISender
 }
 
 func NewService(
 	classesRepo repositories.IClasses,
 	bookingsRepo repositories.IBookings,
+	passesRepo repositories.IPasses,
 	messageSender sender.ISender,
 ) *Service {
 	return &Service{
 		classesRepo:   classesRepo,
 		bookingsRepo:  bookingsRepo,
+		passesRepo:    passesRepo,
 		MessageSender: messageSender,
 	}
 }
@@ -105,13 +108,13 @@ func (s *Service) CreateClasses(
 	return insertedClasses, nil
 }
 
-func (s *Service) DeleteClass(ctx context.Context, classID uuid.UUID, reasonMsg *string) error {
+func (s *Service) DeleteClass(ctx context.Context, classID uuid.UUID, msg *string) error {
 	bookings, err := s.bookingsRepo.ListByClassID(ctx, classID)
 	if err != nil {
 		return fmt.Errorf("could not get classes for classID %v: %w", classID, err)
 	}
 
-	if len(bookings) > 0 && reasonMsg == nil {
+	if len(bookings) > 0 && msg == nil {
 		return errs.ErrClassValidation(
 			errors.New("reason msg can not be empty, when classes has bookings"),
 		)
@@ -127,12 +130,36 @@ func (s *Service) DeleteClass(ctx context.Context, classID uuid.UUID, reasonMsg 
 			return fmt.Errorf("could not delete booking for id %v: %w", booking.ID, err)
 		}
 
-		err := s.MessageSender.SendInfoAboutClassCancellation(
-			booking.Email,
-			booking.FirstName,
-			*reasonMsg,
-			*booking.Class,
-		)
+		passOpt, err := s.passesRepo.GetByEmail(ctx, booking.Email)
+		if err != nil {
+			return fmt.Errorf("could not delete booking for id %v: %w", booking.ID, err)
+		}
+
+		senderParams := models.SenderParams{
+			RecipientFirstName: booking.FirstName,
+			RecipientEmail:     booking.Email,
+			ClassName:          booking.Class.ClassName,
+			ClassLevel:         booking.Class.ClassLevel,
+			StartTime:          booking.Class.StartTime,
+			Location:           booking.Class.Location,
+		}
+
+		if passOpt.Exists() {
+			pass := passOpt.Get()
+
+			if pass.UsedCredits > 0 {
+				updatedCredits := pass.UsedCredits - 1
+				err := s.passesRepo.Update(ctx, pass.ID, map[string]any{"used_credits": updatedCredits})
+				if err != nil {
+					return fmt.Errorf("could not delete booking for id %v: %w", booking.ID, err)
+				}
+
+				senderParams.UsedPassCredits = &updatedCredits
+				senderParams.TotalPassCredits = &pass.TotalCredits
+			}
+		}
+
+		err = s.MessageSender.SendInfoAboutClassCancellation(senderParams, *msg)
 		if err != nil {
 			return fmt.Errorf("could not send info about class cancellation: %w", err)
 		}

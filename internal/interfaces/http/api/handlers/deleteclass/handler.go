@@ -47,7 +47,7 @@ func (h *Handler) Handle(c *gin.Context) {
 
 	ctx := c.Request.Context()
 
-	err = h.classesService.DeleteClass(ctx, classID, dtoDeleteClassRequest.ReasonMsg)
+	err = h.classesService.DeleteClass(ctx, classID, dtoDeleteClassRequest.Message)
 	if err != nil {
 		h.apiErrorHandler.Handle(c, err)
 
