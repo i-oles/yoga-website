@@ -12,7 +12,7 @@ type SQLPass struct {
 	ID             int         `gorm:"primaryKey"`
 	Email          string      `gorm:"unique;not null"`
 	UsedBookingIDs []uuid.UUID `gorm:"type:json;serializer:json"`
-	TotalCredits   int         `gorm:"not null"`
+	TotalBookings  int         `gorm:"not null"`
 	UpdatedAt      time.Time   `gorm:"autoUpdateTime"`
 	CreatedAt      time.Time   `gorm:"autoCreateTime"`
 }
@@ -26,7 +26,7 @@ func (s SQLPass) ToDomain() models.Pass {
 		ID:             s.ID,
 		Email:          s.Email,
 		UsedBookingIDs: s.UsedBookingIDs,
-		TotalCredits:   s.TotalCredits,
+		TotalBookings:  s.TotalBookings,
 		UpdatedAt:      s.UpdatedAt,
 		CreatedAt:      s.CreatedAt,
 	}

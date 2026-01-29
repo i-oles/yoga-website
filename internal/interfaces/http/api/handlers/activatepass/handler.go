@@ -37,9 +37,9 @@ func (h *Handler) Handle(c *gin.Context) {
 	}
 
 	params := models.PassActivationParams{
-		Email:        dtoPassesRequest.Email,
-		UsedCredits:  dtoPassesRequest.UsedCredits,
-		TotalCredits: dtoPassesRequest.TotalCredits,
+		Email:         dtoPassesRequest.Email,
+		UsedBookings:  dtoPassesRequest.UsedBookings,
+		TotalBookings: dtoPassesRequest.TotalBookings,
 	}
 
 	ctx := c.Request.Context()

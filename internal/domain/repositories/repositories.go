@@ -38,6 +38,6 @@ type IPendingBookings interface {
 
 type IPasses interface {
 	GetByEmail(ctx context.Context, email string) (optional.Optional[models.Pass], error)
-	Update(ctx context.Context, id int, usedBookingIDs []uuid.UUID, totalCredits int) error
-	Insert(ctx context.Context, email string, usedBookingIDs []uuid.UUID, totalCredits int) (models.Pass, error)
+	Update(ctx context.Context, id int, usedBookingIDs []uuid.UUID, totalBookings int) error
+	Insert(ctx context.Context, email string, usedBookingIDs []uuid.UUID, totalBookings int) (models.Pass, error)
 }

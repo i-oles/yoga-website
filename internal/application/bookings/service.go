@@ -125,17 +125,17 @@ func (s *Service) CreateBooking(ctx context.Context, token string) (models.Class
 
 	pass := passOpt.Get()
 
-	if len(pass.UsedBookingIDs)+1 <= pass.TotalCredits {
+	if len(pass.UsedBookingIDs)+1 <= pass.TotalBookings {
 		updatedBookingIDs := pass.UsedBookingIDs
 		updatedBookingIDs = append(updatedBookingIDs, bookingID)
 
-		err = s.PassesRepo.Update(ctx, pass.ID, updatedBookingIDs, pass.TotalCredits)
+		err = s.PassesRepo.Update(ctx, pass.ID, updatedBookingIDs, pass.TotalBookings)
 		if err != nil {
-			return models.Class{}, fmt.Errorf("could not update pass for %s with %v", pendingBooking.Email, updatedBookingIDs, pass.TotalCredits)
+			return models.Class{}, fmt.Errorf("could not update pass for %s with %v", pendingBooking.Email, updatedBookingIDs, pass.TotalBookings)
 		}
 
-		senderParams.BookingIDs = updatedBookingIDs
-		senderParams.TotalPassCredits = &pass.TotalCredits
+		senderParams.PassUsedBookingIDs = updatedBookingIDs
+		senderParams.PassTotalBookings = &pass.TotalBookings
 	}
 
 	cancellationLink := fmt.Sprintf("%s/bookings/%s/cancel_form?token=%s", s.DomainAddr, bookingID, token)
@@ -314,13 +314,13 @@ func (s Service) updateSenderParamsWithPass(
 			return models.SenderParams{}, fmt.Errorf("could not remove bookingID %v from bookingIDs", bookingID)
 		}
 
-		err = s.PassesRepo.Update(ctx, pass.ID, updatedBookingIDs, pass.TotalCredits)
+		err = s.PassesRepo.Update(ctx, pass.ID, updatedBookingIDs, pass.TotalBookings)
 		if err != nil {
 			return models.SenderParams{}, fmt.Errorf("could not update pass for %s with %v", pass.Email, updatedBookingIDs)
 		}
 
-		senderParams.BookingIDs = updatedBookingIDs
-		senderParams.TotalPassCredits = &pass.TotalCredits
+		senderParams.PassUsedBookingIDs = updatedBookingIDs
+		senderParams.PassTotalBookings = &pass.TotalBookings
 	}
 
 	return senderParams, nil

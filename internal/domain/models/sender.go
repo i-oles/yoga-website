@@ -14,6 +14,6 @@ type SenderParams struct {
 	ClassLevel         string
 	StartTime          time.Time
 	Location           string
-	BookingIDs         []uuid.UUID
-	TotalPassCredits   *int
+	PassUsedBookingIDs []uuid.UUID
+	PassTotalBookings  *int
 }

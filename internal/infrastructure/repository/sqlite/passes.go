@@ -39,7 +39,7 @@ func (r PassesRepo) GetByEmail(ctx context.Context, email string) (optional.Opti
 	return optional.Of(sqlPass.ToDomain()), nil
 }
 
-func (r PassesRepo) Update(ctx context.Context, id int, usedBookingIDs []uuid.UUID, totalCredits int) error {
+func (r PassesRepo) Update(ctx context.Context, id int, usedBookingIDs []uuid.UUID, totalBookings int) error {
 	var pass db.SQLPass
 
 	if err := r.db.WithContext(ctx).First(&pass, id).Error; err != nil {
@@ -50,7 +50,7 @@ func (r PassesRepo) Update(ctx context.Context, id int, usedBookingIDs []uuid.UU
 		pass.UsedBookingIDs = usedBookingIDs
 	}
 
-	pass.TotalCredits = totalCredits
+	pass.TotalBookings = totalBookings
 
 	if err := r.db.WithContext(ctx).Save(&pass).Error; err != nil {
 		return err
@@ -59,11 +59,11 @@ func (r PassesRepo) Update(ctx context.Context, id int, usedBookingIDs []uuid.UU
 	return nil
 }
 
-func (r PassesRepo) Insert(ctx context.Context, email string, usedBookingIDs []uuid.UUID, totalCredits int) (models.Pass, error) {
+func (r PassesRepo) Insert(ctx context.Context, email string, usedBookingIDs []uuid.UUID, totalBookings int) (models.Pass, error) {
 	pass := db.SQLPass{
 		Email:          email,
 		UsedBookingIDs: usedBookingIDs,
-		TotalCredits:   totalCredits,
+		TotalBookings:  totalBookings,
 	}
 
 	if err := r.db.WithContext(ctx).Create(&pass).Error; err != nil {

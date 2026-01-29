@@ -31,7 +31,7 @@ func NewService(
 }
 
 func (s Service) ActivatePass(ctx context.Context, params models.PassActivationParams) (models.Pass, error) {
-	if params.UsedCredits > params.TotalCredits {
+	if params.UsedBookings > params.TotalBookings {
 		return models.Pass{}, errors.New("implement custom error bad request")
 	}
 
@@ -40,7 +40,7 @@ func (s Service) ActivatePass(ctx context.Context, params models.PassActivationP
 		return models.Pass{}, fmt.Errorf("could not get pass by email %s: %w", params.Email, err)
 	}
 
-	usedBookingIDs, err := s.getBookingIDsForPass(ctx, params.Email, params.UsedCredits)
+	usedBookingIDs, err := s.getBookingIDsForPass(ctx, params.Email, params.UsedBookings)
 	if err != nil {
 		return models.Pass{}, fmt.Errorf("could not get bookingIDs for pass: %w", err)
 	}
@@ -50,7 +50,7 @@ func (s Service) ActivatePass(ctx context.Context, params models.PassActivationP
 			ctx,
 			params.Email,
 			usedBookingIDs,
-			params.TotalCredits,
+			params.TotalBookings,
 		)
 		if err != nil {
 			return models.Pass{}, fmt.Errorf("could not insert pass: %w", err)
@@ -66,7 +66,7 @@ func (s Service) ActivatePass(ctx context.Context, params models.PassActivationP
 
 	pass := passOpt.Get()
 
-	err = s.passesRepo.Update(ctx, pass.ID, usedBookingIDs, params.TotalCredits)
+	err = s.passesRepo.Update(ctx, pass.ID, usedBookingIDs, params.TotalBookings)
 	if err != nil {
 		return models.Pass{}, fmt.Errorf("could not update pass with %+v: %w", usedBookingIDs, err)
 	}
@@ -75,7 +75,7 @@ func (s Service) ActivatePass(ctx context.Context, params models.PassActivationP
 		ID:             pass.ID,
 		Email:          pass.Email,
 		UsedBookingIDs: usedBookingIDs,
-		TotalCredits:   params.TotalCredits,
+		TotalBookings:  params.TotalBookings,
 		CreatedAt:      pass.CreatedAt,
 		UpdatedAt:      pass.UpdatedAt,
 	}
@@ -91,13 +91,13 @@ func (s Service) ActivatePass(ctx context.Context, params models.PassActivationP
 func (s Service) getBookingIDsForPass(
 	ctx context.Context,
 	email string,
-	usedPassCredits int,
+	passUsedBookings int,
 ) ([]uuid.UUID, error) {
-	if usedPassCredits == 0 {
+	if passUsedBookings == 0 {
 		return []uuid.UUID{}, nil
 	}
 
-	bookingIDs, err := s.bookingsRepo.GetIDsByEmail(ctx, email, usedPassCredits)
+	bookingIDs, err := s.bookingsRepo.GetIDsByEmail(ctx, email, passUsedBookings)
 	if err != nil {
 		return nil, fmt.Errorf("could not get bookingIDs for email %s: %w", email, err)
 	}

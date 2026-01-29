@@ -109,8 +109,8 @@ func (s Sender) SendConfirmations(params models.SenderParams, cancellationLink s
 	}
 
 	var isPass bool
-	if params.BookingIDs != nil && params.TotalPassCredits != nil {
-		tmplData.PassState = getPassState(params.BookingIDs, *params.TotalPassCredits)
+	if params.PassUsedBookingIDs != nil && params.PassTotalBookings != nil {
+		tmplData.PassState = getPassState(params.PassUsedBookingIDs, *params.PassTotalBookings)
 		isPass = true
 	}
 
@@ -159,8 +159,8 @@ func (s Sender) SendConfirmations(params models.SenderParams, cancellationLink s
 	return nil
 }
 
-func getPassState(bookingIDs []uuid.UUID, totalCredits int) []bool {
-	result := make([]bool, totalCredits)
+func getPassState(bookingIDs []uuid.UUID, totalBookings int) []bool {
+	result := make([]bool, totalBookings)
 
 	for i := range bookingIDs {
 		result[i] = true
@@ -244,8 +244,8 @@ func (s Sender) SendInfoAboutClassCancellation(
 		Message:            msg,
 	}
 
-	if params.BookingIDs != nil && params.TotalPassCredits != nil {
-		tmplData.PassState = getPassState(params.BookingIDs, *params.TotalPassCredits)
+	if params.PassUsedBookingIDs != nil && params.PassTotalBookings != nil {
+		tmplData.PassState = getPassState(params.PassUsedBookingIDs, *params.PassTotalBookings)
 	}
 
 	tmpl, err := template.ParseFiles(s.ClassCancellationTmplPath)
@@ -335,8 +335,8 @@ func (s Sender) SendInfoAboutBookingCancellation(params models.SenderParams) err
 		Location:           params.Location,
 	}
 
-	if params.BookingIDs != nil && params.TotalPassCredits != nil {
-		tmplData.PassState = getPassState(params.BookingIDs, *params.TotalPassCredits)
+	if params.PassUsedBookingIDs != nil && params.PassTotalBookings != nil {
+		tmplData.PassState = getPassState(params.PassUsedBookingIDs, *params.PassTotalBookings)
 	}
 
 	tmpl, err := template.ParseFiles(s.BookingCancellationTmplPath)
@@ -365,7 +365,7 @@ func (s Sender) SendInfoAboutBookingCancellation(params models.SenderParams) err
 }
 
 func (s Sender) SendPass(pass models.Pass) error {
-	passState := getPassState(pass.UsedBookingIDs, pass.TotalCredits)
+	passState := getPassState(pass.UsedBookingIDs, pass.TotalBookings)
 
 	tmplData := senderModels.PassActivationTmplData{
 		SenderName: s.SenderName,

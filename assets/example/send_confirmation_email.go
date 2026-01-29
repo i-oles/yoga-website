@@ -37,8 +37,8 @@ func main() {
 		ClassLevel:         "beginner",
 		StartTime:          time.Now(),
 		Location:           "dom",
-		UsedPassCredits:    *three,
-		TotalPassCredits:   *four,
+		UsedBookins:        *three,
+		TotalPassBookings:  *four,
 	}
 
 	cancellationLink := "http://testlink.com"

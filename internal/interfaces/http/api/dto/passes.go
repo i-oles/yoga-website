@@ -11,16 +11,16 @@ import (
 )
 
 type ActivatePassRequest struct {
-	Email        string `binding:"required,min=3,max=40" json:"email"`
-	UsedCredits  int    `binding:"min=0" json:"used_credits"`
-	TotalCredits int    `binding:"min=1" json:"total_credits"`
+	Email         string `binding:"required,min=3,max=40" json:"email"`
+	UsedBookings  int    `binding:"min=0" json:"used_bookings"`
+	TotalBookings int    `binding:"min=1" json:"total_bookings"`
 }
 
 type PassDTO struct {
 	ID             int         `json:"id"`
 	Email          string      `json:"email"`
 	UsedBookingIDs []uuid.UUID `json:"used_booking_ids"`
-	TotalCredits   int         `json:"total_credits"`
+	TotalBookings  int         `json:"total_bookings"`
 	UpdatedAt      time.Time   `json:"updated_at"`
 	CreatedAt      time.Time   `json:"created_at"`
 }
@@ -40,7 +40,7 @@ func ToPassDTO(pass models.Pass) (PassDTO, error) {
 		ID:             pass.ID,
 		Email:          pass.Email,
 		UsedBookingIDs: pass.UsedBookingIDs,
-		TotalCredits:   pass.TotalCredits,
+		TotalBookings:  pass.TotalBookings,
 		UpdatedAt:      updatedAtWarsawTime,
 		CreatedAt:      cratedAtWarsawTime,
 	}, nil
