@@ -6,6 +6,8 @@ import (
 
 	"main/internal/domain/models"
 	"main/pkg/converter"
+
+	"github.com/google/uuid"
 )
 
 type ActivatePassRequest struct {
@@ -15,11 +17,12 @@ type ActivatePassRequest struct {
 }
 
 type PassDTO struct {
-	ID           int       `json:"id"`
-	Email        string    `json:"email"`
-	UsedCredits  int       `json:"used_credits"`
-	TotalCredits int       `json:"total_credits"`
-	CreatedAt    time.Time `json:"created_at"`
+	ID             int         `json:"id"`
+	Email          string      `json:"email"`
+	UsedBookingIDs []uuid.UUID `json:"used_booking_ids"`
+	TotalCredits   int         `json:"total_credits"`
+	UpdatedAt      time.Time   `json:"updated_at"`
+	CreatedAt      time.Time   `json:"created_at"`
 }
 
 func ToPassDTO(pass models.Pass) (PassDTO, error) {
@@ -28,11 +31,17 @@ func ToPassDTO(pass models.Pass) (PassDTO, error) {
 		return PassDTO{}, fmt.Errorf("error while converting createdAt to warsaw time: %w", err)
 	}
 
+	updatedAtWarsawTime, err := converter.ConvertToWarsawTime(pass.UpdatedAt)
+	if err != nil {
+		return PassDTO{}, fmt.Errorf("error while converting createdAt to warsaw time: %w", err)
+	}
+
 	return PassDTO{
-		ID:           pass.ID,
-		Email:        pass.Email,
-		UsedCredits:  pass.UsedCredits,
-		TotalCredits: pass.TotalCredits,
-		CreatedAt:    cratedAtWarsawTime,
+		ID:             pass.ID,
+		Email:          pass.Email,
+		UsedBookingIDs: pass.UsedBookingIDs,
+		TotalCredits:   pass.TotalCredits,
+		UpdatedAt:      updatedAtWarsawTime,
+		CreatedAt:      cratedAtWarsawTime,
 	}, nil
 }

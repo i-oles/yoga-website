@@ -8,35 +8,48 @@ import (
 	"main/internal/domain/models"
 	"main/internal/domain/repositories"
 	"main/internal/domain/sender"
+
+	"github.com/google/uuid"
 )
 
 type Service struct {
-	passRepo      repositories.IPasses
+	passesRepo    repositories.IPasses
+	bookingsRepo  repositories.IBookings
 	messageSender sender.ISender
 }
 
 func NewService(
-	passRepo repositories.IPasses,
+	passesRepo repositories.IPasses,
+	bookingsRepo repositories.IBookings,
 	messageSender sender.ISender,
 ) *Service {
 	return &Service{
-		passRepo:      passRepo,
+		passesRepo:    passesRepo,
+		bookingsRepo:  bookingsRepo,
 		messageSender: messageSender,
 	}
 }
 
 func (s Service) ActivatePass(ctx context.Context, params models.PassActivationParams) (models.Pass, error) {
-	// TODO: refactor error domain and leave here proper domainError 400
 	if params.UsedCredits > params.TotalCredits {
-		return models.Pass{}, errors.New("bad request pass - implement me")
+		return models.Pass{}, errors.New("implement custom error bad request")
 	}
 
-	passOpt, err := s.passRepo.GetByEmail(ctx, params.Email)
+	passOpt, err := s.passesRepo.GetByEmail(ctx, params.Email)
+	if err != nil {
+		return models.Pass{}, fmt.Errorf("could not get pass by email %s: %w", params.Email, err)
+	}
+
+	usedBookingIDs, err := s.getBookingIDsForPass(ctx, params.Email, params.UsedCredits)
+	if err != nil {
+		return models.Pass{}, fmt.Errorf("could not get bookingIDs for pass: %w", err)
+	}
+
 	if !passOpt.Exists() {
-		pass, err := s.passRepo.Insert(
+		pass, err := s.passesRepo.Insert(
 			ctx,
 			params.Email,
-			params.UsedCredits,
+			usedBookingIDs,
 			params.TotalCredits,
 		)
 		if err != nil {
@@ -51,28 +64,20 @@ func (s Service) ActivatePass(ctx context.Context, params models.PassActivationP
 		return pass, nil
 	}
 
-	if err != nil {
-		return models.Pass{}, fmt.Errorf("could not get pass by email %s: %w", params.Email, err)
-	}
-
-	update := map[string]any{
-		"used_credits":  params.UsedCredits,
-		"total_credits": params.TotalCredits,
-	}
-
 	pass := passOpt.Get()
 
-	err = s.passRepo.Update(ctx, pass.ID, update)
+	err = s.passesRepo.Update(ctx, pass.ID, usedBookingIDs, params.TotalCredits)
 	if err != nil {
-		return models.Pass{}, fmt.Errorf("could not update pass with %+v: %w", update, err)
+		return models.Pass{}, fmt.Errorf("could not update pass with %+v: %w", usedBookingIDs, err)
 	}
 
 	newPass := models.Pass{
-		ID:           pass.ID,
-		Email:        pass.Email,
-		UsedCredits:  params.UsedCredits,
-		TotalCredits: params.TotalCredits,
-		CreatedAt:    pass.CreatedAt,
+		ID:             pass.ID,
+		Email:          pass.Email,
+		UsedBookingIDs: usedBookingIDs,
+		TotalCredits:   params.TotalCredits,
+		CreatedAt:      pass.CreatedAt,
+		UpdatedAt:      pass.UpdatedAt,
 	}
 
 	err = s.messageSender.SendPass(newPass)
@@ -81,4 +86,21 @@ func (s Service) ActivatePass(ctx context.Context, params models.PassActivationP
 	}
 
 	return newPass, nil
+}
+
+func (s Service) getBookingIDsForPass(
+	ctx context.Context,
+	email string,
+	usedPassCredits int,
+) ([]uuid.UUID, error) {
+	if usedPassCredits == 0 {
+		return []uuid.UUID{}, nil
+	}
+
+	bookingIDs, err := s.bookingsRepo.GetIDsByEmail(ctx, email, usedPassCredits)
+	if err != nil {
+		return nil, fmt.Errorf("could not get bookingIDs for email %s: %w", email, err)
+	}
+
+	return bookingIDs, nil
 }

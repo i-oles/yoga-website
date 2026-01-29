@@ -140,7 +140,7 @@ func setupRouter(db *gorm.DB, cfg *configuration.Configuration) *gin.Engine {
 		emailSender,
 		cfg.DomainAddr,
 	)
-	passesService := passes.NewService(passesRepo, emailSender)
+	passesService := passes.NewService(passesRepo, bookingsRepo, emailSender)
 
 	var viewErrorHandler viewErrs.IErrorHandler
 

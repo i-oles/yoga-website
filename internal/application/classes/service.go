@@ -11,6 +11,8 @@ import (
 	"main/internal/domain/repositories"
 	"main/internal/domain/sender"
 	repositoryError "main/internal/infrastructure/errs"
+	"main/pkg/optional"
+	"main/pkg/tools"
 
 	"github.com/google/uuid"
 )
@@ -145,17 +147,9 @@ func (s *Service) DeleteClass(ctx context.Context, classID uuid.UUID, msg *strin
 		}
 
 		if passOpt.Exists() {
-			pass := passOpt.Get()
-
-			if pass.UsedCredits > 0 {
-				updatedCredits := pass.UsedCredits - 1
-				err := s.passesRepo.Update(ctx, pass.ID, map[string]any{"used_credits": updatedCredits})
-				if err != nil {
-					return fmt.Errorf("could not delete booking for id %v: %w", booking.ID, err)
-				}
-
-				senderParams.UsedPassCredits = &updatedCredits
-				senderParams.TotalPassCredits = &pass.TotalCredits
+			senderParams, err = s.updateSenderParamsWithPass(ctx, booking.ID, passOpt, senderParams)
+			if err != nil {
+				return fmt.Errorf("could not send info about cancellation to %s: %w", booking.Email, err)
 			}
 		}
 
@@ -171,6 +165,36 @@ func (s *Service) DeleteClass(ctx context.Context, classID uuid.UUID, msg *strin
 	}
 
 	return nil
+}
+
+func (s Service) updateSenderParamsWithPass(
+	ctx context.Context,
+	bookingID uuid.UUID,
+	passOpt optional.Optional[models.Pass],
+	senderParams models.SenderParams,
+) (models.SenderParams, error) {
+	pass := passOpt.Get()
+
+	if len(pass.UsedBookingIDs) > 0 {
+		updatedBookingIDs, err := tools.RemoveFromSlice(pass.UsedBookingIDs, bookingID)
+		if errors.Is(err, errs.ErrBookingIDNotFoundInPass) {
+			return senderParams, nil
+		}
+
+		if err != nil {
+			return models.SenderParams{}, fmt.Errorf("could not remove bookingID %v from bookingIDs", bookingID)
+		}
+
+		err = s.passesRepo.Update(ctx, pass.ID, updatedBookingIDs, pass.TotalCredits)
+		if err != nil {
+			return models.SenderParams{}, fmt.Errorf("could not update pass for %s with %v", pass.Email, updatedBookingIDs)
+		}
+
+		senderParams.BookingIDs = updatedBookingIDs
+		senderParams.TotalPassCredits = &pass.TotalCredits
+	}
+
+	return senderParams, nil
 }
 
 func (s *Service) UpdateClass(

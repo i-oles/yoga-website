@@ -12,6 +12,8 @@ import (
 	"main/internal/domain/repositories"
 	"main/internal/domain/sender"
 	"main/internal/infrastructure/errs"
+	"main/pkg/optional"
+	"main/pkg/tools"
 
 	"github.com/google/uuid"
 )
@@ -123,19 +125,17 @@ func (s *Service) CreateBooking(ctx context.Context, token string) (models.Class
 
 	pass := passOpt.Get()
 
-	if pass.UsedCredits+1 <= pass.TotalCredits {
-		updatedCredits := pass.UsedCredits + 1
-		senderParams.UsedPassCredits = &updatedCredits
-		senderParams.TotalPassCredits = &pass.TotalCredits
+	if len(pass.UsedBookingIDs)+1 <= pass.TotalCredits {
+		updatedBookingIDs := pass.UsedBookingIDs
+		updatedBookingIDs = append(updatedBookingIDs, bookingID)
 
-		update := map[string]any{
-			"used_credits": updatedCredits,
-		}
-
-		err = s.PassesRepo.Update(ctx, pass.ID, update)
+		err = s.PassesRepo.Update(ctx, pass.ID, updatedBookingIDs, pass.TotalCredits)
 		if err != nil {
-			return models.Class{}, fmt.Errorf("could not update pass for %s with %v", pendingBooking.Email, update)
+			return models.Class{}, fmt.Errorf("could not update pass for %s with %v", pendingBooking.Email, updatedBookingIDs, pass.TotalCredits)
 		}
+
+		senderParams.BookingIDs = updatedBookingIDs
+		senderParams.TotalPassCredits = &pass.TotalCredits
 	}
 
 	cancellationLink := fmt.Sprintf("%s/bookings/%s/cancel_form?token=%s", s.DomainAddr, bookingID, token)
@@ -200,7 +200,7 @@ func (s *Service) CancelBooking(ctx context.Context, bookingID uuid.UUID, token 
 
 	passOpt, err := s.PassesRepo.GetByEmail(ctx, booking.Email)
 	if err != nil {
-		return fmt.Errorf("could not get users passOpt for: %s", booking.Email)
+		return fmt.Errorf("could not get users passOpt for %s: %w", booking.Email, err)
 	}
 
 	senderParams := models.SenderParams{
@@ -213,22 +213,9 @@ func (s *Service) CancelBooking(ctx context.Context, bookingID uuid.UUID, token 
 	}
 
 	if passOpt.Exists() {
-		pass := passOpt.Get()
-
-		if pass.UsedCredits > 0 {
-			updatedCredits := pass.UsedCredits - 1
-
-			update := map[string]any{
-				"used_credits": updatedCredits,
-			}
-
-			err = s.PassesRepo.Update(ctx, pass.ID, update)
-			if err != nil {
-				return fmt.Errorf("could not update pass for %s with %v", booking.Email, update)
-			}
-
-			senderParams.UsedPassCredits = &updatedCredits
-			senderParams.TotalPassCredits = &pass.TotalCredits
+		senderParams, err = s.updateSenderParamsWithPass(ctx, bookingID, passOpt, senderParams)
+		if err != nil {
+			return fmt.Errorf("could not send info about cancellation to %s: %w", booking.Email, err)
 		}
 	}
 
@@ -280,6 +267,11 @@ func (s *Service) DeleteBooking(ctx context.Context, bookingID uuid.UUID) error 
 		return nil
 	}
 
+	passOpt, err := s.PassesRepo.GetByEmail(ctx, booking.Email)
+	if err != nil {
+		return fmt.Errorf("could not get users passOpt for: %s", booking.Email)
+	}
+
 	senderParams := models.SenderParams{
 		RecipientFirstName: booking.FirstName,
 		RecipientEmail:     booking.Email,
@@ -289,28 +281,10 @@ func (s *Service) DeleteBooking(ctx context.Context, bookingID uuid.UUID) error 
 		Location:           booking.Class.Location,
 	}
 
-	passOpt, err := s.PassesRepo.GetByEmail(ctx, booking.Email)
-	if err != nil {
-		return fmt.Errorf("could not get users passOpt for: %s", booking.Email)
-	}
-
 	if passOpt.Exists() {
-		pass := passOpt.Get()
-
-		if pass.UsedCredits > 0 {
-			updatedCredits := pass.UsedCredits - 1
-
-			update := map[string]any{
-				"used_credits": updatedCredits,
-			}
-
-			err = s.PassesRepo.Update(ctx, pass.ID, update)
-			if err != nil {
-				return fmt.Errorf("could not update pass for %s with %v", booking.Email, update)
-			}
-
-			senderParams.UsedPassCredits = &updatedCredits
-			senderParams.TotalPassCredits = &pass.TotalCredits
+		senderParams, err = s.updateSenderParamsWithPass(ctx, bookingID, passOpt, senderParams)
+		if err != nil {
+			return fmt.Errorf("could not send info about cancellation to %s: %w", booking.Email, err)
 		}
 	}
 
@@ -320,4 +294,34 @@ func (s *Service) DeleteBooking(ctx context.Context, bookingID uuid.UUID) error 
 	}
 
 	return nil
+}
+
+func (s Service) updateSenderParamsWithPass(
+	ctx context.Context,
+	bookingID uuid.UUID,
+	passOpt optional.Optional[models.Pass],
+	senderParams models.SenderParams,
+) (models.SenderParams, error) {
+	pass := passOpt.Get()
+
+	if len(pass.UsedBookingIDs) > 0 {
+		updatedBookingIDs, err := tools.RemoveFromSlice(pass.UsedBookingIDs, bookingID)
+		if errors.Is(err, domainErrors.ErrBookingIDNotFoundInPass) {
+			return senderParams, nil
+		}
+
+		if err != nil {
+			return models.SenderParams{}, fmt.Errorf("could not remove bookingID %v from bookingIDs", bookingID)
+		}
+
+		err = s.PassesRepo.Update(ctx, pass.ID, updatedBookingIDs, pass.TotalCredits)
+		if err != nil {
+			return models.SenderParams{}, fmt.Errorf("could not update pass for %s with %v", pass.Email, updatedBookingIDs)
+		}
+
+		senderParams.BookingIDs = updatedBookingIDs
+		senderParams.TotalPassCredits = &pass.TotalCredits
+	}
+
+	return senderParams, nil
 }

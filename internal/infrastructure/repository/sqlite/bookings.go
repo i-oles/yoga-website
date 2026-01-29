@@ -63,6 +63,30 @@ func (r BookingsRepo) GetByEmailAndClassID(
 	return sqlBooking.ToDomain(), nil
 }
 
+func (r BookingsRepo) GetIDsByEmail(ctx context.Context, email string, limit int) ([]uuid.UUID, error) {
+	var sqlBookings []db.SQLBooking
+
+	if limit <= 0 {
+		return nil, fmt.Errorf("limit must be positive: %d", limit)
+	}
+
+	if err := r.db.WithContext(ctx).
+		Select("id", "created_at").
+		Where("email = ?", email).
+		Order("created_at DESC").
+		Limit(limit).
+		Find(&sqlBookings).Error; err != nil {
+		return nil, fmt.Errorf("could not get booking IDs for email %s: %w", email, err)
+	}
+
+	result := make([]uuid.UUID, len(sqlBookings))
+	for i, booking := range sqlBookings {
+		result[i] = booking.ID
+	}
+
+	return result, nil
+}
+
 func (r BookingsRepo) List(ctx context.Context) ([]models.Booking, error) {
 	var SQLBookings []db.SQLBooking
 

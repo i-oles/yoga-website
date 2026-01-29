@@ -1,6 +1,10 @@
 package models
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type SenderParams struct {
 	RecipientEmail     string
@@ -10,6 +14,6 @@ type SenderParams struct {
 	ClassLevel         string
 	StartTime          time.Time
 	Location           string
-	UsedPassCredits    *int
+	BookingIDs         []uuid.UUID
 	TotalPassCredits   *int
 }

@@ -12,6 +12,7 @@ import (
 	"main/pkg/converter"
 	"main/pkg/translator"
 
+	"github.com/google/uuid"
 	"gopkg.in/gomail.v2"
 )
 
@@ -108,8 +109,8 @@ func (s Sender) SendConfirmations(params models.SenderParams, cancellationLink s
 	}
 
 	var isPass bool
-	if params.UsedPassCredits != nil && params.TotalPassCredits != nil {
-		tmplData.PassState = getPassState(*params.UsedPassCredits, *params.TotalPassCredits)
+	if params.BookingIDs != nil && params.TotalPassCredits != nil {
+		tmplData.PassState = getPassState(params.BookingIDs, *params.TotalPassCredits)
 		isPass = true
 	}
 
@@ -158,10 +159,10 @@ func (s Sender) SendConfirmations(params models.SenderParams, cancellationLink s
 	return nil
 }
 
-func getPassState(usedCredits, totalCredits int) []bool {
+func getPassState(bookingIDs []uuid.UUID, totalCredits int) []bool {
 	result := make([]bool, totalCredits)
 
-	for i := 0; i < usedCredits; i++ {
+	for i := range bookingIDs {
 		result[i] = true
 	}
 
@@ -243,8 +244,8 @@ func (s Sender) SendInfoAboutClassCancellation(
 		Message:            msg,
 	}
 
-	if params.UsedPassCredits != nil && params.TotalPassCredits != nil {
-		tmplData.PassState = getPassState(*params.UsedPassCredits, *params.TotalPassCredits)
+	if params.BookingIDs != nil && params.TotalPassCredits != nil {
+		tmplData.PassState = getPassState(params.BookingIDs, *params.TotalPassCredits)
 	}
 
 	tmpl, err := template.ParseFiles(s.ClassCancellationTmplPath)
@@ -334,8 +335,8 @@ func (s Sender) SendInfoAboutBookingCancellation(params models.SenderParams) err
 		Location:           params.Location,
 	}
 
-	if params.UsedPassCredits != nil && params.TotalPassCredits != nil {
-		tmplData.PassState = getPassState(*params.UsedPassCredits, *params.TotalPassCredits)
+	if params.BookingIDs != nil && params.TotalPassCredits != nil {
+		tmplData.PassState = getPassState(params.BookingIDs, *params.TotalPassCredits)
 	}
 
 	tmpl, err := template.ParseFiles(s.BookingCancellationTmplPath)
@@ -364,7 +365,7 @@ func (s Sender) SendInfoAboutBookingCancellation(params models.SenderParams) err
 }
 
 func (s Sender) SendPass(pass models.Pass) error {
-	passState := getPassState(pass.UsedCredits, pass.TotalCredits)
+	passState := getPassState(pass.UsedBookingIDs, pass.TotalCredits)
 
 	tmplData := senderModels.PassActivationTmplData{
 		SenderName: s.SenderName,

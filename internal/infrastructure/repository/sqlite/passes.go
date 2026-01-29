@@ -9,6 +9,7 @@ import (
 	"main/internal/infrastructure/models/db"
 	"main/pkg/optional"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -38,22 +39,31 @@ func (r PassesRepo) GetByEmail(ctx context.Context, email string) (optional.Opti
 	return optional.Of(sqlPass.ToDomain()), nil
 }
 
-func (r PassesRepo) Update(ctx context.Context, id int, update map[string]any) error {
+func (r PassesRepo) Update(ctx context.Context, id int, usedBookingIDs []uuid.UUID, totalCredits int) error {
 	var pass db.SQLPass
 
-	result := r.db.WithContext(ctx).Model(&pass).Where("id = ?", id).Updates(update)
-	if result.Error != nil {
-		return fmt.Errorf("could not update pass: %v with data: %v, %w", id, update, result.Error)
+	if err := r.db.WithContext(ctx).First(&pass, id).Error; err != nil {
+		return err
+	}
+
+	if usedBookingIDs != nil {
+		pass.UsedBookingIDs = usedBookingIDs
+	}
+
+	pass.TotalCredits = totalCredits
+
+	if err := r.db.WithContext(ctx).Save(&pass).Error; err != nil {
+		return err
 	}
 
 	return nil
 }
 
-func (r PassesRepo) Insert(ctx context.Context, email string, usedCredits, totalCredits int) (models.Pass, error) {
+func (r PassesRepo) Insert(ctx context.Context, email string, usedBookingIDs []uuid.UUID, totalCredits int) (models.Pass, error) {
 	pass := db.SQLPass{
-		Email:        email,
-		UsedCredits:  usedCredits,
-		TotalCredits: totalCredits,
+		Email:          email,
+		UsedBookingIDs: usedBookingIDs,
+		TotalCredits:   totalCredits,
 	}
 
 	if err := r.db.WithContext(ctx).Create(&pass).Error; err != nil {
