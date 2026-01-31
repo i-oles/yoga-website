@@ -40,9 +40,10 @@ func (s Service) ActivatePass(ctx context.Context, params models.PassActivationP
 		return models.Pass{}, fmt.Errorf("could not get pass by email %s: %w", params.Email, err)
 	}
 
-	usedBookingIDs, err := s.getBookingIDsForPass(ctx, params.Email, params.UsedBookings)
+	// when user booked one or more classes in future - system needs to add this bookings to Pass
+	usedBookingIDs, err := s.getUsedBookingIDsForPass(ctx, params.Email, params.UsedBookings)
 	if err != nil {
-		return models.Pass{}, fmt.Errorf("could not get bookingIDs for pass: %w", err)
+		return models.Pass{}, fmt.Errorf("could not get usedBookingIDs for email %s: %w", params.Email, err)
 	}
 
 	if !passOpt.Exists() {
@@ -53,12 +54,12 @@ func (s Service) ActivatePass(ctx context.Context, params models.PassActivationP
 			params.TotalBookings,
 		)
 		if err != nil {
-			return models.Pass{}, fmt.Errorf("could not insert pass: %w", err)
+			return models.Pass{}, fmt.Errorf("could not insert pass for %s: %w", params.Email, err)
 		}
 
 		err = s.messageSender.SendPass(pass)
 		if err != nil {
-			return models.Pass{}, fmt.Errorf("could not send pass: %w", err)
+			return models.Pass{}, fmt.Errorf("could not send pass %v: %w", pass, err)
 		}
 
 		return pass, nil
@@ -88,7 +89,7 @@ func (s Service) ActivatePass(ctx context.Context, params models.PassActivationP
 	return newPass, nil
 }
 
-func (s Service) getBookingIDsForPass(
+func (s Service) getUsedBookingIDsForPass(
 	ctx context.Context,
 	email string,
 	passUsedBookings int,
@@ -97,10 +98,10 @@ func (s Service) getBookingIDsForPass(
 		return []uuid.UUID{}, nil
 	}
 
-	bookingIDs, err := s.bookingsRepo.GetIDsByEmail(ctx, email, passUsedBookings)
+	usedBookingIDs, err := s.bookingsRepo.GetIDsByEmail(ctx, email, passUsedBookings)
 	if err != nil {
-		return nil, fmt.Errorf("could not get bookingIDs for email %s: %w", email, err)
+		return nil, fmt.Errorf("could not get usedBookingIDs for email %s: %w", email, err)
 	}
 
-	return bookingIDs, nil
+	return usedBookingIDs, nil
 }

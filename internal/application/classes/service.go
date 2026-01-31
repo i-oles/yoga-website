@@ -182,12 +182,12 @@ func (s Service) updateSenderParamsWithPass(
 		}
 
 		if err != nil {
-			return models.SenderParams{}, fmt.Errorf("could not remove bookingID %v from bookingIDs", bookingID)
+			return models.SenderParams{}, fmt.Errorf("could not remove bookingID %v from usedBookingIDs: %v", bookingID, pass.UsedBookingIDs)
 		}
 
 		err = s.passesRepo.Update(ctx, pass.ID, updatedBookingIDs, pass.TotalBookings)
 		if err != nil {
-			return models.SenderParams{}, fmt.Errorf("could not update pass for %s with %v", pass.Email, updatedBookingIDs)
+			return models.SenderParams{}, fmt.Errorf("could not update pass for %s with %v: %w", pass.Email, updatedBookingIDs, err)
 		}
 
 		senderParams.PassUsedBookingIDs = updatedBookingIDs

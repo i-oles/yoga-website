@@ -27,9 +27,9 @@ func NewHandler(
 }
 
 func (h *Handler) Handle(c *gin.Context) {
-	var dtoPassesRequest dto.ActivatePassRequest
+	var dtoActivatePassRequest dto.ActivatePassRequest
 
-	err := c.ShouldBindJSON(&dtoPassesRequest)
+	err := c.ShouldBindJSON(&dtoActivatePassRequest)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 
@@ -37,9 +37,9 @@ func (h *Handler) Handle(c *gin.Context) {
 	}
 
 	params := models.PassActivationParams{
-		Email:         dtoPassesRequest.Email,
-		UsedBookings:  dtoPassesRequest.UsedBookings,
-		TotalBookings: dtoPassesRequest.TotalBookings,
+		Email:         dtoActivatePassRequest.Email,
+		UsedBookings:  dtoActivatePassRequest.UsedBookings,
+		TotalBookings: dtoActivatePassRequest.TotalBookings,
 	}
 
 	ctx := c.Request.Context()

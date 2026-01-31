@@ -137,11 +137,13 @@ func (s Sender) SendConfirmations(params models.SenderParams, cancellationLink s
 		paymentType = PaymentType
 	}
 
-	// TODO: string builder?
-	subject := fmt.Sprintf("%s %s %s: %s (%s) %s",
+	subject := fmt.Sprintf("%s %s booked %s",
 		params.RecipientFirstName,
 		*params.RecipientLastName,
 		paymentType,
+	)
+
+	msg := fmt.Sprintf("%s (%s) - %s",
 		startTimeDetails.weekDayInPolish,
 		startTimeDetails.startDate,
 		startTimeDetails.startHour,
@@ -151,6 +153,7 @@ func (s Sender) SendConfirmations(params models.SenderParams, cancellationLink s
 	msgToOwner.SetHeader("From", s.SenderEmail)
 	msgToOwner.SetHeader("To", s.SenderEmail)
 	msgToOwner.SetHeader("Subject", subject)
+	msgToOwner.SetBody("text/html", msg)
 
 	if err = s.Dialer.DialAndSend(msgToRecipient, msgToOwner); err != nil {
 		return fmt.Errorf("failed to send emails: %w", err)
@@ -159,10 +162,10 @@ func (s Sender) SendConfirmations(params models.SenderParams, cancellationLink s
 	return nil
 }
 
-func getPassState(bookingIDs []uuid.UUID, totalBookings int) []bool {
+func getPassState(usedBookingIDs []uuid.UUID, totalBookings int) []bool {
 	result := make([]bool, totalBookings)
 
-	for i := range bookingIDs {
+	for i := range usedBookingIDs {
 		result[i] = true
 	}
 
@@ -177,9 +180,9 @@ func (s Sender) SendInfoAboutCancellationToOwner(
 		return fmt.Errorf("could not get date details: %w", err)
 	}
 
-	subject := fmt.Sprintf("%s %s cancelled: %s (%s) at %s.",
-		recipientFirstName,
-		recipientLastName,
+	subject := fmt.Sprintf("%s %s cancelled", recipientFirstName, recipientLastName)
+
+	msg := fmt.Sprintf("%s (%s) - %s",
 		startTimeDetails.weekDayInPolish,
 		startTimeDetails.startDate,
 		startTimeDetails.startHour,
@@ -189,6 +192,7 @@ func (s Sender) SendInfoAboutCancellationToOwner(
 	m.SetHeader("From", s.SenderEmail)
 	m.SetHeader("To", s.SenderEmail)
 	m.SetHeader("Subject", subject)
+	m.SetBody("text/html", msg)
 
 	if err = s.Dialer.DialAndSend(m); err != nil {
 		return fmt.Errorf("failed to send email: %w", err)
