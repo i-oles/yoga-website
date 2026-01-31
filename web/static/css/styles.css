@@ -206,6 +206,11 @@ h1 {
         padding-top: 40px;
         gap: 15px;
         overflow-y: auto;
+        grid-auto-rows: min-content;
+        overflow: visible;
+        height: auto;
+        margin-bottom: 0;
+        padding-bottom: 0;
     }
 
     #info-header,
@@ -214,12 +219,15 @@ h1 {
         grid-template-columns: 1fr;
         grid-column: 1;
         gap: 15px
+        font-size: 1rem;
     }
 
+    .class-container,
     .info-box-price,
     .info-box-about,
     .info-box-contact {
-        font-size: 0.7rem;
+        font-size: 0.9rem;
+        opacity: 0.8
     }
 
     .msg-email-container {
@@ -243,10 +251,15 @@ h1 {
     }
 
     body::before {
-        background-image: url('/web/static/images/mobile/yoga-bg.jpeg');
-        opacity: 1; /* Zwiększamy przezroczystość na mobile */
-        touch-action: pan-y;
-        overscroll-behavior-y: none;
+        height: 100vh;
+        height: -webkit-fill-available;
+        min-height: -webkit-fill-available;
+        max-height: 100vh;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
     }
 }
 
