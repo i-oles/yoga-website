@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	domainErrors "main/internal/domain/errs"
+	viewErrors "main/internal/domain/errs/view"
 	"main/internal/domain/models"
 	"main/internal/domain/repositories"
 	"main/internal/domain/sender"
@@ -51,7 +51,7 @@ func (s *Service) CreatePendingBooking(
 		ctx, pendingBookingParams.ClassID, pendingBookingParams.Email,
 	)
 	if err == nil {
-		return uuid.Nil, domainErrors.ErrBookingAlreadyExists(
+		return uuid.Nil, viewErrors.ErrBookingAlreadyExists(
 			pendingBookingParams.ClassID, pendingBookingParams.Email, err,
 		)
 	}
@@ -79,14 +79,14 @@ func (s *Service) CreatePendingBooking(
 	}
 
 	if bookingCount == class.MaxCapacity {
-		return uuid.Nil, domainErrors.ErrClassFullyBooked(
+		return uuid.Nil, viewErrors.ErrClassFullyBooked(
 			pendingBookingParams.ClassID,
 			fmt.Errorf("no spots left in class with id: %d", pendingBookingParams.ClassID),
 		)
 	}
 
 	if class.StartTime.Before(time.Now()) {
-		return uuid.Nil, domainErrors.ErrClassExpired(
+		return uuid.Nil, viewErrors.ErrClassExpired(
 			pendingBookingParams.ClassID,
 			fmt.Errorf("class %s has expired at %v", pendingBookingParams.ClassID, class.StartTime),
 		)
@@ -135,7 +135,7 @@ func (s *Service) validatePendingBookingsPerUser(
 	}
 
 	if count >= 2 {
-		return domainErrors.ErrTooManyPendingBookings(
+		return viewErrors.ErrTooManyPendingBookings(
 			classID,
 			email,
 			fmt.Errorf("found %d pending operations per user", count),

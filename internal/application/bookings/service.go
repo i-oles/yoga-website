@@ -7,7 +7,8 @@ import (
 	"fmt"
 	"time"
 
-	domainErrors "main/internal/domain/errs"
+	sharedErrors "main/internal/domain/errs"
+	viewErrors "main/internal/domain/errs/view"
 	"main/internal/domain/models"
 	"main/internal/domain/repositories"
 	"main/internal/domain/sender"
@@ -50,7 +51,7 @@ func (s *Service) CreateBooking(ctx context.Context, token string) (models.Class
 	pendingBooking, err := s.PendingBookingsRepo.GetByConfirmationToken(ctx, token)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return models.Class{}, domainErrors.ErrPendingBookingNotFound(
+			return models.Class{}, viewErrors.ErrPendingBookingNotFound(
 				fmt.Errorf("pending booking for token: %s not found", token),
 			)
 		}
@@ -61,7 +62,7 @@ func (s *Service) CreateBooking(ctx context.Context, token string) (models.Class
 	_, err = s.BookingsRepo.GetByEmailAndClassID(ctx, pendingBooking.ClassID, pendingBooking.Email)
 	if err == nil {
 		return models.Class{},
-			domainErrors.ErrBookingAlreadyExists(pendingBooking.ClassID, pendingBooking.Email,
+			viewErrors.ErrBookingAlreadyExists(pendingBooking.ClassID, pendingBooking.Email,
 				err,
 			)
 	}
@@ -74,7 +75,7 @@ func (s *Service) CreateBooking(ctx context.Context, token string) (models.Class
 	}
 
 	if class.StartTime.Before(time.Now()) {
-		return models.Class{}, domainErrors.ErrClassExpired(
+		return models.Class{}, viewErrors.ErrClassExpired(
 			class.ID,
 			fmt.Errorf("class %s has expired at %v", pendingBooking.ClassID, class.StartTime),
 		)
@@ -88,7 +89,7 @@ func (s *Service) CreateBooking(ctx context.Context, token string) (models.Class
 	}
 
 	if bookingCount == class.MaxCapacity {
-		return models.Class{}, domainErrors.ErrSomeoneBookedClassFaster(
+		return models.Class{}, viewErrors.ErrSomeoneBookedClassFaster(
 			fmt.Errorf("max capacity of class %d exceeded", class.MaxCapacity),
 		)
 	}
@@ -161,7 +162,7 @@ func (s *Service) CancelBooking(ctx context.Context, bookingID uuid.UUID, token 
 
 	// TODO: do I need this check?
 	if booking.ConfirmationToken != token {
-		return domainErrors.ErrInvalidCancellationLink(
+		return viewErrors.ErrInvalidCancellationLink(
 			fmt.Errorf("cancel booking failed due to invalid token: %s for email: %s", booking.Email, token),
 		)
 	}
@@ -171,7 +172,7 @@ func (s *Service) CancelBooking(ctx context.Context, bookingID uuid.UUID, token 
 	}
 
 	if booking.Class.StartTime.Before(time.Now()) {
-		return domainErrors.ErrClassExpired(
+		return viewErrors.ErrClassExpired(
 			booking.Class.ID,
 			fmt.Errorf("class %s has expired at %v", booking.ClassID, booking.Class.StartTime),
 		)
@@ -180,7 +181,7 @@ func (s *Service) CancelBooking(ctx context.Context, bookingID uuid.UUID, token 
 	err = s.BookingsRepo.Delete(ctx, booking.ID)
 	if err != nil {
 		if errors.Is(err, errs.ErrNoRowsAffected) {
-			return domainErrors.ErrBookingNotFound(
+			return viewErrors.ErrBookingNotFound(
 				booking.ClassID,
 				booking.Email,
 				fmt.Errorf("could not find booking with email %s for class %s",
@@ -242,7 +243,7 @@ func (s *Service) GetBookingForCancellation(
 	}
 
 	if booking.ConfirmationToken != token {
-		return models.Booking{}, domainErrors.ErrInvalidCancellationLink(err)
+		return models.Booking{}, viewErrors.ErrInvalidCancellationLink(err)
 	}
 
 	return booking, nil
@@ -306,7 +307,7 @@ func (s Service) updateSenderParamsWithPass(
 
 	if len(pass.UsedBookingIDs) > 0 {
 		updatedBookingIDs, err := tools.RemoveFromSlice(pass.UsedBookingIDs, bookingID)
-		if errors.Is(err, domainErrors.ErrBookingIDNotFoundInPass) {
+		if errors.Is(err, sharedErrors.ErrBookingIDNotFoundInPass) {
 			return senderParams, nil
 		}
 

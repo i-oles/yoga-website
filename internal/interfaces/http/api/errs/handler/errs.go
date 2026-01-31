@@ -2,8 +2,9 @@ package handler
 
 import (
 	"errors"
-	domainErrs "main/internal/domain/errs"
 	"net/http"
+
+	domainErrs "main/internal/domain/errs/api"
 
 	"github.com/gin-gonic/gin"
 )
@@ -15,9 +16,9 @@ func NewErrorHandler() ErrorHandler {
 }
 
 func (e ErrorHandler) Handle(c *gin.Context, err error) {
-	var classError *domainErrs.ClassError
-	if errors.As(err, &classError) {
-		switch classError.Code {
+	var apiError *domainErrs.APIError
+	if errors.As(err, &apiError) {
+		switch apiError.Code {
 		case domainErrs.BadRequestCode:
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		case domainErrs.ConflictCode:

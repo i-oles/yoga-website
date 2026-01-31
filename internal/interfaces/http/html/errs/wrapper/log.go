@@ -3,35 +3,36 @@ package wrapper
 import (
 	"errors"
 	"log/slog"
-	"main/internal/domain/errs"
-	viewErrs "main/internal/interfaces/http/html/errs"
+
+	domainErrs "main/internal/domain/errs/view"
+	handlerErrs "main/internal/interfaces/http/html/errs"
 
 	"github.com/gin-gonic/gin"
 )
 
 type ErrorHandler struct {
-	viewErrorHandler  viewErrs.IErrorHandler
+	errorHandler      handlerErrs.IErrorHandler
 	logBusinessErrors bool
 }
 
 func NewErrorHandler(
-	viewErrorHandler viewErrs.IErrorHandler,
+	errorHandler handlerErrs.IErrorHandler,
 	logBusinessErrors bool,
 ) ErrorHandler {
 	return ErrorHandler{
-		viewErrorHandler:  viewErrorHandler,
+		errorHandler:      errorHandler,
 		logBusinessErrors: logBusinessErrors,
 	}
 }
 
 func (e ErrorHandler) Handle(c *gin.Context, tmplName string, err error) {
-	var bookingError *errs.BookingError
+	var viewError *domainErrs.ViewError
 
-	if e.logBusinessErrors && errors.As(err, &bookingError) {
+	if e.logBusinessErrors && errors.As(err, &viewError) {
 		slog.Info("BookingBusinessError",
-			slog.Int("code", bookingError.Code),
-			slog.String("message", bookingError.Message),
-			slog.Any("classID", bookingError.ClassID),
+			slog.Int("code", viewError.Code),
+			slog.String("message", viewError.Message),
+			slog.Any("classID", viewError.ClassID),
 			slog.Any("params", c.Request.URL.Query()),
 			slog.String("endpoint", c.FullPath()),
 		)
@@ -43,5 +44,5 @@ func (e ErrorHandler) Handle(c *gin.Context, tmplName string, err error) {
 		)
 	}
 
-	e.viewErrorHandler.Handle(c, tmplName, err)
+	e.errorHandler.Handle(c, tmplName, err)
 }

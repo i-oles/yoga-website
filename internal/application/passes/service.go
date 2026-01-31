@@ -2,9 +2,9 @@ package passes
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
+	"main/internal/domain/errs/api"
 	"main/internal/domain/models"
 	"main/internal/domain/repositories"
 	"main/internal/domain/sender"
@@ -32,7 +32,7 @@ func NewService(
 
 func (s Service) ActivatePass(ctx context.Context, params models.PassActivationParams) (models.Pass, error) {
 	if params.UsedBookings > params.TotalBookings {
-		return models.Pass{}, errors.New("implement custom error bad request")
+		return models.Pass{}, api.ErrValidation(fmt.Errorf("usedBookings: %d can not be grater than totalBookings: %d", params.UsedBookings, params.TotalBookings))
 	}
 
 	passOpt, err := s.passesRepo.GetByEmail(ctx, params.Email)

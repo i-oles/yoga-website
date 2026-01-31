@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"main/internal/domain/errs"
+	"main/internal/domain/errs/api"
 	"main/internal/domain/models"
 	"main/internal/domain/repositories"
 	"main/internal/domain/sender"
@@ -44,7 +45,7 @@ func (s *Service) ListClasses(
 	classesLimit *int,
 ) ([]models.ClassWithCurrentCapacity, error) {
 	if classesLimit != nil && *classesLimit < 0 {
-		return nil, errs.ErrClassValidation(
+		return nil, api.ErrValidation(
 			fmt.Errorf("classes_limit must be greater than or equal to 0, got: %d", *classesLimit),
 		)
 	}
@@ -99,7 +100,7 @@ func (s *Service) CreateClasses(
 ) ([]models.Class, error) {
 	err := validateClasses(classes)
 	if err != nil {
-		return nil, errs.ErrClassValidation(err)
+		return nil, api.ErrValidation(err)
 	}
 
 	insertedClasses, err := s.classesRepo.Insert(ctx, classes)
@@ -117,7 +118,7 @@ func (s *Service) DeleteClass(ctx context.Context, classID uuid.UUID, msg *strin
 	}
 
 	if len(bookings) > 0 && msg == nil {
-		return errs.ErrClassValidation(
+		return api.ErrValidation(
 			errors.New("reason msg can not be empty, when classes has bookings"),
 		)
 	}
@@ -202,13 +203,13 @@ func (s *Service) UpdateClass(
 ) (models.Class, error) {
 	err := validateClassUpdate(update)
 	if err != nil {
-		return models.Class{}, errs.ErrClassValidation(err)
+		return models.Class{}, api.ErrValidation(err)
 	}
 
 	_, err = s.classesRepo.Get(ctx, id)
 	if err != nil {
 		if errors.Is(err, repositoryError.ErrNotFound) {
-			return models.Class{}, errs.ErrClassNotFound(err)
+			return models.Class{}, api.ErrNotFound(err)
 		}
 
 		return models.Class{}, fmt.Errorf("could not get class for class_id %v: %w", id, err)

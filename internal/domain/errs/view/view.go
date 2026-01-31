@@ -1,4 +1,4 @@
-package errs
+package view
 
 import (
 	"fmt"
@@ -18,19 +18,19 @@ const (
 	InvalidCancellationLinkCode
 )
 
-type BookingError struct {
+type ViewError struct {
 	ClassID *uuid.UUID
 	Code    int
 	Message string
 	Err     error
 }
 
-func (e *BookingError) Error() string {
+func (e *ViewError) Error() string {
 	return e.Err.Error()
 }
 
-func ErrBookingAlreadyExists(classID uuid.UUID, email string, err error) *BookingError {
-	return &BookingError{
+func ErrBookingAlreadyExists(classID uuid.UUID, email string, err error) *ViewError {
+	return &ViewError{
 		ClassID: &classID,
 		Code:    BookingAlreadyExistsCode,
 		Message: "Wygląda na to, że rezerwacja dla: " + email + " już istnieje. " +
@@ -39,8 +39,8 @@ func ErrBookingAlreadyExists(classID uuid.UUID, email string, err error) *Bookin
 	}
 }
 
-func ErrBookingNotFound(classID uuid.UUID, email string, err error) *BookingError {
-	return &BookingError{
+func ErrBookingNotFound(classID uuid.UUID, email string, err error) *ViewError {
+	return &ViewError{
 		ClassID: &classID,
 		Code:    BookingNotFoundCode,
 		Message: "Brak potwierdzonej rezerwacji na te zajęcia dla: " + email,
@@ -48,8 +48,8 @@ func ErrBookingNotFound(classID uuid.UUID, email string, err error) *BookingErro
 	}
 }
 
-func ErrClassExpired(classID uuid.UUID, err error) *BookingError {
-	return &BookingError{
+func ErrClassExpired(classID uuid.UUID, err error) *ViewError {
+	return &ViewError{
 		ClassID: &classID,
 		Code:    ClassExpiredCode,
 		Message: "Rezerwacja niedostępna – zajęcia już się zaczęły albo odbyły",
@@ -57,16 +57,16 @@ func ErrClassExpired(classID uuid.UUID, err error) *BookingError {
 	}
 }
 
-func ErrPendingBookingNotFound(err error) *BookingError {
-	return &BookingError{
+func ErrPendingBookingNotFound(err error) *ViewError {
+	return &ViewError{
 		Code:    PendingBookingNotFoundCode,
 		Message: "Twój link potwierdzający operację wygasł, stwórz nową sesję.",
 		Err:     err,
 	}
 }
 
-func ErrTooManyPendingBookings(classID uuid.UUID, email string, err error) *BookingError {
-	return &BookingError{
+func ErrTooManyPendingBookings(classID uuid.UUID, email string, err error) *ViewError {
+	return &ViewError{
 		Code:    TooManyPendingBookingsCode,
 		ClassID: &classID,
 		Message: fmt.Sprintf("Wyczerpano limit linków potwierdzających dla %s. "+
@@ -75,8 +75,8 @@ func ErrTooManyPendingBookings(classID uuid.UUID, email string, err error) *Book
 	}
 }
 
-func ErrClassFullyBooked(classID uuid.UUID, err error) *BookingError {
-	return &BookingError{
+func ErrClassFullyBooked(classID uuid.UUID, err error) *ViewError {
+	return &ViewError{
 		Code:    ClassFullyBookedCode,
 		ClassID: &classID,
 		Message: "Brak wolnych miejsc na te zajęcia",
@@ -84,16 +84,16 @@ func ErrClassFullyBooked(classID uuid.UUID, err error) *BookingError {
 	}
 }
 
-func ErrSomeoneBookedClassFaster(err error) *BookingError {
-	return &BookingError{
+func ErrSomeoneBookedClassFaster(err error) *ViewError {
+	return &ViewError{
 		Code:    SomeoneBookedClassFasterCode,
 		Message: "Ktoś Cię uprzedził... :( Brak wolnych miejsc na te zajęcia.",
 		Err:     err,
 	}
 }
 
-func ErrInvalidCancellationLink(err error) *BookingError {
-	return &BookingError{
+func ErrInvalidCancellationLink(err error) *ViewError {
+	return &ViewError{
 		Code:    InvalidCancellationLinkCode,
 		Message: "Twój link do odwołania rezerwacji wygasł albo jest nieprawidłowy, skontaktuj się ze mną...",
 		Err:     err,
