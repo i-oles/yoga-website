@@ -9,7 +9,7 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Alegreya+Sans+SC:ital,wght@0,100;0,300;0,400;0,500;0,700;0,800;0,900;1,100;1,300;1,400;1,500;1,700;1,800;1,900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
 <br>
@@ -31,11 +31,11 @@
         <div class="class-container">
             <form id="form-{{ .ID }}">
                 <div class="class-info">
+                    <div class="class-title"
+                        style="font-weight: 600; font-size: 14px; color: grey; opacity: 0.4; text-align: left; margin-bottom: 15px; padding-bottom: 5px; padding-top: 1px; border-bottom: 1px solid rgba(224, 224, 224, 0.5);">
+                        {{ .ClassName }}
+                    </div>
                     <table style="border-collapse: collapse; margin-top: 15px;">
-                        <tr>
-                            <td style="font-weight:300;">zajęcia:</td>
-                            <td style="font-weight:500;">{{ .ClassName }}</td>
-                        </tr>
                         <tr>
                             <td style="font-weight:300;">poziom:</td>
                             <td style="font-weight:500;">{{ .ClassLevel }}</td>
@@ -86,31 +86,38 @@
     <div id="info-container">
         <p id="info-header">cennik</p> 
         <div class="info-box-price">
-            <p>
-                40 zł – zajęcia<br>
-                20 zł – pierwszy raz
-            </p>
-            <p>
-                180 zł - karnet (5)
-            </p>
+            <table style="border-collapse: collapse;">
+                <tr>
+                    <td style="width:60px; padding-top: 10px;">40 zł</td>
+                    <td style="padding-top: 10px;">zajęcia</td>
+                </tr>
+                <tr>
+                    <td style="width:60px">20 zł</td>
+                    <td>pierwszy raz</td>
+                </tr>
+                <tr>
+                    <td style="padding-top: 10px; width:60px;">180 zł</td>
+                    <td style="padding-top: 10px;"> karnet (5)</td>
+                </tr>
+            </table>
         </div>
         <p id="info-header">o mnie</p>
         <div class="info-box-about">
             <p>
                 jestem uczniem wspaniałej<br>
-                joginki Rachele Faiella.<br><br>
-                Ukończyłem kurs instruktora <br>
+                jogini Rachele Faiella<br><br>
+                ukończyłem kurs instruktora <br>
                 vinyasa yoga i ashtanga yoga<br>
                 RYT 200h (Rishikesh, India)<br><br>
-                jogi uczę u siebie w domu.<br><br>
+                jogi uczę u siebie w domu<br><br>
                 joga to dla mnie praktyka duchowa<br>
-                i nauka kontaktu ze swoim ciałem.
+                i nauka kontaktu ze swoim ciałem
             </p>
         </div>
         <p id="info-header">kontakt</p>
         <div class="info-box-contact">
             <p>
-                Igor Oleś<br>
+                igor oleś<br><br>
                 +48 505 082 655<br>
                 gore.pakore.yogi@gmail.com
             </p>

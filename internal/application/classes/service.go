@@ -11,6 +11,8 @@ import (
 	"main/internal/domain/repositories"
 	"main/internal/domain/sender"
 	repositoryError "main/internal/infrastructure/errs"
+	"main/pkg/optional"
+	"main/pkg/tools"
 
 	"github.com/google/uuid"
 )
@@ -18,17 +20,20 @@ import (
 type Service struct {
 	classesRepo   repositories.IClasses
 	bookingsRepo  repositories.IBookings
+	passesRepo    repositories.IPasses
 	MessageSender sender.ISender
 }
 
 func NewService(
 	classesRepo repositories.IClasses,
 	bookingsRepo repositories.IBookings,
+	passesRepo repositories.IPasses,
 	messageSender sender.ISender,
 ) *Service {
 	return &Service{
 		classesRepo:   classesRepo,
 		bookingsRepo:  bookingsRepo,
+		passesRepo:    passesRepo,
 		MessageSender: messageSender,
 	}
 }
@@ -105,13 +110,13 @@ func (s *Service) CreateClasses(
 	return insertedClasses, nil
 }
 
-func (s *Service) DeleteClass(ctx context.Context, classID uuid.UUID, reasonMsg *string) error {
+func (s *Service) DeleteClass(ctx context.Context, classID uuid.UUID, msg *string) error {
 	bookings, err := s.bookingsRepo.ListByClassID(ctx, classID)
 	if err != nil {
 		return fmt.Errorf("could not get classes for classID %v: %w", classID, err)
 	}
 
-	if len(bookings) > 0 && reasonMsg == nil {
+	if len(bookings) > 0 && msg == nil {
 		return errs.ErrClassValidation(
 			errors.New("reason msg can not be empty, when classes has bookings"),
 		)
@@ -127,12 +132,28 @@ func (s *Service) DeleteClass(ctx context.Context, classID uuid.UUID, reasonMsg 
 			return fmt.Errorf("could not delete booking for id %v: %w", booking.ID, err)
 		}
 
-		err := s.MessageSender.SendInfoAboutClassCancellation(
-			booking.Email,
-			booking.FirstName,
-			*reasonMsg,
-			*booking.Class,
-		)
+		passOpt, err := s.passesRepo.GetByEmail(ctx, booking.Email)
+		if err != nil {
+			return fmt.Errorf("could not delete booking for id %v: %w", booking.ID, err)
+		}
+
+		senderParams := models.SenderParams{
+			RecipientFirstName: booking.FirstName,
+			RecipientEmail:     booking.Email,
+			ClassName:          booking.Class.ClassName,
+			ClassLevel:         booking.Class.ClassLevel,
+			StartTime:          booking.Class.StartTime,
+			Location:           booking.Class.Location,
+		}
+
+		if passOpt.Exists() {
+			senderParams, err = s.updateSenderParamsWithPass(ctx, booking.ID, passOpt, senderParams)
+			if err != nil {
+				return fmt.Errorf("could not send info about cancellation to %s: %w", booking.Email, err)
+			}
+		}
+
+		err = s.MessageSender.SendInfoAboutClassCancellation(senderParams, *msg)
 		if err != nil {
 			return fmt.Errorf("could not send info about class cancellation: %w", err)
 		}
@@ -144,6 +165,36 @@ func (s *Service) DeleteClass(ctx context.Context, classID uuid.UUID, reasonMsg 
 	}
 
 	return nil
+}
+
+func (s Service) updateSenderParamsWithPass(
+	ctx context.Context,
+	bookingID uuid.UUID,
+	passOpt optional.Optional[models.Pass],
+	senderParams models.SenderParams,
+) (models.SenderParams, error) {
+	pass := passOpt.Get()
+
+	if len(pass.UsedBookingIDs) > 0 {
+		updatedBookingIDs, err := tools.RemoveFromSlice(pass.UsedBookingIDs, bookingID)
+		if errors.Is(err, errs.ErrBookingIDNotFoundInPass) {
+			return senderParams, nil
+		}
+
+		if err != nil {
+			return models.SenderParams{}, fmt.Errorf("could not remove bookingID %v from usedBookingIDs: %v", bookingID, pass.UsedBookingIDs)
+		}
+
+		err = s.passesRepo.Update(ctx, pass.ID, updatedBookingIDs, pass.TotalBookings)
+		if err != nil {
+			return models.SenderParams{}, fmt.Errorf("could not update pass for %s with %v: %w", pass.Email, updatedBookingIDs, err)
+		}
+
+		senderParams.PassUsedBookingIDs = updatedBookingIDs
+		senderParams.PassTotalBookings = &pass.TotalBookings
+	}
+
+	return senderParams, nil
 }
 
 func (s *Service) UpdateClass(

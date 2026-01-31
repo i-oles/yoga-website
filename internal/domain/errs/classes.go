@@ -36,4 +36,3 @@ func ErrClassNotFound(err error) *ClassError {
 		Err:  err,
 	}
 }
-

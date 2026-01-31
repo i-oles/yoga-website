@@ -1,4 +1,4 @@
-package models
+package sender
 
 type ConfirmationRequestTmplData struct {
 	SenderName         string

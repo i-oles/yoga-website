@@ -12,6 +12,8 @@ import (
 	"main/internal/domain/repositories"
 	"main/internal/domain/sender"
 	"main/internal/infrastructure/errs"
+	"main/pkg/optional"
+	"main/pkg/tools"
 
 	"github.com/google/uuid"
 )
@@ -20,6 +22,7 @@ type Service struct {
 	ClassesRepo         repositories.IClasses
 	BookingsRepo        repositories.IBookings
 	PendingBookingsRepo repositories.IPendingBookings
+	PassesRepo          repositories.IPasses
 	MessageSender       sender.ISender
 	DomainAddr          string
 }
@@ -28,6 +31,7 @@ func NewService(
 	classesRepo repositories.IClasses,
 	bookingsRepo repositories.IBookings,
 	pendingBookingsRepo repositories.IPendingBookings,
+	passesRepo repositories.IPasses,
 	messageSender sender.ISender,
 	domainAddr string,
 ) *Service {
@@ -35,6 +39,7 @@ func NewService(
 		ClassesRepo:         classesRepo,
 		BookingsRepo:        bookingsRepo,
 		PendingBookingsRepo: pendingBookingsRepo,
+		PassesRepo:          passesRepo,
 		MessageSender:       messageSender,
 		DomainAddr:          domainAddr,
 	}
@@ -103,27 +108,46 @@ func (s *Service) CreateBooking(ctx context.Context, token string) (models.Class
 		return models.Class{}, fmt.Errorf("could not insert booking: %w", err)
 	}
 
-	err = s.PendingBookingsRepo.Delete(ctx, pendingBooking.ID)
-	if err != nil {
-		return models.Class{}, fmt.Errorf("could not delete pending booking: %w", err)
-	}
-
-	link := fmt.Sprintf("%s/bookings/%s/cancel_form?token=%s", s.DomainAddr, bookingID, token)
-
-	msg := models.ConfirmationMsg{
+	senderParams := models.SenderParams{
 		RecipientEmail:     pendingBooking.Email,
 		RecipientFirstName: pendingBooking.FirstName,
-		RecipientLastName:  pendingBooking.LastName,
+		RecipientLastName:  &pendingBooking.LastName,
 		ClassName:          class.ClassName,
 		ClassLevel:         class.ClassLevel,
 		StartTime:          class.StartTime,
 		Location:           class.Location,
-		CancellationLink:   link,
 	}
 
-	err = s.MessageSender.SendConfirmations(msg)
+	passOpt, err := s.PassesRepo.GetByEmail(ctx, pendingBooking.Email)
+	if err != nil && passOpt.Exists() {
+		return models.Class{}, fmt.Errorf("could not get pass: %w", err)
+	}
+
+	pass := passOpt.Get()
+
+	if len(pass.UsedBookingIDs)+1 <= pass.TotalBookings {
+		updatedBookingIDs := pass.UsedBookingIDs
+		updatedBookingIDs = append(updatedBookingIDs, bookingID)
+
+		err = s.PassesRepo.Update(ctx, pass.ID, updatedBookingIDs, pass.TotalBookings)
+		if err != nil {
+			return models.Class{}, fmt.Errorf("could not update pass for %s with %v, %d", pendingBooking.Email, updatedBookingIDs, pass.TotalBookings)
+		}
+
+		senderParams.PassUsedBookingIDs = updatedBookingIDs
+		senderParams.PassTotalBookings = &pass.TotalBookings
+	}
+
+	cancellationLink := fmt.Sprintf("%s/bookings/%s/cancel_form?token=%s", s.DomainAddr, bookingID, token)
+
+	err = s.MessageSender.SendConfirmations(senderParams, cancellationLink)
 	if err != nil {
 		return models.Class{}, fmt.Errorf("error while sending final-confirmation: %w", err)
+	}
+
+	err = s.PendingBookingsRepo.Delete(ctx, pendingBooking.ID)
+	if err != nil {
+		return models.Class{}, fmt.Errorf("could not delete pending booking: %w", err)
 	}
 
 	return class, nil
@@ -174,6 +198,32 @@ func (s *Service) CancelBooking(ctx context.Context, bookingID uuid.UUID, token 
 		return fmt.Errorf("could not get class: %w", err)
 	}
 
+	passOpt, err := s.PassesRepo.GetByEmail(ctx, booking.Email)
+	if err != nil {
+		return fmt.Errorf("could not get users passOpt for %s: %w", booking.Email, err)
+	}
+
+	senderParams := models.SenderParams{
+		RecipientFirstName: booking.FirstName,
+		RecipientEmail:     booking.Email,
+		ClassName:          class.ClassName,
+		ClassLevel:         class.ClassLevel,
+		StartTime:          class.StartTime,
+		Location:           class.Location,
+	}
+
+	if passOpt.Exists() {
+		senderParams, err = s.updateSenderParamsWithPass(ctx, bookingID, passOpt, senderParams)
+		if err != nil {
+			return fmt.Errorf("could not send info about cancellation to %s: %w", booking.Email, err)
+		}
+	}
+
+	err = s.MessageSender.SendInfoAboutBookingCancellation(senderParams)
+	if err != nil {
+		return fmt.Errorf("could not send info about cancellation to %s: %w", booking.Email, err)
+	}
+
 	err = s.MessageSender.SendInfoAboutCancellationToOwner(
 		booking.FirstName, booking.LastName, class.StartTime)
 	if err != nil {
@@ -213,14 +263,66 @@ func (s *Service) DeleteBooking(ctx context.Context, bookingID uuid.UUID) error 
 		return fmt.Errorf("could not delete booking for id %s: %w", bookingID, err)
 	}
 
-	if booking.Class.StartTime.After(time.Now()) {
-		err = s.MessageSender.SendInfoAboutBookingCancellation(
-			booking.Email, booking.FirstName, *booking.Class,
-		)
+	if booking.Class.StartTime.Before(time.Now()) {
+		return nil
+	}
+
+	passOpt, err := s.PassesRepo.GetByEmail(ctx, booking.Email)
+	if err != nil {
+		return fmt.Errorf("could not get users passOpt for: %s", booking.Email)
+	}
+
+	senderParams := models.SenderParams{
+		RecipientFirstName: booking.FirstName,
+		RecipientEmail:     booking.Email,
+		ClassName:          booking.Class.ClassName,
+		ClassLevel:         booking.Class.ClassLevel,
+		StartTime:          booking.Class.StartTime,
+		Location:           booking.Class.Location,
+	}
+
+	if passOpt.Exists() {
+		senderParams, err = s.updateSenderParamsWithPass(ctx, bookingID, passOpt, senderParams)
 		if err != nil {
-			return fmt.Errorf("could not send info about booking cancellation to %s: %w", booking.Email, err)
+			return fmt.Errorf("could not send info about cancellation to %s: %w", booking.Email, err)
 		}
 	}
 
+	err = s.MessageSender.SendInfoAboutBookingCancellation(senderParams)
+	if err != nil {
+		return fmt.Errorf("could not send info about cancellation to %s: %w", booking.Email, err)
+	}
+
 	return nil
+}
+
+func (s Service) updateSenderParamsWithPass(
+	ctx context.Context,
+	bookingID uuid.UUID,
+	passOpt optional.Optional[models.Pass],
+	senderParams models.SenderParams,
+) (models.SenderParams, error) {
+	pass := passOpt.Get()
+
+	if len(pass.UsedBookingIDs) > 0 {
+		updatedBookingIDs, err := tools.RemoveFromSlice(pass.UsedBookingIDs, bookingID)
+		if errors.Is(err, domainErrors.ErrBookingIDNotFoundInPass) {
+			return senderParams, nil
+		}
+
+		if err != nil {
+			return models.SenderParams{}, fmt.Errorf("could not remove bookingID %v from usedBookingIDs", bookingID)
+		}
+
+		err = s.PassesRepo.Update(ctx, pass.ID, updatedBookingIDs, pass.TotalBookings)
+		if err != nil {
+			return models.SenderParams{},
+				fmt.Errorf("could not update pass for %s with %v: %w", pass.Email, updatedBookingIDs, err)
+		}
+
+		senderParams.PassUsedBookingIDs = updatedBookingIDs
+		senderParams.PassTotalBookings = &pass.TotalBookings
+	}
+
+	return senderParams, nil
 }

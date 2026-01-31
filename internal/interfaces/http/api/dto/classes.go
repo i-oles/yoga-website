@@ -18,7 +18,7 @@ type GetClassesRequest struct {
 }
 
 type DeleteClassRequest struct {
-	ReasonMsg *string `json:"reason_msg" binding:"omitempty,min=1,max=250"`
+	Message *string `json:"message" binding:"omitempty,min=1,max=250"`
 }
 
 type UpdateClassRequest struct {

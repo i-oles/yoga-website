@@ -1,11 +1,8 @@
 * {
-    font-family: "Alegreya Sans SC", sans-serif;
-    font-style: normal;
+    font-family: 'Open Sans', sans-serif;
 }
 
-/* Reset i podstawowe style */
 body {
-    font-family: 'Inter', 'Helvetica Neue', sans-serif;
     line-height: 1.5;
     color: #000;
     max-width: 100%;
@@ -58,7 +55,7 @@ h1 {
 
 #page-grid {
     display: grid;
-    grid-template-columns: 0.7fr 0.7fr 1.6fr 0.8fr;
+    grid-template-columns: 0.9fr 0.9fr 1.3fr 1fr;
     gap: 20px;
     padding-left: 100px; 
     padding-right: 50px;
@@ -96,6 +93,78 @@ h1 {
     padding-bottom: 3px;
     margin-top: 0;
 }
+
+.class-container,
+.info-box-price,
+.info-box-about,
+.info-box-contact {
+    background-color: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(224, 224, 224, 0.8);
+    padding: 28px;
+    opacity: 0.6;
+    transition: all 0.2s ease;
+    border-radius: 4px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    flex: 1;
+    padding-bottom: 50px;
+}
+
+.class-container {
+    font-size: 0.8rem;
+    padding-bottom: 30px;
+    min-width: 190px;
+}
+
+.class-title {
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: #2c3e50;
+    text-align: center;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(224, 224, 224, 0.5);
+}
+
+.info-box-price, .info-box-about, .info-box-contact {
+    padding-bottom: 10px;
+    padding-top: 10px;
+    padding-bottom: 20px;
+}
+
+.class-container:hover {
+    background-color: rgba(245, 245, 245, 0.95);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    transform: translateY(-2px);
+}
+
+.form-input {
+    background-color: #fff;
+    border: 1px solid #e0e0e0;
+    margin-top: 5px;
+    margin-bottom: 10px;
+    width: 100%;
+    padding: 12px;
+    border-radius: 0;
+    box-sizing: border-box;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    height: 35px;
+    font-size: 0.7rem;
+}
+
+.form-input:focus {
+    border-color: #989898;
+    outline: none;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.1);
+}
+.vacation-info {
+    margin-top: 15px;
+    margin-left: -10px;
+    margin-bottom: 10px;
+    padding: 12px;
+    font-size: 1rem;
+}
+
 
 /* Tablet */
 @media (min-width: 761px) and (max-width: 1024px) {
@@ -136,7 +205,6 @@ h1 {
         padding-right: 15px;
         padding-top: 40px;
         gap: 15px;
-        max-height: calc(100vh - 100px);
         overflow-y: auto;
     }
 
@@ -154,8 +222,20 @@ h1 {
         font-size: 0.7rem;
     }
 
-    #info-container {
+    .msg-email-container {
+        flex-direction: column;
+        align-items: left;
+        margin-right: auto;
+        width: 250px;
+    }
+
+    #info-container,
+    .class-container {
         padding-bottom: 40px;
+    }
+
+    .pass-container {
+        padding-bottom: 50px;
     }
 
     input, textarea, select {
@@ -170,58 +250,12 @@ h1 {
     }
 }
 
-.class-container, .info-box-price, .info-box-about, .info-box-contact {
-    background-color: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(224, 224, 224, 0.8);
-    padding: 20px;
-    padding-top: 5px;
-    opacity: 0.8;
-    transition: all 0.2s ease;
-    border-radius: 4px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-}
-
-.class-container { 
-    font-size: 0.7rem;
-    padding-bottom: 25px;
-}
-
-.info-box-price, .info-box-about, .info-box-contact {
-    padding-bottom: 10px;
-}
-
-.class-container:hover {
-    background-color: rgba(245, 245, 245, 0.95);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-    transform: translateY(-2px);
-}
-
-.form-input {
-    background-color: #fff;
-    border: 1px solid #e0e0e0;
-    margin-top: 5px;
-    margin-bottom: 10px;
-    width: 100%;
-    padding: 12px;
-    border-radius: 0;
-    box-sizing: border-box;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-    height: 35px;
-    font-size: 0.7rem;
-}
-
-.form-input:focus {
-    border-color: #989898;
-    outline: none;
-    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.1);
-}
-.vacation-info {
-    margin-top: 15px;
-    margin-left: -10px;
-    margin-bottom: 10px;
-    padding: 12px;
-    font-size: 1rem;
+.msg-email-container {
+    font-family: 'Open Sans', sans-serif;
+    display: flex;
+    gap: 20px;
+    max-width: 360px;
+    margin-bottom: 5px;
 }
 
 /* Tabele z informacjami */
@@ -229,7 +263,7 @@ h1 {
 .class-info table {
     width: 100%;
     border-collapse: collapse;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
 }
 
 .booking-info td,
@@ -443,4 +477,5 @@ form.htmx-request .btn-book .submit-text {
 .btn-cancel.htmx-request .submit-text {
     display: none;
 }
+
 

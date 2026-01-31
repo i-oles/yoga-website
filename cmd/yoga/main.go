@@ -14,15 +14,17 @@ import (
 
 	"main/internal/application/bookings"
 	"main/internal/application/classes"
+	"main/internal/application/passes"
 	"main/internal/application/pendingbookings"
 	"main/internal/infrastructure/configuration"
 	"main/internal/infrastructure/generator/token"
-	classesDBModels "main/internal/infrastructure/models/db"
+	dbModels "main/internal/infrastructure/models/db"
 	sqliteRepo "main/internal/infrastructure/repository/sqlite"
 	"main/internal/infrastructure/sender/gmail"
 	apiErrs "main/internal/interfaces/http/api/errs"
 	apiErrHandler "main/internal/interfaces/http/api/errs/handler"
 	"main/internal/interfaces/http/api/errs/wrapper"
+	"main/internal/interfaces/http/api/handlers/activatepass"
 	"main/internal/interfaces/http/api/handlers/createclasses"
 	"main/internal/interfaces/http/api/handlers/deletebooking"
 	"main/internal/interfaces/http/api/handlers/deleteclass"
@@ -67,9 +69,10 @@ func main() {
 	slog.Info("Successfully connected to database")
 
 	err = db.AutoMigrate(
-		&classesDBModels.SQLClass{},
-		&classesDBModels.SQLPendingBooking{},
-		&classesDBModels.SQLBooking{},
+		&dbModels.SQLClass{},
+		&dbModels.SQLPendingBooking{},
+		&dbModels.SQLBooking{},
+		&dbModels.SQLPass{},
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -113,6 +116,7 @@ func setupRouter(db *gorm.DB, cfg *configuration.Configuration) *gin.Engine {
 	classesRepo := sqliteRepo.NewClassesRepo(db)
 	bookingsRepo := sqliteRepo.NewBookingsRepo(db)
 	pendingBookingsRepo := sqliteRepo.NewPendingBookingsRepo(db)
+	passesRepo := sqliteRepo.NewPassesRepo(db)
 
 	tokenGenerator := token.NewGenerator()
 	emailSender := gmail.NewSender(
@@ -124,9 +128,9 @@ func setupRouter(db *gorm.DB, cfg *configuration.Configuration) *gin.Engine {
 		cfg.BaseSenderTmplPath,
 	)
 
-	classesService := classes.NewService(classesRepo, bookingsRepo, emailSender)
+	classesService := classes.NewService(classesRepo, bookingsRepo, passesRepo, emailSender)
 	bookingsService := bookings.NewService(
-		classesRepo, bookingsRepo, pendingBookingsRepo, emailSender, cfg.DomainAddr,
+		classesRepo, bookingsRepo, pendingBookingsRepo, passesRepo, emailSender, cfg.DomainAddr,
 	)
 	pendingBookingsService := pendingbookings.NewService(
 		classesRepo,
@@ -136,6 +140,7 @@ func setupRouter(db *gorm.DB, cfg *configuration.Configuration) *gin.Engine {
 		emailSender,
 		cfg.DomainAddr,
 	)
+	passesService := passes.NewService(passesRepo, bookingsRepo, emailSender)
 
 	var viewErrorHandler viewErrs.IErrorHandler
 
@@ -184,6 +189,7 @@ func setupRouter(db *gorm.DB, cfg *configuration.Configuration) *gin.Engine {
 	listBookingsByClassHandler := listbookingsbyclass.NewHandler(bookingsRepo, apiErrorHandler)
 	deleteBookingHandler := deletebooking.NewHandler(bookingsService, apiErrorHandler)
 	listPendingBookingsHandler := listpendingbookings.NewHandler(pendingBookingsRepo, apiErrorHandler)
+	activatePassHandler := activatepass.NewHandler(passesService, apiErrorHandler)
 
 	{
 		api.GET("/api/v1/bookings", authMiddleware, listBookingsHandler.Handle)
@@ -194,6 +200,7 @@ func setupRouter(db *gorm.DB, cfg *configuration.Configuration) *gin.Engine {
 		api.PATCH("/api/v1/classes/:class_id", authMiddleware, updateClassHandler.Handle)
 		api.DELETE("/api/v1/classes/:class_id", authMiddleware, deleteClassHandler.Handle)
 		api.GET("/api/v1/classes/:class_id/bookings", authMiddleware, listBookingsByClassHandler.Handle)
+		api.PUT("/api/v1/passes", authMiddleware, activatePassHandler.Handle)
 	}
 
 	return router

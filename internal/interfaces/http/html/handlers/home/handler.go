@@ -1,10 +1,11 @@
 package home
 
 import (
+	"net/http"
+
 	"main/internal/domain/services"
 	viewErrs "main/internal/interfaces/http/html/errs"
 	sharedDTO "main/internal/interfaces/http/shared/dto"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 )

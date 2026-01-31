@@ -8,12 +8,15 @@ import (
 	"time"
 
 	"main/internal/domain/models"
-	infrastructureModels "main/internal/infrastructure/models"
+	senderModels "main/internal/infrastructure/models/sender"
 	"main/pkg/converter"
 	"main/pkg/translator"
 
+	"github.com/google/uuid"
 	"gopkg.in/gomail.v2"
 )
+
+const PaymentType = "KARNET"
 
 type Sender struct {
 	SenderName                         string
@@ -23,6 +26,7 @@ type Sender struct {
 	ClassCancellationTmplPath          string
 	ClassUpdateTmplPath                string
 	BookingCancellationTmplPath        string
+	PassActivationTmplPath             string
 	Dialer                             *gomail.Dialer
 }
 
@@ -45,6 +49,7 @@ func NewSender(
 		ClassCancellationTmplPath:          baseSenderTmplPath + "class_cancellation.tmpl",
 		ClassUpdateTmplPath:                baseSenderTmplPath + "class_update.tmpl",
 		BookingCancellationTmplPath:        baseSenderTmplPath + "booking_cancellation.tmpl",
+		PassActivationTmplPath:             baseSenderTmplPath + "pass_activation.tmpl",
 		Dialer:                             dialer,
 	}
 }
@@ -54,7 +59,7 @@ func (s Sender) SendLinkToConfirmation(
 	recipientFirstName string,
 	linkToConfirmation string,
 ) error {
-	tmplData := infrastructureModels.ConfirmationRequestTmplData{
+	tmplData := senderModels.ConfirmationRequestTmplData{
 		SenderName:         s.SenderName,
 		RecipientFirstName: recipientFirstName,
 		LinkToConfirmation: linkToConfirmation,
@@ -85,22 +90,28 @@ func (s Sender) SendLinkToConfirmation(
 	return nil
 }
 
-func (s Sender) SendConfirmations(msg models.ConfirmationMsg) error {
-	startTimeDetails, err := getTimeDetails(msg.StartTime)
+func (s Sender) SendConfirmations(params models.SenderParams, cancellationLink string) error {
+	startTimeDetails, err := getTimeDetails(params.StartTime)
 	if err != nil {
 		return fmt.Errorf("could not get date details: %w", err)
 	}
 
-	tmplData := infrastructureModels.ConfirmationTmplData{
+	tmplData := senderModels.ConfirmationTmplData{
 		SenderName:         s.SenderName,
-		RecipientFirstName: msg.RecipientFirstName,
-		ClassName:          msg.ClassName,
-		ClassLevel:         msg.ClassLevel,
+		RecipientFirstName: params.RecipientFirstName,
+		ClassName:          params.ClassName,
+		ClassLevel:         params.ClassLevel,
 		WeekDay:            startTimeDetails.weekDayInPolish,
 		Hour:               startTimeDetails.startHour,
 		Date:               startTimeDetails.startDate,
-		Location:           msg.Location,
-		CancellationLink:   msg.CancellationLink,
+		Location:           params.Location,
+		CancellationLink:   cancellationLink,
+	}
+
+	var isPass bool
+	if params.PassUsedBookingIDs != nil && params.PassTotalBookings != nil {
+		tmplData.PassState = getPassState(params.PassUsedBookingIDs, *params.PassTotalBookings)
+		isPass = true
 	}
 
 	tmpl, err := template.ParseFiles(s.BookingConfirmationTmplPath)
@@ -117,13 +128,22 @@ func (s Sender) SendConfirmations(msg models.ConfirmationMsg) error {
 
 	msgToRecipient := gomail.NewMessage()
 	msgToRecipient.SetHeader("From", s.SenderEmail)
-	msgToRecipient.SetHeader("To", msg.RecipientEmail)
+	msgToRecipient.SetHeader("To", params.RecipientEmail)
 	msgToRecipient.SetHeader("Subject", "Yoga - Rezerwacja potwierdzona!")
 	msgToRecipient.SetBody("text/html", msgContent.String())
 
-	subject := fmt.Sprintf("%s %s booked: %s (%s) at %s.",
-		msg.RecipientFirstName,
-		msg.RecipientLastName,
+	paymentType := ""
+	if isPass {
+		paymentType = PaymentType
+	}
+
+	subject := fmt.Sprintf("%s %s booked %s",
+		params.RecipientFirstName,
+		*params.RecipientLastName,
+		paymentType,
+	)
+
+	msg := fmt.Sprintf("%s (%s) - %s",
 		startTimeDetails.weekDayInPolish,
 		startTimeDetails.startDate,
 		startTimeDetails.startHour,
@@ -133,12 +153,23 @@ func (s Sender) SendConfirmations(msg models.ConfirmationMsg) error {
 	msgToOwner.SetHeader("From", s.SenderEmail)
 	msgToOwner.SetHeader("To", s.SenderEmail)
 	msgToOwner.SetHeader("Subject", subject)
+	msgToOwner.SetBody("text/html", msg)
 
 	if err = s.Dialer.DialAndSend(msgToRecipient, msgToOwner); err != nil {
 		return fmt.Errorf("failed to send emails: %w", err)
 	}
 
 	return nil
+}
+
+func getPassState(usedBookingIDs []uuid.UUID, totalBookings int) []bool {
+	result := make([]bool, totalBookings)
+
+	for i := range usedBookingIDs {
+		result[i] = true
+	}
+
+	return result
 }
 
 func (s Sender) SendInfoAboutCancellationToOwner(
@@ -149,9 +180,9 @@ func (s Sender) SendInfoAboutCancellationToOwner(
 		return fmt.Errorf("could not get date details: %w", err)
 	}
 
-	subject := fmt.Sprintf("%s %s cancelled: %s (%s) at %s.",
-		recipientFirstName,
-		recipientLastName,
+	subject := fmt.Sprintf("%s %s cancelled", recipientFirstName, recipientLastName)
+
+	msg := fmt.Sprintf("%s (%s) - %s",
 		startTimeDetails.weekDayInPolish,
 		startTimeDetails.startDate,
 		startTimeDetails.startHour,
@@ -161,6 +192,7 @@ func (s Sender) SendInfoAboutCancellationToOwner(
 	m.SetHeader("From", s.SenderEmail)
 	m.SetHeader("To", s.SenderEmail)
 	m.SetHeader("Subject", subject)
+	m.SetBody("text/html", msg)
 
 	if err = s.Dialer.DialAndSend(m); err != nil {
 		return fmt.Errorf("failed to send email: %w", err)
@@ -197,22 +229,27 @@ func getTimeDetails(t time.Time) (timeDetails, error) {
 }
 
 func (s Sender) SendInfoAboutClassCancellation(
-	recipientEmail, recipientFirstName string, reasonMsg string, class models.Class,
+	params models.SenderParams, msg string,
 ) error {
-	classTimeDetails, err := getTimeDetails(class.StartTime)
+	classTimeDetails, err := getTimeDetails(params.StartTime)
 	if err != nil {
 		return fmt.Errorf("could not get date details: %w", err)
 	}
 
-	tmplData := infrastructureModels.ClassCancellationTmplData{
+	tmplData := senderModels.TmplWithMsg{
 		SenderName:         s.SenderName,
-		RecipientFirstName: recipientFirstName,
-		ClassName:          class.ClassName,
+		RecipientFirstName: params.RecipientFirstName,
+		ClassName:          params.ClassName,
+		ClassLevel:         params.ClassLevel,
 		Hour:               classTimeDetails.startHour,
 		WeekDay:            classTimeDetails.weekDayInPolish,
 		Date:               classTimeDetails.startDate,
-		Location:           class.Location,
-		ReasonMsg:          reasonMsg,
+		Location:           params.Location,
+		Message:            msg,
+	}
+
+	if params.PassUsedBookingIDs != nil && params.PassTotalBookings != nil {
+		tmplData.PassState = getPassState(params.PassUsedBookingIDs, *params.PassTotalBookings)
 	}
 
 	tmpl, err := template.ParseFiles(s.ClassCancellationTmplPath)
@@ -229,7 +266,7 @@ func (s Sender) SendInfoAboutClassCancellation(
 
 	m := gomail.NewMessage()
 	m.SetHeader("From", s.SenderEmail)
-	m.SetHeader("To", recipientEmail)
+	m.SetHeader("To", params.RecipientEmail)
 	m.SetHeader("Subject", "Yoga - Zajęcia Odwołane!")
 	m.SetBody("text/html", msgContent.String())
 
@@ -248,7 +285,7 @@ func (s Sender) SendInfoAboutUpdate(
 		return fmt.Errorf("could not get date details: %w", err)
 	}
 
-	tmplData := infrastructureModels.ClassUpdateTmplData{
+	tmplData := senderModels.TmplWithMsg{
 		SenderName:         s.SenderName,
 		RecipientFirstName: recipientFirstName,
 		ClassName:          class.ClassName,
@@ -285,23 +322,25 @@ func (s Sender) SendInfoAboutUpdate(
 	return nil
 }
 
-func (s Sender) SendInfoAboutBookingCancellation(
-	recipientEmail, recipientFirstName string, class models.Class,
-) error {
-	classTimeDetails, err := getTimeDetails(class.StartTime)
+func (s Sender) SendInfoAboutBookingCancellation(params models.SenderParams) error {
+	classTimeDetails, err := getTimeDetails(params.StartTime)
 	if err != nil {
 		return fmt.Errorf("could not get date details: %w", err)
 	}
 
-	tmplData := infrastructureModels.BookingCancellationTmplData{
+	tmplData := senderModels.BookingCancellationTmplData{
 		SenderName:         s.SenderName,
-		RecipientFirstName: recipientFirstName,
-		ClassName:          class.ClassName,
-		ClassLevel:         class.ClassLevel,
+		RecipientFirstName: params.RecipientFirstName,
+		ClassName:          params.ClassName,
+		ClassLevel:         params.ClassLevel,
 		Hour:               classTimeDetails.startHour,
 		WeekDay:            classTimeDetails.weekDayInPolish,
 		Date:               classTimeDetails.startDate,
-		Location:           class.Location,
+		Location:           params.Location,
+	}
+
+	if params.PassUsedBookingIDs != nil && params.PassTotalBookings != nil {
+		tmplData.PassState = getPassState(params.PassUsedBookingIDs, *params.PassTotalBookings)
 	}
 
 	tmpl, err := template.ParseFiles(s.BookingCancellationTmplPath)
@@ -318,11 +357,44 @@ func (s Sender) SendInfoAboutBookingCancellation(
 
 	m := gomail.NewMessage()
 	m.SetHeader("From", s.SenderEmail)
-	m.SetHeader("To", recipientEmail)
+	m.SetHeader("To", params.RecipientEmail)
 	m.SetHeader("Subject", "Yoga - Rezerwacja odwołana!")
 	m.SetBody("text/html", msgContent.String())
 
 	if err = s.Dialer.DialAndSend(m); err != nil {
+		return fmt.Errorf("failed to send email: %w", err)
+	}
+
+	return nil
+}
+
+func (s Sender) SendPass(pass models.Pass) error {
+	passState := getPassState(pass.UsedBookingIDs, pass.TotalBookings)
+
+	tmplData := senderModels.PassActivationTmplData{
+		SenderName: s.SenderName,
+		PassState:  passState,
+	}
+
+	tmpl, err := template.ParseFiles(s.PassActivationTmplPath)
+	if err != nil {
+		return fmt.Errorf("could not parse template: %w", err)
+	}
+
+	var msgContent strings.Builder
+
+	err = tmpl.Execute(&msgContent, tmplData)
+	if err != nil {
+		return fmt.Errorf("could not execute template: %w", err)
+	}
+
+	msgToRecipient := gomail.NewMessage()
+	msgToRecipient.SetHeader("From", s.SenderEmail)
+	msgToRecipient.SetHeader("To", pass.Email)
+	msgToRecipient.SetHeader("Subject", "Yoga - twój karnet!")
+	msgToRecipient.SetBody("text/html", msgContent.String())
+
+	if err = s.Dialer.DialAndSend(msgToRecipient); err != nil {
 		return fmt.Errorf("failed to send email: %w", err)
 	}
 
