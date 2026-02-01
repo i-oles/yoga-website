@@ -1,6 +1,7 @@
 package cancelbookingform
 
 import (
+	"errors"
 	"net/http"
 
 	"main/internal/domain/services"
@@ -46,22 +47,33 @@ func (h *Handler) Handle(c *gin.Context) {
 	bookingID, err := uuid.Parse(uri.BookingID)
 	if err != nil {
 		viewErrs.ErrBadRequest(c, "cancel_booking_form.tmpl", err)
+
 		return
 	}
 
 	ctx := c.Request.Context()
 
-	bookingForCancellation, err := h.bookingService.GetBookingForCancellation(ctx, bookingID, form.Token)
+	booking, err := h.bookingService.GetBookingForCancellation(ctx, bookingID, form.Token)
 	if err != nil {
 		h.viewErrorHandler.Handle(c, "err.tmpl", err)
+
 		return
 	}
 
-	view, err := dto.ToBookingCancelView(bookingForCancellation)
+	if booking.Class == nil {
+		h.viewErrorHandler.Handle(c, "err.tmpl", errors.New("booking.Class should not be empty"))
+
+		return
+	}
+
+	classView, err := dto.ToClassView(*booking.Class)
 	if err != nil {
 		viewErrs.ErrDTOConversion(c, "cancel_booking_form.tmpl", err)
+
 		return
 	}
 
-	c.HTML(http.StatusOK, "cancel_booking_form.tmpl", view)
+	c.HTML(http.StatusOK, "cancel_booking_form.tmpl", gin.H{
+		"Class": classView, "BookingID": bookingID, "ConfirmationToken": booking.ConfirmationToken,
+	})
 }

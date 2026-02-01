@@ -2,6 +2,7 @@ package dto
 
 import (
 	"fmt"
+
 	"main/internal/domain/models"
 	"main/pkg/converter"
 	"main/pkg/translator"
@@ -20,36 +21,44 @@ type BookingCancelURI struct {
 type BookingCreateForm struct {
 	Token string `form:"token" binding:"required,len=44"`
 }
-type BookingView struct {
-	ClassName string
-	Date      string
-	Hour      string
-	Location  string
+type ClassView struct {
+	WeekDay    string
+	StartDate  string
+	StartHour  string
+	ClassLevel string
+	ClassName  string
+	Location   string
 }
 
-func ToBookingView(class models.Class) (BookingView, error) {
-	warsawTimeDate, err := converter.ConvertToWarsawTime(class.StartTime)
+func ToClassView(class models.Class) (ClassView, error) {
+	warsawStartTime, err := converter.ConvertToWarsawTime(class.StartTime)
 	if err != nil {
-		return BookingView{}, fmt.Errorf("could not convert start time: %w", err)
+		return ClassView{}, fmt.Errorf("could not convert class start time from booking: %w", err)
 	}
 
-	return BookingView{
-		ClassName: class.ClassName,
-		Date:      warsawTimeDate.Format(converter.DateLayout),
-		Hour:      warsawTimeDate.Format(converter.HourLayout),
-		Location:  class.Location,
+	weekDay, err := translator.TranslateToWeekDayToPolish(warsawStartTime.Weekday())
+	if err != nil {
+		return ClassView{}, fmt.Errorf("could not convert weekday from booking: %w", err)
+	}
+
+	return ClassView{
+		WeekDay:    weekDay,
+		StartDate:  warsawStartTime.Format(converter.DateLayout),
+		StartHour:  warsawStartTime.Format(converter.HourLayout),
+		ClassLevel: class.ClassLevel,
+		ClassName:  class.ClassName,
+		Location:   class.Location,
 	}, nil
 }
 
 type BookingCancelView struct {
-	BookingID         uuid.UUID
 	WeekDay           string
 	StartDate         string
 	StartHour         string
 	ClassLevel        string
 	ClassName         string
-	MaxCapacity       int
 	Location          string
+	BookingID         uuid.UUID
 	ConfirmationToken string
 }
 
@@ -65,14 +74,13 @@ func ToBookingCancelView(booking models.Booking) (BookingCancelView, error) {
 	}
 
 	return BookingCancelView{
-		BookingID:         booking.ID,
 		WeekDay:           weekDay,
 		StartDate:         warsawStartTime.Format(converter.DateLayout),
 		StartHour:         warsawStartTime.Format(converter.HourLayout),
 		ClassLevel:        booking.Class.ClassLevel,
 		ClassName:         booking.Class.ClassName,
-		MaxCapacity:       booking.Class.MaxCapacity,
 		Location:          booking.Class.Location,
+		BookingID:         booking.ID,
 		ConfirmationToken: booking.ConfirmationToken,
 	}, nil
 }

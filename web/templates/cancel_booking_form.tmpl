@@ -1,58 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-    <title>Odwołanie rezerwacji</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>odwołanie rezerwacji</title>
+    <script src="https://unpkg.com/htmx.org/dist/htmx.min.js"></script>
+    <link rel="stylesheet" href="/web/static/css/styles.css">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Alegreya+Sans+SC:ital,wght@0,100;0,300;0,400;0,500;0,700;0,800;0,900;1,100;1,300;1,400;1,500;1,700;1,800;1,900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/web/static/css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
 </head>
-<div id="cancel-booking-container" class="cancel-booking-container">
-<div class="cancel-booking-card">
-    <form id="form-{{ .BookingID }}">
+<div id="cancellation-container">
+    <div class="cancellation-card">
         <div class="class-info">
+            <div class="class-title"
+                style="font-weight: 600; font-size: 14px; color: black; opacity: 0.6; text-align: left; margin-bottom: 15px; padding-bottom: 5px; padding-top: 1px; border-bottom: 1px solid rgba(224, 224, 224, 0.5);">
+                {{ .Class.ClassName }}
+            </div>
             <table style="border-collapse: collapse; margin-top: 15px;">
                 <tr>
-                    <td style="font-weight:300;">zajęcia:</td>
-                    <td style="font-weight:500;">{{ .ClassName }}</td>
-                </tr>
-                <tr>
                     <td style="font-weight:300;">poziom:</td>
-                    <td style="font-weight:500;">{{ .ClassLevel }}</td>
+                    <td style="font-weight:500;">{{ .Class.ClassLevel }}</td>
                 </tr>
                 <tr>
                     <td style="font-weight:300;">dzień:</td>
-                    <td style="font-weight:500;">{{ .WeekDay }}</td>
+                    <td style="font-weight:500;">{{ .Class.WeekDay }}</td>
                 </tr>
                 <tr>
                     <td style="font-weight:300;">data:</td>
-                    <td style="font-weight:500;">{{ .StartDate }}</td>
+                    <td style="font-weight:500;">{{ .Class.StartDate }}</td>
                 </tr>
                 <tr>
                     <td style="font-weight:300;">godzina:</td>
-                    <td style="font-weight:500;">{{ .StartHour }}</td>
+                    <td style="font-weight:500;">{{ .Class.StartHour }}</td>
                 </tr>
                 <tr>
                     <td style="font-weight:300;">gdzie:</td>
-                    <td style="font-weight:500;">{{ .Location }}</td>
+                    <td style="font-weight:500;">{{ .Class.Location }}</td>
                 </tr>
             </table>
         </div>
         <div id="cancel-button-{{ .BookingID }}">
-        <button
-            type="submit"
-            class="btn-cancel"
-            hx-delete="/bookings/{{ .BookingID }}?token={{ .ConfirmationToken }}"
-            hx-swap="outerHTML"
-            hx-target="#cancel-booking-container"> 
-            <span class="btn-content">
-                <span class="submit-text">odwołuję</span>
-                <span class="htmx-indicator spinner"></span>
-            </span>
-        </button>
+            <button
+                type="submit"
+                class="btn-cancel"
+                hx-delete="/bookings/{{ .BookingID }}?token={{ .ConfirmationToken }}"
+                hx-swap="outerHTML"
+                hx-target="#cancel-booking-container"> 
+                <span class="btn-content">
+                    <span class="submit-text">odwołuję</span>
+                    <span class="htmx-indicator spinner"></span>
+                </span>
+            </button>
         </div>
-    </form>
     </div>
 </div>
 <script>

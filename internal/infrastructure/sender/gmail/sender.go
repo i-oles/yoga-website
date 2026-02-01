@@ -16,7 +16,7 @@ import (
 	"gopkg.in/gomail.v2"
 )
 
-const PaymentType = "KARNET"
+const Pass = "KARNET"
 
 type Sender struct {
 	SenderName                         string
@@ -134,7 +134,7 @@ func (s Sender) SendConfirmations(params models.SenderParams, cancellationLink s
 
 	paymentType := ""
 	if isPass {
-		paymentType = PaymentType
+		paymentType = Pass
 	}
 
 	subject := fmt.Sprintf("%s %s booked %s",
