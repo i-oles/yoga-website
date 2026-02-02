@@ -11,12 +11,9 @@ import (
 	"syscall"
 	"time"
 
-	"main/internal/domain/models"
 	"main/internal/infrastructure/configuration"
-	"main/internal/interfaces/http/html/dto"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 func main() {
@@ -46,27 +43,28 @@ func main() {
 }
 
 func preview(c *gin.Context) {
-	class := models.Class{
-		ID:          uuid.New(),
-		StartTime:   time.Now(),
-		ClassLevel:  "Beginner",
-		ClassName:   "Vinyasa",
-		MaxCapacity: 5,
-		Location:    "Studio A",
-	}
-
-	view, err := dto.ToClassView(class)
-	if err != nil {
-		fmt.Println(err.Error())
-
-		return
-	}
+	// class := models.Class{
+	// 	ID:          uuid.New(),
+	// 	StartTime:   time.Now(),
+	// 	ClassLevel:  "Beginner",
+	// 	ClassName:   "Vinyasa",
+	// 	MaxCapacity: 5,
+	// 	Location:    "Studio A",
+	// }
+	//
+	// view, err := dto.ToClassView(class)
+	// if err != nil {
+	// 	fmt.Println(err.Error())
+	//
+	// 	return
+	// }
+	c.HTML(http.StatusOK, "err.tmpl", gin.H{"Error": "Twój link ddsię ze mną..."})
 
 	// c.HTML(http.StatusOK, "confirmation_create_booking.tmpl", view)
-
-	c.HTML(http.StatusOK, "cancel_booking_form.tmpl", gin.H{
-		"Class": view, "BookingID": uuid.New(), "ConfirmationToken": "abrakadabra",
-	})
+	// c.HTML(http.StatusOK, "confirmation_cancel_booking.tmpl", gin.H{
+	// c.HTML(http.StatusOK, "confirmation_cancel_booking.tmpl", gin.H{
+	// 	"BookingID": uuid.New(), "ConfirmationToken": "abrakadabra",
+	// })
 }
 
 func runServer(srv *http.Server, cfg *configuration.Configuration) {

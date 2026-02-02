@@ -96,6 +96,7 @@ h1 {
 
 .cancellation-card,
 .confirmation-card,
+.error-card,
 .class-container,
 .info-box-price,
 .info-box-about,
@@ -119,12 +120,15 @@ h1 {
 }
 
 .cancellation-card,
+.error-card,
 .confirmation-card {
     font-size: 0.8rem;
     padding-bottom: 30px;
     width: 100%;
     max-width: 240px;
+    height: 250px;
     margin: 0 auto;
+    margin-top: 20px;
 }
 
 .class-title {
@@ -208,6 +212,7 @@ h1 {
     }
 
     #cancellation-container,
+    #error-container,
     #confirmation-container {
         display: flex;
         justify-content: center;
@@ -215,6 +220,7 @@ h1 {
     }
 
     .cancellation-card,
+    .error-container,
     .confirmation-card {
         font-size: 0.8rem;
         padding-bottom: 40px;
@@ -262,6 +268,7 @@ h1 {
     }
 
     #cancellation-container,
+    #error-container,
     #confirmation-container {
         display: flex;
         justify-content: center;
@@ -269,6 +276,7 @@ h1 {
     }
 
     .cancellation-card,
+    .error-card,
     .confirmation-card {
         font-size: 0.8rem;
         padding-bottom: 40px;
@@ -415,37 +423,6 @@ button:disabled {
     height: auto;
     border-left: 2px solid #d32f2f;
     padding-left: 8px;
-}
-
-.text-gray {
-    color: #757575;
-}
-
-.cancel-booking-card, .error-card {
-    background-color: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(224, 224, 224, 0.8);
-    padding: 24px;
-    transition: all 0.2s ease;
-    border-radius: 4px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-    width: 100%; /* Pełna szerokość kontenera */
-    max-width: 400px; /* Maksymalna szerokość */
-    display: flex;
-    flex-direction: column;
-    margin: 0 auto; /* Wyśrodkowanie poziome */
-}
-
-.cancel-booking-card:hover,
-.error-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-}
-
-.cancel-booking-card, .error-card h2 {
-    color: #2c3e50;
-    margin-bottom: 20px;
-    font-size: 1.2rem;
 }
 
 .confirmation-message, .error-message {
