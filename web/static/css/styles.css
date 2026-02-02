@@ -126,9 +126,13 @@ h1 {
     padding-bottom: 30px;
     width: 100%;
     max-width: 240px;
-    height: 250px;
     margin: 0 auto;
     margin-top: 20px;
+}
+
+.cancellation-card,
+.error-card {
+    height: 250px;
 }
 
 .class-title {
