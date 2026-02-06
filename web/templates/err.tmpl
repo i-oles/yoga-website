@@ -1,31 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Potwierdzenie odwołania</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>upssss...</title>
+    <script src="https://unpkg.com/htmx.org/dist/htmx.min.js"></script>
+    <link rel="stylesheet" href="/web/static/css/styles.css">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Alegreya+Sans+SC:ital,wght@0,100;0,300;0,400;0,500;0,700;0,800;0,900;1,100;1,300;1,400;1,500;1,700;1,800;1,900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/web/static/css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
 </head>
-<div class="error-container">
+<div id="error-container">
     <div class="error-card">
-        <h2>Ups! Coś poszło nie tak...</h2>
-
         <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"
              viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="2"
              stroke-linecap="round" stroke-linejoin="round"
-             style="margin: 20px auto; display: block;">
+             style="margin: 30 auto; display: block;">
             <circle cx="12" cy="12" r="10"></circle>
             <line x1="15" y1="9" x2="9" y2="15"></line>
             <line x1="9" y1="9" x2="15" y2="15"></line>
         </svg>
-
-        <p class="error-message">
-            {{ .Error }}
-        </p>
-
+        <h4 style="text-align: center; margin: 0;">ups! coś poszło nie tak...</h4>
+        <p style="text-align: center; margin-bottom: 30px; height: 30px; font-size: 0.7rem;">{{ .Error }}</p>
         <button onclick="window.location.href='/'" class="btn-return">
-            Powrót do listy zajęć
+            < wróć
         </button>
     </div>
 </div>

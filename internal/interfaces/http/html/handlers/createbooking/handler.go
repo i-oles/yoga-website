@@ -1,10 +1,11 @@
 package createbooking
 
 import (
+	"net/http"
+
 	"main/internal/domain/services"
 	"main/internal/interfaces/http/html/dto"
 	viewErrs "main/internal/interfaces/http/html/errs"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
@@ -41,7 +42,7 @@ func (h *Handler) Handle(c *gin.Context) {
 		return
 	}
 
-	view, err := dto.ToBookingView(class)
+	view, err := dto.ToClassView(class)
 	if err != nil {
 		viewErrs.ErrDTOConversion(c, "err.tmpl", err)
 

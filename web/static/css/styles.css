@@ -94,6 +94,9 @@ h1 {
     margin-top: 0;
 }
 
+.cancellation-card,
+.confirmation-card,
+.error-card,
 .class-container,
 .info-box-price,
 .info-box-about,
@@ -102,7 +105,7 @@ h1 {
     backdrop-filter: blur(10px);
     border: 1px solid rgba(224, 224, 224, 0.8);
     padding: 28px;
-    opacity: 0.6;
+    opacity: 0.8;
     transition: all 0.2s ease;
     border-radius: 4px;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
@@ -114,6 +117,22 @@ h1 {
     font-size: 0.8rem;
     padding-bottom: 30px;
     min-width: 190px;
+}
+
+.cancellation-card,
+.error-card,
+.confirmation-card {
+    font-size: 0.8rem;
+    padding-bottom: 30px;
+    width: 100%;
+    max-width: 240px;
+    margin: 0 auto;
+    margin-top: 20px;
+}
+
+.cancellation-card,
+.error-card {
+    height: 250px;
 }
 
 .class-title {
@@ -196,6 +215,23 @@ h1 {
         gap: 15px;
     }
 
+    #cancellation-container,
+    #error-container,
+    #confirmation-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .cancellation-card,
+    .error-container,
+    .confirmation-card {
+        font-size: 0.8rem;
+        padding-bottom: 40px;
+        width: 100%;
+        margin: 15px 15px 15px 15px;
+    }
+
     body::before {
         background-image: url('/web/static/images/tablet/yoga-bg.jpeg');
     }
@@ -233,6 +269,24 @@ h1 {
     .info-box-contact {
         font-size: 0.9rem;
         opacity: 0.8
+    }
+
+    #cancellation-container,
+    #error-container,
+    #confirmation-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .cancellation-card,
+    .error-card,
+    .confirmation-card {
+        font-size: 0.8rem;
+        padding-bottom: 40px;
+        width: 100%;
+        max-width: 80%;
+        margin: 15px 15px 15px 15px;
     }
 
     .msg-email-container {
@@ -302,23 +356,29 @@ h1 {
     color: #000;
 }
 
-/* Przyciski - minimalistyczne z cieniami */
-button {
+/* Buttons */
+.btn-cancel,
+.btn-return,
+.btn-book {
     border: 1px solid #000;
     padding: 12px 20px;
-    border-radius: 0;
     margin-top: 16px;
     text-align: center;
     cursor: pointer;
-    font-size: 0.9rem;
     width: 100%;
     transition: all 0.2s ease;
     background-color: transparent;
-    color: #000;
-    font-weight: 500;
     letter-spacing: 0.5px;
-    text-transform: uppercase;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    border-color: #a8a8a8;
+    border-radius: 4px;
+    min-height: 35px;
+    color: #000;
+    font-weight: 300;
+    font-size: 0.6rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 button:disabled {
@@ -329,31 +389,17 @@ button:disabled {
     box-shadow: none;
 }
 
-.btn-return:hover {
-    background-color: #dadada;
+.btn-cancel:hover {
+    background-color: #CD5C5C;
 }
 
-.btn-book:hover,
-.btn-cancel:hover {
+.btn-return:hover,
+.btn-book:hover {
     background-color: #727272;
     color: #fff;
 }
 
-.btn-cancel,
-.btn-return,
-.btn-book {
-    border-color: #a8a8a8;
-    border-radius: 4px;
-    min-height: 35px;
-    color: #000;
-    font-weight: 300;
-    font-size: 0.6rem;
-    display: flex;
-    align-items: center; /* wyśrodkowanie pionowe */
-    justify-content: center; /* wyśrodkowanie poziome */
-}
-
-/* Komunikaty o błędach */
+/* Pending Booking small error messages displayed before button */
 .err-msg {
     font-size: 0.8rem;
     color: #d32f2f;
@@ -373,38 +419,6 @@ button:disabled {
     height: auto;
     border-left: 2px solid #d32f2f;
     padding-left: 8px;
-}
-
-.text-gray {
-    color: #757575;
-}
-
-.cancel-booking-card, .confirmation-card, .error-card {
-    background-color: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(224, 224, 224, 0.8);
-    padding: 24px;
-    transition: all 0.2s ease;
-    border-radius: 4px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-    width: 100%; /* Pełna szerokość kontenera */
-    max-width: 400px; /* Maksymalna szerokość */
-    display: flex;
-    flex-direction: column;
-    margin: 0 auto; /* Wyśrodkowanie poziome */
-}
-
-.cancel-booking-card:hover,
-.confirmation-card:hover, .error-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-}
-
-.cancel-booking-card,
-.confirmation-card, .error-card h2 {
-    color: #2c3e50;
-    margin-bottom: 20px;
-    font-size: 1.2rem;
 }
 
 .confirmation-message, .error-message {
