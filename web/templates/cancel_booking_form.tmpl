@@ -41,19 +41,17 @@
                 </tr>
             </table>
         </div>
-        <div id="cancel-button-{{ .BookingID }}">
-            <button
-                type="submit"
-                class="btn-cancel"
-                hx-delete="/bookings/{{ .BookingID }}?token={{ .ConfirmationToken }}"
-                hx-swap="outerHTML"
-                hx-target="#cancellation-container"> 
+        <button
+            type="submit"
+            class="btn-cancel"
+            hx-delete="/bookings/{{ .BookingID }}?token={{ .ConfirmationToken }}"
+            hx-swap="outerHTML"
+            hx-target="#cancellation-container"> 
                 <span class="btn-content">
                     <span class="submit-text">odwołuję</span>
                     <span class="htmx-indicator spinner"></span>
                 </span>
-            </button>
-        </div>
+        </button>
     </div>
 </div>
 <script>
