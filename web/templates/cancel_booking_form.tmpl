@@ -12,8 +12,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
 </head>
 <div id="cancellation-container">
-    <div class="cancellation-card">
-        <div class="class-info">
+    <div style="mergin-bottom: 50px;" class="cancellation-card">
+        <div style="margin-bottom: 30px;" class="class-info">
             <div class="class-title"
                 style="font-weight: 600; font-size: 14px; color: black; opacity: 0.6; text-align: left; margin-bottom: 15px; padding-bottom: 5px; padding-top: 1px; border-bottom: 1px solid rgba(224, 224, 224, 0.5);">
                 {{ .Class.ClassName }}
@@ -40,18 +40,18 @@
                     <td style="font-weight:500;">{{ .Class.Location }}</td>
                 </tr>
             </table>
+            <button
+                type="submit"
+                class="btn-cancel"
+                hx-delete="/bookings/{{ .BookingID }}?token={{ .ConfirmationToken }}"
+                hx-swap="outerHTML"
+                hx-target="#cancellation-container"> 
+                    <span class="btn-content">
+                        <span class="submit-text">odwołuję</span>
+                        <span class="htmx-indicator spinner"></span>
+                    </span>
+            </button>
         </div>
-        <button
-            type="submit"
-            class="btn-cancel"
-            hx-delete="/bookings/{{ .BookingID }}?token={{ .ConfirmationToken }}"
-            hx-swap="outerHTML"
-            hx-target="#cancellation-container"> 
-                <span class="btn-content">
-                    <span class="submit-text">odwołuję</span>
-                    <span class="htmx-indicator spinner"></span>
-                </span>
-        </button>
     </div>
 </div>
 <script>
