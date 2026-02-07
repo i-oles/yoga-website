@@ -1,14 +1,24 @@
+<!DOCTYPE html>
 <html>
-<body>
-    <h2>Hej {{.RecipientFirstName}}!</h2>
-    <br>
-    <p>Słyszałem, że wbijasz do mnie na jogę :)</p>
-    <p>Aby potwierdzić rezerwację, kliknij w poniższy link:</p>
-    <p><a href="{{.LinkToConfirmation}}">{{.LinkToConfirmation}}</a></p>
 
-    <p>Jeśli to nie Ty próbujesz zarezerwować miejsce, zignoruj tę wiadomość.</p>
+<body
+    style="margin: 0; padding: 20px; font-family: 'Open Sans', Arial, Helvetica, sans-serif; font-size: 12px; line-height: 1.5; color: #000000; background-color: #f8f9fa;">
 
-    <br>
-    <p>{{.SenderName}}</p>
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f8f9fa">
+        <tr>
+            <td align="left">
+                <h3 style="margin: 0 0 10px 0; font-size: 14px; font-weight: 600; text-align: left;">Hej {{.RecipientFirstName}}!</h3>
+                <p style="margin: 0 0 30px 0; font-size: 14px; text-align: left;">Słyszałem, że wbijasz do mnie na jogę &#128522;</p>
+                <p style="margin: 0; font-size: 14px; text-align: left;">Aby potwierdzić rezerwację, kliknij w poniższy link:</p>
+                <a style="margin: 0; font-size: 13px;" href="{{.LinkToConfirmation}}">{{.LinkToConfirmation}}</a>
+                <p style="margin: 40px 0 15px 0; font-size: 14px; text-align: left;">Jeśli to nie Ty próbujesz zarezerwować miejsce, zignoruj tę wiadomość.</p>
+
+                <div>
+                    <p style="margin: 0; font-size: 14px;">{{.SenderName}}</p>
+                </div>
+                </div>
+            </td>
+        </tr>
+    </table>
 </body>
 </html>
