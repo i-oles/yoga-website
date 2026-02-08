@@ -8,7 +8,7 @@ body {
     max-width: 100%;
     background-color: #fff;
     position: relative;
-    min-height: 100vh;
+    min-height: 80vh;
     touch-action: pan-y;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
@@ -16,7 +16,6 @@ body {
     min-height: -webkit-fill-available; /* for Safari */
 }
 
-/* Fullscreen background image */
 body::before {
     content: '';
     position: fixed;
@@ -24,10 +23,7 @@ body::before {
     left: 0;
     width: 100%;
     height: 100%;
-    background-image: url('/web/static/images/desktop/yoga-bg.jpeg');
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.3), rgba(255, 255, 255, 0.9));
     z-index: -1;
     opacity: 1;
     height: 100vh;
@@ -53,54 +49,10 @@ h1 {
     font-weight: 600;
 }
 
-#page-grid {
-    display: grid;
-    grid-template-columns: 0.9fr 0.9fr 1.3fr 1fr;
-    gap: 20px;
-    padding-left: 100px; 
-    padding-right: 50px;
-    align-items: start;
-    grid-auto-rows: 1fr; 
-}
-
-#main-container {
-    display: grid;
-    grid-column: 1 / 3;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
-}
-
-.class-container {
-    grid-template-columns: repeat(2, 1fr);
-}
-
-#info-container {
-    grid-column: 4 / 5;
-    display: grid;
-    font-size: 0.8rem;
-    gap: 20px;
-    padding-bottom: 0px;
-}
-
-#info-header {
-    grid-column: 1 / span 2;
-    display: grid;
-    color: white;
-    opacity: 0.5;
-    font-size: 1.5rem;
-    height: 0px;
-    padding-top: 0;
-    padding-bottom: 3px;
-    margin-top: 0;
-}
-
 .cancellation-card,
 .confirmation-card,
 .error-card,
-.class-container,
-.info-box-price,
-.info-box-about,
-.info-box-contact {
+.class-container {
     background-color: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(224, 224, 224, 0.8);
@@ -146,8 +98,6 @@ h1 {
 
 .info-box-price, .info-box-about, .info-box-contact {
     padding-bottom: 10px;
-    padding-top: 10px;
-    padding-bottom: 20px;
 }
 
 .class-container:hover {
@@ -214,8 +164,7 @@ h1 {
 
 .booking-info td:first-child,
 .class-info td:first-child {
-    font-weight: 600;
-    width: 45%;
+    width: 50%;
     color: #333;
 }
 
@@ -378,40 +327,82 @@ form.htmx-request .btn-book .submit-text {
     display: none;
 }
 
-/* Mobile */
+#info-header-price,
+#info-header-about,
+#info-header-schedule,
+#info-header-contact {
+    font-style: bold;
+}
+
+/* mobile */
 @media (max-width: 760px) {
     #page-grid {
         grid-template-columns: 1fr;
         display: grid;
         padding-left: 15px;
         padding-right: 15px;
-        padding-top: 40px;
-        gap: 15px;
+        padding-top: 100px;
         overflow-y: auto;
         grid-auto-rows: min-content;
         overflow: visible;
         height: auto;
         margin-bottom: 0;
         padding-bottom: 0;
+        font-weight: 300;
+        gap: 15px;
     }
 
-    #info-header,
-    #main-container,
-    #info-container {
+    #main-container {
+        display: grid;
         grid-template-columns: 1fr;
-        grid-column: 1;
         gap: 15px;
+        grid-column: 1;
+        padding-bottom: 20px;
+    }
+
+    #info-container {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 15px;
+        grid-column: 1;
+    }
+
+    #info-header-schedule {
+        padding-bottom: 20px;
     }
 
     .class-info,
     .class-container,
     .cancellation-container,
     .confirmation-container,
-    .error-container,
+    .error-container {
+        font-size: 0.9rem;
+    }
+
     .info-box-price,
     .info-box-about,
     .info-box-contact {
         font-size: 0.9rem;
+        margin-left: 15px;
+        padding-bottom: 10px;
+    }
+
+    #info-header-price,
+    #info-header-about,
+    #info-header-schedule,
+    #info-header-contact {
+        color: grey;
+        opacity: 0.7;
+        font-size: 1.5rem;
+        height: 0px;
+        padding-top: 0;
+        padding-bottom: 0;
+        margin-top: 0;
+        font-weight: 300;
+    }
+
+    .info-box-price {
+        padding-bottom: 20px;
     }
 
     #cancellation-container,
@@ -479,28 +470,16 @@ form.htmx-request .btn-book .submit-text {
     }
 }
 
-/* Tablet */
-@media (min-width: 761px) and (max-width: 1024px) {
-    body .class-container,
-    body .info-box-price, 
-    body .info-box-about, 
-    body .info-box-contact {
-        font-size: 0.9rem;
-    }
-
-    body .cancellation-card,
-    body .error-card,
-    body .confirmation-card {
-        font-size: 0.9rem;
-    }
-
+/* tablet */
+@media (min-width: 761px) and (max-width: 900px) {
     #page-grid {
-        grid-template-columns: 1.8fr 1.8fr 0.7fr 1.5fr;
+        grid-template-columns: 1.8fr 1.8fr;
         display: grid;
-        padding-left: 15px;
-        padding-right: 0px;
+        padding-left: 80px;
+        padding-right: 80px;
         padding-top: 100px;
         gap: 15px;
+        font-weight: 300;
     }
 
     #main-container {
@@ -511,11 +490,71 @@ form.htmx-request .btn-book .submit-text {
     }
 
     #info-container {
-        grid-column: 4 / 5;
+        grid-column: 1 / 3;
+        grid-template-columns: 1fr 1fr;
         display: grid;
-        grid-template-columns: 1.5fr;
+        padding-top: 30px;
         gap: 15px;
+        grid-template-rows: auto auto auto auto auto auto;
     }
+
+    .info-header-about {
+        grid-column: 1/2;
+        grid-row: 1;
+        padding-top: 40px;
+    }
+
+    .info-box-about {
+        grid-column: 1/2;
+        grid-row: 2/ span 3;
+    }
+
+    #info-header-contact {
+        grid-column: 2/3;
+        grid-row: 3;
+    }
+  
+    .info-box-contact {
+        grid-column: 2/3;
+        grid-row: 4;
+        padding-bottom: 50px;
+    }
+
+    #info-header-price {
+        grid-column: 2/3;
+        grid-row: 1;
+        padding-bottom: 20px;
+    }
+
+    .info-box-price {
+        grid-column: 2/3;
+        grid-row: 2;
+    }
+
+    #info-header-schedule {
+        grid-column: 1 / span 2;
+        display: grid;
+    }
+
+    #info-header-price,
+    #info-header-about,
+    #info-header-schedule,
+    #info-header-contact {
+        color: grey;
+        opacity: 0.7;
+        font-size: 1.5rem;
+        height: 0px;
+        padding-bottom: 10px;
+        margin-top: 0;
+        font-weight: 300;
+    }
+
+    .info-box-about,
+    .info-box-contact,
+    .info-box-price {
+        padding-left: 10px;
+    }
+
 
     #cancellation-container,
     #error-container,
@@ -532,10 +571,58 @@ form.htmx-request .btn-book .submit-text {
         width: 100%;
         margin: 15px 15px 15px 15px;
     }
-
-    body::before {
-        background-image: url('/web/static/images/tablet/yoga-bg.jpeg');
-    }
 }
 
+@media (min-width: 900px) {
+    #page-grid {
+        display: grid;
+        grid-template-columns: 0.9fr 0.9fr 1.3fr 1fr;
+        gap: 20px;
+        padding-left: 100px; 
+        padding-right: 50px;
+        align-items: start;
+        grid-auto-rows: 1fr; 
+    }
+
+    #info-header-price,
+    #info-header-about,
+    #info-header-schedule,
+    #info-header-contact {
+        grid-column: 1 / span 2;
+        display: grid;
+        color: grey;
+        opacity: 0.7;
+        font-size: 1.5rem;
+        height: 0px;
+        padding-top: 0;
+        margin-top: 0;
+        font-weight: 300;
+    }
+
+    .info-box-about,
+    .info-box-contact,
+    .info-box-price {
+        padding-left: 10px;
+    }
+
+    #main-container {
+        display: grid;
+        grid-column: 1 / 3;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+    }
+
+    .class-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    #info-container {
+        grid-column: 4 / 5;
+        display: grid;
+        font-size: 0.8rem;
+        padding-top: 130px;
+        gap: 20px;
+        font-weight: 300;
+    }
+}
 
