@@ -15,7 +15,7 @@
 <br>
 <div id="page-grid">
     <div id="main-container">
-        <p id="info-header">harmonogram</p> 
+        <p style="padding-bottom: 10px;" id="info-header-schedule">harmonogram</p> 
         {{ if .IsVacation }}
             <div class="class-container">
                 <div class="vacation-info">
@@ -38,27 +38,27 @@
                     <table style="border-collapse: collapse; margin-top: 15px;">
                         <tr>
                             <td style="font-weight:300;">poziom:</td>
-                            <td style="font-weight:500;">{{ .ClassLevel }}</td>
+                            <td style="font-weight:300;">{{ .ClassLevel }}</td>
                         </tr>
                         <tr>
                             <td style="font-weight:300;">dzień:</td>
-                            <td style="font-weight:500;">{{ .WeekDay }}</td>
+                            <td style="font-weight:300;">{{ .WeekDay }}</td>
                         </tr>
                         <tr>
                             <td style="font-weight:300;">data:</td>
-                            <td style="font-weight:500;">{{ .StartDate }}</td>
+                            <td style="font-weight:300;">{{ .StartDate }}</td>
                         </tr>
                         <tr>
                             <td style="font-weight:300;">godzina:</td>
-                            <td style="font-weight:500;">{{ .StartHour }}</td>
+                            <td style="font-weight:300;">{{ .StartHour }}</td>
                         </tr>
                         <tr>
                             <td style="font-weight:300;">gdzie:</td>
-                            <td style="font-weight:500;">{{ .Location }}</td>
+                            <td style="font-weight:300;">{{ .Location }}</td>
                         </tr>
                         <tr>
                             <td style="font-weight:300;">wolne miejsca:</td>
-                            <td style="font-weight:500;">{{ .CurrentCapacity }}</td>
+                            <td style="font-weight:300;">{{ .CurrentCapacity }}</td>
                         </tr>
                     </table>
                 </div>
@@ -84,7 +84,23 @@
         {{ end }}
     </div>
     <div id="info-container">
-        <p id="info-header">cennik</p> 
+        <p id="info-header-about">o mnie</p>
+        <div class="info-box-about">
+            <p>
+                jestem uczniem wspaniałej<br>
+                jogini Rachele Faiella<br>
+                <span class="half-break"></span>
+                ukończyłem kurs instruktora<br>
+                vinyasa yoga i ashtanga yoga<br>
+                RYT 200h (Rishikesh, India)<br>
+                <span class="half-break"></span>
+                jogi uczę u siebie w domu<br>
+                <span class="half-break"></span>
+                joga to dla mnie praktyka duchowa<br>
+                i nauka kontaktu ze swoim ciałem
+            </p>
+        </div>
+        <p id="info-header-price">cennik</p> 
         <div class="info-box-price">
             <table style="border-collapse: collapse;">
                 <tr>
@@ -101,23 +117,7 @@
                 </tr>
             </table>
         </div>
-        <p id="info-header">o mnie</p>
-        <div class="info-box-about">
-            <p>
-                jestem uczniem wspaniałej<br>
-                jogini Rachele Faiella<br>
-                <span class="half-break"></span>
-                ukończyłem kurs instruktora<br>
-                vinyasa yoga i ashtanga yoga<br>
-                RYT 200h (Rishikesh, India)<br>
-                <span class="half-break"></span>
-                jogi uczę u siebie w domu<br>
-                <span class="half-break"></span>
-                joga to dla mnie praktyka duchowa<br>
-                i nauka kontaktu ze swoim ciałem
-            </p>
-        </div>
-        <p id="info-header">kontakt</p>
+        <p id="info-header-contact">kontakt</p>
         <div class="info-box-contact">
             <p>
                 igor oleś<br>
