@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	pendingBookingsLimit = 200
+	allowedPendingBookingsLimit = 200
 )
 
 type Service struct {
@@ -138,8 +138,8 @@ func (s *Service) ensurePendingBookingAvailability(
 		return fmt.Errorf("could not list pending bookings: %w", err)
 	}
 
-	if len(pendingBookings) >= pendingBookingsLimit {
-		return fmt.Errorf("limit: %d of pending bookings exceeded", pendingBookingsLimit)
+	if len(pendingBookings) >= allowedPendingBookingsLimit {
+		return fmt.Errorf("limit: %d of pending bookings exceeded", allowedPendingBookingsLimit)
 	}
 
 	var count int
