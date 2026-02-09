@@ -55,23 +55,6 @@ func (r PendingBookingsRepo) GetByConfirmationToken(
 	return sqlPendingBooking.ToDomain(), nil
 }
 
-func (r PendingBookingsRepo) CountPendingBookingsPerUser(
-	ctx context.Context,
-	email string,
-	classID uuid.UUID,
-) (int8, error) {
-	var count int64
-
-	if err := r.db.WithContext(ctx).
-		Model(&db.SQLPendingBooking{}).
-		Where("email = ? AND class_id = ?", email, classID).
-		Count(&count).Error; err != nil {
-		return 0, fmt.Errorf("could not count pending bookings: %w", err)
-	}
-
-	return int8(count), nil
-}
-
 func (r PendingBookingsRepo) Delete(ctx context.Context, id uuid.UUID) error {
 	var sqlPendingBooking db.SQLPendingBooking
 

@@ -32,7 +32,6 @@ type IPendingBookings interface {
 	GetByConfirmationToken(ctx context.Context, token string) (models.PendingBooking, error)
 	Insert(ctx context.Context, booking models.PendingBooking) error
 	Delete(ctx context.Context, id uuid.UUID) error
-	CountPendingBookingsPerUser(ctx context.Context, email string, classID uuid.UUID) (int8, error)
 	List(ctx context.Context) ([]models.PendingBooking, error)
 }
 
