@@ -78,6 +78,8 @@ func main() {
 		log.Fatal(err)
 	}
 
+	cleanUpPendingBookingsDBAsync(db)
+
 	router := setupRouter(db, cfg)
 
 	srv := &http.Server{
@@ -169,7 +171,7 @@ func setupRouter(db *gorm.DB, cfg *configuration.Configuration) *gin.Engine {
 		// pending_bookings
 		api.GET("/classes/:class_id/pending_bookings/form", pendingBookingFormHandler.Handle)
 
-		requestLimiter := rate.NewLimiter(1, 2)
+		requestLimiter := rate.NewLimiter(rate.Limit(1), 2)
 		api.POST("/pending_bookings", rateLimiterMiddleware(requestLimiter), createPendingBookingHandler.Handle)
 	}
 
@@ -231,4 +233,30 @@ func runServer(srv *http.Server, cfg *configuration.Configuration) {
 	}
 
 	slog.Info("Server stopped")
+}
+
+func cleanUpPendingBookingsDBAsync(db *gorm.DB) {
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+
+		oneHourAgo := time.Now().UTC().Add(-1 * time.Hour)
+
+		result := db.WithContext(ctx).
+			Where("created_at < ?", oneHourAgo).
+			Delete(&dbModels.SQLPendingBooking{})
+
+		if result.Error != nil {
+			if errors.Is(result.Error, context.DeadlineExceeded) {
+				slog.Warn("cleanup timeout exceeded")
+			} else {
+				slog.Error("failed to cleanup pending bookings async",
+					slog.String("err", result.Error.Error()))
+			}
+
+			return
+		}
+
+		slog.Info("Cleaned up pending bookings", slog.Int64("rows_deleted", result.RowsAffected))
+	}()
 }

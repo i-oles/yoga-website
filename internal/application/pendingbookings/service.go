@@ -16,6 +16,10 @@ import (
 	"github.com/google/uuid"
 )
 
+const (
+	allowedPendingBookingsLimit = 200
+)
+
 type Service struct {
 	ClassesRepo         repositories.IClasses
 	PendingBookingsRepo repositories.IPendingBookings
@@ -60,7 +64,7 @@ func (s *Service) CreatePendingBooking(
 		return uuid.Nil, fmt.Errorf("could not get booking: %w", err)
 	}
 
-	err = s.validatePendingBookingsPerUser(
+	err = s.ensurePendingBookingAvailability(
 		ctx, pendingBookingParams.ClassID, pendingBookingParams.Email,
 	)
 	if err != nil {
@@ -124,14 +128,25 @@ func (s *Service) CreatePendingBooking(
 	return class.ID, nil
 }
 
-func (s *Service) validatePendingBookingsPerUser(
+func (s *Service) ensurePendingBookingAvailability(
 	ctx context.Context,
 	classID uuid.UUID,
 	email string,
 ) error {
-	count, err := s.PendingBookingsRepo.CountPendingBookingsPerUser(ctx, email, classID)
+	pendingBookings, err := s.PendingBookingsRepo.List(ctx)
 	if err != nil {
-		return fmt.Errorf("could not count pending bookings for email: %s, error: %w", email, err)
+		return fmt.Errorf("could not list pending bookings: %w", err)
+	}
+
+	if len(pendingBookings) >= allowedPendingBookingsLimit {
+		return fmt.Errorf("limit: %d of pending bookings exceeded", allowedPendingBookingsLimit)
+	}
+
+	var count int
+	for _, pendingBooking := range pendingBookings {
+		if pendingBooking.Email == email {
+			count += 1
+		}
 	}
 
 	if count >= 2 {
