@@ -11,7 +11,8 @@
     "port": 587,
     "user": "",
     "password": "",
-    "fromName": "Igor"
+    "fromName": "Igor",
+    "skipVerification": false
   },
   "postgres": {
     "dbName": "yoga",

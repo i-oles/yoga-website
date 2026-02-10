@@ -28,6 +28,7 @@ type Sender struct {
 	BookingCancellationTmplPath        string
 	PassActivationTmplPath             string
 	Dialer                             *gomail.Dialer
+	SkipVerification                   bool
 }
 
 func NewSender(
@@ -37,9 +38,10 @@ func NewSender(
 	password string,
 	senderName string,
 	baseSenderTmplPath string,
+	skipVerification bool,
 ) *Sender {
 	dialer := gomail.NewDialer(host, port, senderEmail, password)
-	dialer.TLSConfig = &tls.Config{InsecureSkipVerify: true} // TODO: change to false in production
+	dialer.TLSConfig = &tls.Config{InsecureSkipVerify: skipVerification}
 
 	return &Sender{
 		SenderName:                         senderName,
@@ -109,6 +111,7 @@ func (s Sender) SendConfirmations(params models.SenderParams, cancellationLink s
 	}
 
 	var isPass bool
+
 	if params.PassUsedBookingIDs != nil && params.PassTotalBookings != nil {
 		tmplData.PassState = getPassState(params.PassUsedBookingIDs, *params.PassTotalBookings)
 		isPass = true

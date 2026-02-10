@@ -18,6 +18,7 @@ import (
 
 const (
 	allowedPendingBookingsLimit = 200
+	tokenLength                 = 32
 )
 
 type Service struct {
@@ -96,7 +97,7 @@ func (s *Service) CreatePendingBooking(
 		)
 	}
 
-	confirmationToken, err := s.TokenGenerator.Generate(32)
+	confirmationToken, err := s.TokenGenerator.Generate(tokenLength)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("could not generate confirmation token: %w", err)
 	}

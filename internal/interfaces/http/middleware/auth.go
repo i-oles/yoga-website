@@ -13,6 +13,7 @@ func Auth(secret string) gin.HandlerFunc {
 
 		if authHeader != expected {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+
 			return
 		}
 

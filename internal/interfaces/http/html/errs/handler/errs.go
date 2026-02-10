@@ -73,6 +73,4 @@ func (e ErrorHandler) Handle(c *gin.Context, tmplName string, err error) {
 	c.HTML(http.StatusInternalServerError, "err.tmpl", gin.H{
 		"Error": "Coś poszło nie tak... Skontaktuj się ze mną :)",
 	})
-
-	return
 }

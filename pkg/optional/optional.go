@@ -10,6 +10,7 @@ type Optional[T any] struct {
 // Empty creates a new Optional without a value.
 func Empty[T any]() Optional[T] {
 	var empty T
+
 	return Optional[T]{empty, false}
 }
 

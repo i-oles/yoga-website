@@ -32,7 +32,10 @@ func NewService(
 
 func (s Service) ActivatePass(ctx context.Context, params models.PassActivationParams) (models.Pass, error) {
 	if params.UsedBookings > params.TotalBookings {
-		return models.Pass{}, api.ErrValidation(fmt.Errorf("usedBookings: %d can not be grater than totalBookings: %d", params.UsedBookings, params.TotalBookings))
+		return models.Pass{},
+			api.ErrValidation(
+				fmt.Errorf("usedBookings: %d can not be grater than totalBookings: %d", params.UsedBookings, params.TotalBookings),
+			)
 	}
 
 	passOpt, err := s.passesRepo.GetByEmail(ctx, params.Email)

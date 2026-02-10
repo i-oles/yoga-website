@@ -14,11 +14,12 @@ import (
 )
 
 type EmailSenderSettings struct {
-	Host     string
-	Port     int
-	User     string
-	Password string
-	FromName string
+	Host             string
+	Port             int
+	User             string
+	Password         string
+	FromName         string
+	SkipVerification bool
 }
 
 type Configuration struct {

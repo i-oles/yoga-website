@@ -2,6 +2,7 @@ package dto
 
 import (
 	"fmt"
+
 	"main/internal/domain/models"
 	"main/pkg/converter"
 	"main/pkg/translator"
@@ -61,14 +62,14 @@ func ToClassesWithCurrentCapacityDTO(classes []models.ClassWithCurrentCapacity) 
 }
 
 type ClassDTO struct {
-	ID              uuid.UUID `json:"id"`
-	WeekDay         string    `json:"week_day"`
-	StartDate       string    `json:"start_date"`
-	StartHour       string    `json:"start_hour"`
-	ClassLevel      string    `json:"class_level"`
-	ClassName       string    `json:"class_name"`
-	MaxCapacity     int       `json:"max_capacity"`
-	Location        string    `json:"location"`
+	ID          uuid.UUID `json:"id"`
+	WeekDay     string    `json:"week_day"`
+	StartDate   string    `json:"start_date"`
+	StartHour   string    `json:"start_hour"`
+	ClassLevel  string    `json:"class_level"`
+	ClassName   string    `json:"class_name"`
+	MaxCapacity int       `json:"max_capacity"`
+	Location    string    `json:"location"`
 }
 
 func ToClassDTO(class models.Class) (ClassDTO, error) {
@@ -83,14 +84,14 @@ func ToClassDTO(class models.Class) (ClassDTO, error) {
 	}
 
 	return ClassDTO{
-		ID:              class.ID,
-		WeekDay:         weekday,
-		StartDate:       warsawTime.Format(converter.DateLayout),
-		StartHour:       warsawTime.Format(converter.HourLayout),
-		ClassLevel:      class.ClassLevel,
-		ClassName:       class.ClassName,
-		MaxCapacity:     class.MaxCapacity,
-		Location:        class.Location,
+		ID:          class.ID,
+		WeekDay:     weekday,
+		StartDate:   warsawTime.Format(converter.DateLayout),
+		StartHour:   warsawTime.Format(converter.HourLayout),
+		ClassLevel:  class.ClassLevel,
+		ClassName:   class.ClassName,
+		MaxCapacity: class.MaxCapacity,
+		Location:    class.Location,
 	}, nil
 }
 

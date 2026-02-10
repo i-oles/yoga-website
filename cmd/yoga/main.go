@@ -128,6 +128,7 @@ func setupRouter(db *gorm.DB, cfg *configuration.Configuration) *gin.Engine {
 		cfg.EmailSender.Password,
 		cfg.EmailSender.FromName,
 		cfg.BaseSenderTmplPath,
+		cfg.EmailSender.SkipVerification,
 	)
 
 	classesService := classes.NewService(classesRepo, bookingsRepo, passesRepo, emailSender)

@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	// DateLayout should not be changed, it can cause an error
+	// DateLayout should not be changed, it can cause an error.
 	DateLayout = "02-01-2006"
 	HourLayout = "15:04"
 )

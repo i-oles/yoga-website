@@ -1,12 +1,13 @@
 package createclasses
 
 import (
+	"net/http"
+
 	"main/internal/domain/models"
 	"main/internal/domain/services"
 	"main/internal/interfaces/http/api/dto"
 	apiErrs "main/internal/interfaces/http/api/errs"
 	sharedDTO "main/internal/interfaces/http/shared/dto"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -41,12 +42,12 @@ func (h *Handler) Handle(c *gin.Context) {
 
 	for _, dtoClass := range dtoClasses {
 		class := models.Class{
-			ID:              uuid.New(),
-			StartTime:       dtoClass.StartTime.UTC(),
-			ClassLevel:      dtoClass.ClassLevel,
-			ClassName:       dtoClass.ClassName,
-			MaxCapacity:     dtoClass.MaxCapacity,
-			Location:        dtoClass.Location,
+			ID:          uuid.New(),
+			StartTime:   dtoClass.StartTime.UTC(),
+			ClassLevel:  dtoClass.ClassLevel,
+			ClassName:   dtoClass.ClassName,
+			MaxCapacity: dtoClass.MaxCapacity,
+			Location:    dtoClass.Location,
 		}
 
 		classes = append(classes, class)

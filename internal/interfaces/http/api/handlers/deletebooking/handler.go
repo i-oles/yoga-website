@@ -1,16 +1,17 @@
 package deletebooking
 
 import (
+	"net/http"
+
 	"main/internal/domain/services"
 	apiErrs "main/internal/interfaces/http/api/errs"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
 type Handler struct {
-	bookingsService    services.IBookingsService
+	bookingsService services.IBookingsService
 	apiErrorHandler apiErrs.IErrorHandler
 }
 
@@ -45,3 +46,4 @@ func (h *Handler) Handle(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"bookingID": bookingID})
 }
+

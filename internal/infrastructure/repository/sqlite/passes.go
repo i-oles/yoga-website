@@ -59,7 +59,12 @@ func (r PassesRepo) Update(ctx context.Context, id int, usedBookingIDs []uuid.UU
 	return nil
 }
 
-func (r PassesRepo) Insert(ctx context.Context, email string, usedBookingIDs []uuid.UUID, totalBookings int) (models.Pass, error) {
+func (r PassesRepo) Insert(
+	ctx context.Context,
+	email string,
+	usedBookingIDs []uuid.UUID,
+	totalBookings int,
+) (models.Pass, error) {
 	pass := db.SQLPass{
 		Email:          email,
 		UsedBookingIDs: usedBookingIDs,

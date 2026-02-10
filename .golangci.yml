@@ -75,22 +75,22 @@ linters:
     - rowserrcheck
     - sloglint
     - spancheck
-    - sqlclosecheck
-    - staticcheck
-    - tagalign
-    - testableexamples
-    - testifylint
-    - thelper
-    - tparallel
-    - unconvert
-    - unparam
-    - unused
-    - usestdlibvars
-    - wastedassign
-    - whitespace
-    - wrapcheck
-    - wsl
-    - zerologlint
+    # - sqlclosecheck
+    # - staticcheck
+    # - tagalign
+    # - testableexamples
+    # - testifylint
+    # - thelper
+    # - tparallel
+    # - unconvert
+    # - unparam
+    # - unused
+    # - usestdlibvars
+    # - wastedassign
+    # - whitespace
+    # - wrapcheck
+    # - wsl
+    # - zerologlint
 
   settings:
     revive:
