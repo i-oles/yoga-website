@@ -143,9 +143,10 @@ func (s *Service) ensurePendingBookingAvailability(
 	}
 
 	var count int
+
 	for _, pendingBooking := range pendingBookings {
-		if pendingBooking.Email == email {
-			count += 1
+		if pendingBooking.Email == email && pendingBooking.ClassID == classID {
+			count++
 		}
 	}
 
