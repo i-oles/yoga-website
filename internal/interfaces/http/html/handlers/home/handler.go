@@ -50,6 +50,7 @@ func (h *Handler) Handle(c *gin.Context) {
 	}
 
 	c.HTML(http.StatusOK, "index.html", gin.H{
-		"Classes": classesView, "IsVacation": h.isVacation,
+		"Classes":    classesView,
+		"IsVacation": h.isVacation,
 	})
 }

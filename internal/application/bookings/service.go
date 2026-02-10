@@ -19,6 +19,7 @@ import (
 	"github.com/google/uuid"
 )
 
+// TODO: all services should be private?
 type Service struct {
 	ClassesRepo         repositories.IClasses
 	BookingsRepo        repositories.IBookings
