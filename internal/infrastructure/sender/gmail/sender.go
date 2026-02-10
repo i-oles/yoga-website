@@ -16,7 +16,7 @@ import (
 	"gopkg.in/gomail.v2"
 )
 
-const Pass = "KARNET"
+const PassValue = "KARNET"
 
 type Sender struct {
 	SenderName                         string
@@ -132,15 +132,15 @@ func (s Sender) SendConfirmations(params models.SenderParams, cancellationLink s
 	msgToRecipient.SetHeader("Subject", "Yoga - Rezerwacja potwierdzona!")
 	msgToRecipient.SetBody("text/html", msgContent.String())
 
-	paymentType := ""
+	passDetails := ""
 	if isPass {
-		paymentType = Pass
+		passDetails = fmt.Sprintf("%s: %d/%d", PassValue, len(params.PassUsedBookingIDs), *params.PassTotalBookings)
 	}
 
 	subject := fmt.Sprintf("%s %s booked %s",
 		params.RecipientFirstName,
 		*params.RecipientLastName,
-		paymentType,
+		passDetails,
 	)
 
 	msg := fmt.Sprintf("%s (%s) - %s",

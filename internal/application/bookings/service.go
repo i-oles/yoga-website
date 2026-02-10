@@ -132,7 +132,8 @@ func (s *Service) CreateBooking(ctx context.Context, token string) (models.Class
 
 		err = s.PassesRepo.Update(ctx, pass.ID, updatedBookingIDs, pass.TotalBookings)
 		if err != nil {
-			return models.Class{}, fmt.Errorf("could not update pass for %s with %v, %d", pendingBooking.Email, updatedBookingIDs, pass.TotalBookings)
+			return models.Class{},
+				fmt.Errorf("could not update pass for %s with %v, %d", pendingBooking.Email, updatedBookingIDs, pass.TotalBookings)
 		}
 
 		senderParams.PassUsedBookingIDs = updatedBookingIDs
