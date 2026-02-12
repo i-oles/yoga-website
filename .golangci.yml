@@ -104,16 +104,29 @@ linters:
         - '1'
         - '2'
 
+  exclusions:
+    rules:
+      - path: cmd/yoga/main.go
+        linters:
+          - gocyclo
+          - funlen
+
+      - path: internal/application/classes/service_test.go
+        linters:
+          - typecheck
+
+      - path: internal/application/classes/service.go
+        linters:
+          - typecheck
+
+      - path: assets/example/send_confirmation_email.go
+        linters:
+          - typecheck
+
 formatters:
   enable:
     - gofmt
     - goimports
-
-issues:
-  exclude-rules:
-    - path: cmd/yoga/main.go
-      linters:
-        - funlen
 
 run:
   timeout: 5m

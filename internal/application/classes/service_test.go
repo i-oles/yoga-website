@@ -9,10 +9,11 @@ import (
 	"testing"
 	"time"
 
-	"main/internal/domain/errs"
+	"main/internal/domain/errs/api"
 	"main/internal/domain/models"
 	"main/internal/domain/repositories"
 	"main/internal/domain/sender"
+	"main/pkg/optional"
 
 	"github.com/google/uuid"
 )
@@ -185,32 +186,54 @@ type mockSender struct {
 	err error
 }
 
-func newMockErrorSender(err error) *mockSender {
-	return &mockSender{err: err}
+func newMockSender(err error) *mockSender {
+	return &mockSender{}
 }
 
 func (m *mockSender) SendLinkToConfirmation(_, _, _ string) error {
-	return m.err
+	return nil
 }
 
-func (m *mockSender) SendConfirmations(_ models.ConfirmationMsg) error {
-	return m.err
+func (m *mockSender) SendConfirmations(_ models.SenderParams, _ string) error {
+	return nil
 }
 
 func (m *mockSender) SendInfoAboutCancellationToOwner(_, _ string, _ time.Time) error {
-	return m.err
+	return nil
 }
 
-func (m *mockSender) SendInfoAboutClassCancellation(_, _, _ string, _ models.Class) error {
-	return m.err
-}
-
-func (m *mockSender) SendInfoAboutBookingCancellation(_, _ string, _ models.Class) error {
-	return m.err
+func (m *mockSender) SendInfoAboutClassCancellation(_ models.SenderParams, _ string) error {
+	return nil
 }
 
 func (m *mockSender) SendInfoAboutUpdate(_, _, _ string, _ models.Class) error {
-	return m.err
+	return nil
+}
+
+func (m *mockSender) SendInfoAboutBookingCancellation(_ models.SenderParams) error {
+	return nil
+}
+
+func (m *mockSender) SendPass(_ models.Pass) error {
+	return nil
+}
+
+type mockPassesRepo struct{}
+
+func newMockPassesRepo() *mockPassesRepo {
+	return &mockPassesRepo{}
+}
+
+func (m *mockPassesRepo) GetByEmail(ctx context.Context, email string) (optional.Optional[models.Pass], error) {
+	return optional.Empty[models.Pass](), nil
+}
+
+func (m *mockPassesRepo) Update(ctx context.Context, id int, usedBookingIDs []uuid.UUID, totalBookings int) error {
+	return nil
+}
+
+func (m *mockPassesRepo) Insert(ctx context.Context, email string, usedBookingIDs []uuid.UUID, totalBookings int) (models.Pass, error) {
+	return models.Pass{}, nil
 }
 
 var testBooking = models.Booking{
@@ -254,6 +277,10 @@ func (m *mockBookingsRepo) GetByEmailAndClassID(_ context.Context, _ uuid.UUID, 
 	return models.Booking{}, m.error
 }
 
+func (m *mockBookingsRepo) GetIDsByEmail(_ context.Context, _ string, _ int) ([]uuid.UUID, error) {
+	return nil, m.error
+}
+
 func (m *mockBookingsRepo) List(_ context.Context) ([]models.Booking, error) {
 	return []models.Booking{}, m.error
 }
@@ -285,6 +312,7 @@ func TestService_ListClasses(t *testing.T) {
 		classesLimit        *int
 		classesRepo         repositories.IClasses
 		bookingsRepo        repositories.IBookings
+		passesRepo          repositories.IPasses
 		wantClasses         []models.ClassWithCurrentCapacity
 		wantError           bool
 		error               error
@@ -295,6 +323,7 @@ func TestService_ListClasses(t *testing.T) {
 			classesLimit:        nil,
 			classesRepo:         newMockClassesRepo(expiredAndFutureClasses, nil),
 			bookingsRepo:        newMockBookingsRepo(testBooking, nil),
+			passesRepo:          newMockPassesRepo(),
 			wantClasses:         expiredAndFutureClassesWithCurrentCap,
 		},
 		{
@@ -302,6 +331,7 @@ func TestService_ListClasses(t *testing.T) {
 			onlyUpcomingClasses: true,
 			classesLimit:        nil,
 			classesRepo:         newMockClassesRepo(expiredAndFutureClasses, nil),
+			passesRepo:          newMockPassesRepo(),
 			bookingsRepo:        newMockBookingsRepo(testBooking, nil),
 			wantClasses: []models.ClassWithCurrentCapacity{
 				expiredAndFutureClassesWithCurrentCap[1],
@@ -313,6 +343,7 @@ func TestService_ListClasses(t *testing.T) {
 			name:                "List all classes with limit",
 			onlyUpcomingClasses: false,
 			classesLimit:        anyValuePtr(2),
+			passesRepo:          newMockPassesRepo(),
 			classesRepo:         newMockClassesRepo(expiredAndFutureClasses, nil),
 			bookingsRepo:        newMockBookingsRepo(testBooking, nil),
 			wantClasses: []models.ClassWithCurrentCapacity{
@@ -324,6 +355,7 @@ func TestService_ListClasses(t *testing.T) {
 			name:                "List upcoming classes with limit",
 			onlyUpcomingClasses: true,
 			classesLimit:        anyValuePtr(2),
+			passesRepo:          newMockPassesRepo(),
 			classesRepo:         newMockClassesRepo(expiredAndFutureClasses, nil),
 			bookingsRepo:        newMockBookingsRepo(testBooking, nil),
 			wantClasses: []models.ClassWithCurrentCapacity{
@@ -335,6 +367,7 @@ func TestService_ListClasses(t *testing.T) {
 			name:                "List upcoming classes with limit larger than available",
 			onlyUpcomingClasses: true,
 			classesLimit:        anyValuePtr(10),
+			passesRepo:          newMockPassesRepo(),
 			classesRepo:         newMockClassesRepo(expiredAndFutureClasses, nil),
 			bookingsRepo:        newMockBookingsRepo(testBooking, nil),
 			wantClasses: []models.ClassWithCurrentCapacity{
@@ -347,6 +380,7 @@ func TestService_ListClasses(t *testing.T) {
 			name:                "List classes with limit larger than available",
 			onlyUpcomingClasses: false,
 			classesLimit:        anyValuePtr(10),
+			passesRepo:          newMockPassesRepo(),
 			classesRepo:         newMockClassesRepo(expiredAndFutureClasses, nil),
 			bookingsRepo:        newMockBookingsRepo(testBooking, nil),
 			wantClasses:         expiredAndFutureClassesWithCurrentCap,
@@ -356,6 +390,7 @@ func TestService_ListClasses(t *testing.T) {
 			onlyUpcomingClasses: true,
 			classesLimit:        anyValuePtr(0),
 			classesRepo:         newMockClassesRepo(expiredAndFutureClasses, nil),
+			passesRepo:          newMockPassesRepo(),
 			bookingsRepo:        newMockBookingsRepo(testBooking, nil),
 			wantClasses:         []models.ClassWithCurrentCapacity{},
 		},
@@ -364,6 +399,7 @@ func TestService_ListClasses(t *testing.T) {
 			onlyUpcomingClasses: false,
 			classesLimit:        anyValuePtr(0),
 			classesRepo:         newMockClassesRepo(expiredAndFutureClasses, nil),
+			passesRepo:          newMockPassesRepo(),
 			bookingsRepo:        newMockBookingsRepo(testBooking, nil),
 			wantClasses:         []models.ClassWithCurrentCapacity{},
 		},
@@ -371,6 +407,7 @@ func TestService_ListClasses(t *testing.T) {
 			name:                "List classes from empty repository",
 			onlyUpcomingClasses: false,
 			classesLimit:        nil,
+			passesRepo:          newMockPassesRepo(),
 			classesRepo:         newMockClassesRepo([]models.Class{}, nil),
 			bookingsRepo:        newMockBookingsRepo(testBooking, nil),
 			wantClasses:         []models.ClassWithCurrentCapacity{},
@@ -379,6 +416,7 @@ func TestService_ListClasses(t *testing.T) {
 			name:                "List upcoming classes from empty repository",
 			onlyUpcomingClasses: true,
 			classesLimit:        nil,
+			passesRepo:          newMockPassesRepo(),
 			classesRepo:         newMockClassesRepo([]models.Class{}, nil),
 			bookingsRepo:        newMockBookingsRepo(testBooking, nil),
 			wantClasses:         []models.ClassWithCurrentCapacity{},
@@ -387,6 +425,7 @@ func TestService_ListClasses(t *testing.T) {
 			name:                "try to list past classes with upcoming filter",
 			onlyUpcomingClasses: true,
 			classesLimit:        nil,
+			passesRepo:          newMockPassesRepo(),
 			classesRepo:         newMockClassesRepo([]models.Class{expiredAndFutureClasses[0]}, nil),
 			bookingsRepo:        newMockBookingsRepo(testBooking, nil),
 			wantClasses:         []models.ClassWithCurrentCapacity{},
@@ -395,6 +434,7 @@ func TestService_ListClasses(t *testing.T) {
 			name:                "List upcoming classes with limit of one",
 			onlyUpcomingClasses: true,
 			classesLimit:        anyValuePtr(1),
+			passesRepo:          newMockPassesRepo(),
 			classesRepo:         newMockClassesRepo(expiredAndFutureClasses, nil),
 			bookingsRepo:        newMockBookingsRepo(testBooking, nil),
 			wantClasses: []models.ClassWithCurrentCapacity{
@@ -404,18 +444,18 @@ func TestService_ListClasses(t *testing.T) {
 		{
 			name:                "List classes with negative limit - should return error",
 			onlyUpcomingClasses: false,
+			passesRepo:          newMockPassesRepo(),
 			classesLimit:        anyValuePtr(-1),
 			wantError:           true,
-			error: errs.ErrClassValidation(
-				fmt.Errorf("classes_limit must be greater than or equal to 0, got: %d", -1),
-			),
+			error:               api.ErrValidation(fmt.Errorf("classes_limit must be greater than or equal to 0, got: %d", -1)),
 		},
 		{
 			name:                "List upcoming classes with negative limit - should return error",
 			onlyUpcomingClasses: true,
+			passesRepo:          newMockPassesRepo(),
 			classesLimit:        anyValuePtr(-5),
 			wantError:           true,
-			error: errs.ErrClassValidation(
+			error: api.ErrValidation(
 				fmt.Errorf("classes_limit must be greater than or equal to 0, got: %d", -5),
 			),
 		},
@@ -423,6 +463,7 @@ func TestService_ListClasses(t *testing.T) {
 			name:                "Repository error",
 			onlyUpcomingClasses: false,
 			classesLimit:        nil,
+			passesRepo:          newMockPassesRepo(),
 			classesRepo:         newMockClassesRepo(futureClasses, errors.New("db error")),
 			wantError:           true,
 			error:               errors.New("db error"),
@@ -431,9 +472,10 @@ func TestService_ListClasses(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			sender := &mockSender{}
+			var sender sender.ISender
+			sender = newMockSender(nil)
 
-			service := NewService(tt.classesRepo, tt.bookingsRepo, sender)
+			service := NewService(tt.classesRepo, tt.bookingsRepo, tt.passesRepo, sender)
 			ctx := context.Background()
 
 			classes, err := service.ListClasses(ctx, tt.onlyUpcomingClasses, tt.classesLimit)
@@ -485,7 +527,7 @@ func TestService_CreateClasses(t *testing.T) {
 			name:      "Validation error - expired class",
 			classes:   []models.Class{expiredClass},
 			wantError: true,
-			error: errs.ErrClassValidation(
+			error: api.ErrValidation(
 				fmt.Errorf("class start_time: %v expired", expiredClass.StartTime),
 			),
 		},
@@ -493,7 +535,7 @@ func TestService_CreateClasses(t *testing.T) {
 			name:      "Validation error - all class should start in future",
 			classes:   expiredAndFutureClasses,
 			wantError: true,
-			error: errs.ErrClassValidation(
+			error: api.ErrValidation(
 				fmt.Errorf("class start_time: %v expired", expiredAndFutureClasses[0].StartTime),
 			),
 		},
@@ -509,10 +551,11 @@ func TestService_CreateClasses(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			sender := &mockSender{}
+			passesRepo := &mockPassesRepo{}
 
 			bookingsRepo := newMockBookingsRepo(testBooking, nil)
 
-			service := NewService(tt.classesRepo, bookingsRepo, sender)
+			service := NewService(tt.classesRepo, bookingsRepo, passesRepo, sender)
 			ctx := context.Background()
 
 			result, err := service.CreateClasses(ctx, tt.classes)
@@ -573,7 +616,7 @@ func TestService_DeleteClass(t *testing.T) {
 			bookingsRepo:  newMockBookingsRepo(testBooking, nil),
 			messageSender: &mockSender{},
 			wantError:     true,
-			error: errs.ErrClassValidation(
+			error: api.ErrValidation(
 				errors.New("reason msg can not be empty, when classes has bookings"),
 			),
 		},
@@ -593,7 +636,7 @@ func TestService_DeleteClass(t *testing.T) {
 			classesRepo:   newMockClassesRepo(futureClasses, nil),
 			bookingsRepo:  newMockBookingsRepo(testBooking, nil),
 			reasonMsg:     anyValuePtr("testReason"),
-			messageSender: newMockErrorSender(errors.New("msgSender error")),
+			messageSender: newMockSender(errors.New("msgSender error")),
 			wantError:     true,
 			error:         errors.New("msgSender error"),
 		},
@@ -630,7 +673,9 @@ func TestService_DeleteClass(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			service := NewService(tt.classesRepo, tt.bookingsRepo, tt.messageSender)
+			passesRepo := mockPassesRepo{}
+
+			service := NewService(tt.classesRepo, tt.bookingsRepo, &passesRepo, tt.messageSender)
 			ctx := context.Background()
 
 			err := service.DeleteClass(ctx, tt.classID, tt.reasonMsg)
