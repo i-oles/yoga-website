@@ -34,9 +34,9 @@ func main() {
 	srv := &http.Server{
 		Addr:              ":8000",
 		Handler:           router,
-		ReadHeaderTimeout: cfg.ReadTimeout * time.Second,
-		ReadTimeout:       cfg.ReadTimeout * time.Second,
-		WriteTimeout:      cfg.WriteTimeout * time.Second,
+		ReadHeaderTimeout: cfg.ReadTimeout,
+		ReadTimeout:       cfg.ReadTimeout,
+		WriteTimeout:      cfg.WriteTimeout,
 	}
 
 	runServer(srv, cfg)

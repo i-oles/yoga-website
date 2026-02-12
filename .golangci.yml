@@ -114,6 +114,9 @@ linters:
       - path: internal/application/classes/service_test.go
         linters:
           - typecheck
+          - funlen
+          - gocyclo
+          - gochecknoglobals
 
       - path: internal/application/classes/service.go
         linters:

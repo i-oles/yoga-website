@@ -38,7 +38,9 @@ func TestGlobalRateLimit(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gin.SetMode(gin.TestMode)
+
 			limiter := rate.NewLimiter(rate.Limit(1), 2)
+
 			handler := GlobalRateLimit(limiter)
 
 			var lastStatus int
