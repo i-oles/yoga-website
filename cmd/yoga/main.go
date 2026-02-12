@@ -85,9 +85,9 @@ func main() {
 	srv := &http.Server{
 		Addr:              cfg.ListenAddress,
 		Handler:           router,
-		ReadHeaderTimeout: cfg.ReadTimeout * time.Second,
-		ReadTimeout:       cfg.ReadTimeout * time.Second,
-		WriteTimeout:      cfg.WriteTimeout * time.Second,
+		ReadHeaderTimeout: cfg.ReadTimeout,
+		ReadTimeout:       cfg.ReadTimeout,
+		WriteTimeout:      cfg.WriteTimeout,
 	}
 
 	runServer(srv, cfg)
@@ -226,7 +226,7 @@ func runServer(srv *http.Server, cfg *configuration.Configuration) {
 	<-quit
 	slog.Info("Shutting down server...")
 
-	ctx, cancel := context.WithTimeout(context.Background(), cfg.ContextTimeout*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), cfg.ContextTimeout)
 	defer cancel()
 
 	if err := srv.Shutdown(ctx); err != nil {
@@ -238,6 +238,7 @@ func runServer(srv *http.Server, cfg *configuration.Configuration) {
 
 func cleanUpPendingBookingsDBAsync(db *gorm.DB) {
 	go func() {
+		//nolint
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 

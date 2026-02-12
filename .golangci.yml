@@ -89,7 +89,7 @@ linters:
     - wastedassign
     - whitespace
     - wrapcheck
-    - wsl
+    - wsl_v5
     - zerologlint
 
   settings:
@@ -111,17 +111,9 @@ formatters:
 
 issues:
   exclude-rules:
-    - path: '_test\.go'
+    - path: cmd/yoga/main.go
       linters:
-        - dupl
         - funlen
-        - nestif
-        - lll
-
-    - path: 'example.*\.go'
-      linters:
-        - forbidigo
-        - lll
 
 run:
   timeout: 5m
