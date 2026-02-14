@@ -18,7 +18,7 @@ import (
 
 const PassValue = "KARNET"
 
-type Sender struct {
+type sender struct {
 	SenderName                         string
 	SenderEmail                        string
 	BookingConfirmationRequestTmplPath string
@@ -37,7 +37,7 @@ func NewSender(
 	senderEmail string,
 	password string,
 	baseSenderTmplPath string,
-) *Sender {
+) *sender {
 	dialer := gomail.NewDialer(host, port, senderEmail, password)
 	dialer.TLSConfig = &tls.Config{
 		MinVersion:         tls.VersionTLS12,
@@ -45,7 +45,7 @@ func NewSender(
 		InsecureSkipVerify: false,
 	}
 
-	return &Sender{
+	return &sender{
 		SenderName:                         senderName,
 		SenderEmail:                        senderEmail,
 		BookingConfirmationRequestTmplPath: baseSenderTmplPath + "booking_confirmation_request.tmpl",
@@ -58,7 +58,7 @@ func NewSender(
 	}
 }
 
-func (s Sender) SendLinkToConfirmation(
+func (s *sender) SendLinkToConfirmation(
 	recipientEmail string,
 	recipientFirstName string,
 	linkToConfirmation string,
@@ -94,7 +94,7 @@ func (s Sender) SendLinkToConfirmation(
 	return nil
 }
 
-func (s Sender) SendConfirmations(params models.SenderParams, cancellationLink string) error {
+func (s *sender) SendConfirmations(params models.SenderParams, cancellationLink string) error {
 	startTimeDetails, err := getTimeDetails(params.StartTime)
 	if err != nil {
 		return fmt.Errorf("could not get date details: %w", err)
@@ -146,7 +146,7 @@ func (s Sender) SendConfirmations(params models.SenderParams, cancellationLink s
 	return nil
 }
 
-func (s Sender) buildMsgToOwner(
+func (s *sender) buildMsgToOwner(
 	isPass bool,
 	status models.BookingStatus,
 	params models.SenderParams,
@@ -189,7 +189,7 @@ func getPassState(usedBookingIDs []uuid.UUID, totalBookings int) []bool {
 	return result
 }
 
-func (s Sender) SendInfoAboutCancellationToOwner(
+func (s *sender) SendInfoAboutCancellationToOwner(
 	recipientFirstName, recipientLastName string, startTime time.Time,
 ) error {
 	startTimeDetails, err := getTimeDetails(startTime)
@@ -245,7 +245,7 @@ func getTimeDetails(t time.Time) (timeDetails, error) {
 	}, nil
 }
 
-func (s Sender) SendInfoAboutClassCancellation(
+func (s *sender) SendInfoAboutClassCancellation(
 	params models.SenderParams, msg string,
 ) error {
 	classTimeDetails, err := getTimeDetails(params.StartTime)
@@ -294,7 +294,7 @@ func (s Sender) SendInfoAboutClassCancellation(
 	return nil
 }
 
-func (s Sender) SendInfoAboutUpdate(
+func (s *sender) SendInfoAboutUpdate(
 	recipientEmail, recipientFirstName, message string, class models.Class,
 ) error {
 	classTimeDetails, err := getTimeDetails(class.StartTime)
@@ -339,7 +339,7 @@ func (s Sender) SendInfoAboutUpdate(
 	return nil
 }
 
-func (s Sender) SendInfoAboutBookingCancellation(params models.SenderParams) error {
+func (s *sender) SendInfoAboutBookingCancellation(params models.SenderParams) error {
 	classTimeDetails, err := getTimeDetails(params.StartTime)
 	if err != nil {
 		return fmt.Errorf("could not get date details: %w", err)
@@ -385,7 +385,7 @@ func (s Sender) SendInfoAboutBookingCancellation(params models.SenderParams) err
 	return nil
 }
 
-func (s Sender) SendPass(pass models.Pass) error {
+func (s *sender) SendPass(pass models.Pass) error {
 	passState := getPassState(pass.UsedBookingIDs, pass.TotalBookings)
 
 	tmplData := senderModels.PassActivationTmplData{

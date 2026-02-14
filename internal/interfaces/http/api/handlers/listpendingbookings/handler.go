@@ -10,7 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type Handler struct {
+type handler struct {
 	pendingBookingsRepo repositories.IPendingBookings
 	apiErrorHandler     apiErrs.IErrorHandler
 }
@@ -18,14 +18,14 @@ type Handler struct {
 func NewHandler(
 	pendingBookingsRepo repositories.IPendingBookings,
 	apiErrorHandler apiErrs.IErrorHandler,
-) *Handler {
-	return &Handler{
+) *handler {
+	return &handler{
 		pendingBookingsRepo: pendingBookingsRepo,
 		apiErrorHandler:     apiErrorHandler,
 	}
 }
 
-func (h *Handler) Handle(c *gin.Context) {
+func (h *handler) Handle(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	allPendingBookings, err := h.pendingBookingsRepo.List(ctx)

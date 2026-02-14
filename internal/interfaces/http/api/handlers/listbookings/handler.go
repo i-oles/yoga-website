@@ -1,15 +1,16 @@
 package listbookings
 
 import (
+	"net/http"
+
 	"main/internal/domain/repositories"
 	"main/internal/interfaces/http/api/dto"
 	apiErrs "main/internal/interfaces/http/api/errs"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
-type Handler struct {
+type handler struct {
 	bookingsRepo    repositories.IBookings
 	apiErrorHandler apiErrs.IErrorHandler
 }
@@ -17,14 +18,14 @@ type Handler struct {
 func NewHandler(
 	bookingsRepo repositories.IBookings,
 	apiErrorHandler apiErrs.IErrorHandler,
-) *Handler {
-	return &Handler{
+) *handler {
+	return &handler{
 		bookingsRepo:    bookingsRepo,
 		apiErrorHandler: apiErrorHandler,
 	}
 }
 
-func (h *Handler) Handle(c *gin.Context) {
+func (h *handler) Handle(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	allBookings, err := h.bookingsRepo.List(ctx)

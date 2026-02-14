@@ -13,20 +13,20 @@ import (
 	"gorm.io/gorm"
 )
 
-type ClassesRepo struct {
+type classesRepo struct {
 	db *gorm.DB
 }
 
-func NewClassesRepo(db *gorm.DB) *ClassesRepo {
-	return &ClassesRepo{
+func NewClassesRepo(db *gorm.DB) *classesRepo {
+	return &classesRepo{
 		db: db,
 	}
 }
 
-func (c ClassesRepo) List(ctx context.Context) ([]models.Class, error) {
+func (r *classesRepo) List(ctx context.Context) ([]models.Class, error) {
 	var sqlClasses []db.SQLClass
 
-	if err := c.db.WithContext(ctx).Order("start_time ASC").Find(&sqlClasses).Error; err != nil {
+	if err := r.db.WithContext(ctx).Order("start_time ASC").Find(&sqlClasses).Error; err != nil {
 		return nil, fmt.Errorf("could not get all classes: %w", err)
 	}
 
@@ -39,10 +39,10 @@ func (c ClassesRepo) List(ctx context.Context) ([]models.Class, error) {
 	return classes, nil
 }
 
-func (c ClassesRepo) Get(ctx context.Context, id uuid.UUID) (models.Class, error) {
+func (r *classesRepo) Get(ctx context.Context, id uuid.UUID) (models.Class, error) {
 	var sqlClass db.SQLClass
 
-	if err := c.db.WithContext(ctx).First(&sqlClass, "id = ?", id).Error; err != nil {
+	if err := r.db.WithContext(ctx).First(&sqlClass, "id = ?", id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return models.Class{}, errs.ErrNotFound
 		}
@@ -53,13 +53,13 @@ func (c ClassesRepo) Get(ctx context.Context, id uuid.UUID) (models.Class, error
 	return sqlClass.ToDomain(), nil
 }
 
-func (c ClassesRepo) Insert(ctx context.Context, classes []models.Class) ([]models.Class, error) {
+func (r *classesRepo) Insert(ctx context.Context, classes []models.Class) ([]models.Class, error) {
 	sqlClass := make([]db.SQLClass, len(classes))
 	for i, class := range classes {
 		sqlClass[i] = db.SQLClassFromDomain(class)
 	}
 
-	err := c.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := tx.Create(&sqlClass).Error; err != nil {
 			return err
 		}
@@ -78,10 +78,10 @@ func (c ClassesRepo) Insert(ctx context.Context, classes []models.Class) ([]mode
 	return insertedClasses, nil
 }
 
-func (c ClassesRepo) Delete(ctx context.Context, id uuid.UUID) error {
+func (r *classesRepo) Delete(ctx context.Context, id uuid.UUID) error {
 	var sqlClass db.SQLClass
 
-	tx := c.db.WithContext(ctx).
+	tx := r.db.WithContext(ctx).
 		Where("id = ?", id).
 		Delete(&sqlClass)
 	if tx.Error != nil {
@@ -95,8 +95,8 @@ func (c ClassesRepo) Delete(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
-func (c ClassesRepo) Update(ctx context.Context, id uuid.UUID, update map[string]any) error {
-	if err := c.db.WithContext(ctx).
+func (r *classesRepo) Update(ctx context.Context, id uuid.UUID, update map[string]any) error {
+	if err := r.db.WithContext(ctx).
 		Model(&db.SQLClass{}).
 		Where("id = ?", id).
 		Updates(update).Error; err != nil {

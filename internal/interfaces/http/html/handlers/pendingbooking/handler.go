@@ -1,18 +1,19 @@
 package pendingbooking
 
 import (
+	"net/http"
+	"strings"
+
 	"main/internal/domain/models"
 	"main/internal/domain/services"
 	"main/internal/interfaces/http/html/dto"
 	viewErrs "main/internal/interfaces/http/html/errs"
-	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
-type Handler struct {
+type handler struct {
 	PendingBookingsService services.IPendingBookingsService
 	ViewErrorHandler       viewErrs.IErrorHandler
 }
@@ -20,14 +21,14 @@ type Handler struct {
 func NewHandler(
 	pendingBookingsService services.IPendingBookingsService,
 	viewErrorHandler viewErrs.IErrorHandler,
-) *Handler {
-	return &Handler{
+) *handler {
+	return &handler{
 		PendingBookingsService: pendingBookingsService,
 		ViewErrorHandler:       viewErrorHandler,
 	}
 }
 
-func (h *Handler) Handle(c *gin.Context) {
+func (h *handler) Handle(c *gin.Context) {
 	var form dto.PendingBookingForm
 	if err := c.ShouldBind(&form); err != nil {
 		viewErrs.ErrBadRequest(c, "pending_booking_form.tmpl", err)

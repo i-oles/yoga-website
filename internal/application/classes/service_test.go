@@ -158,7 +158,6 @@ func newMockClassesRepo(classes []models.Class, err error) *mockClassesRepo {
 }
 
 func (m *mockClassesRepo) Get(_ context.Context, _ uuid.UUID) (models.Class, error) {
-	// TODO: can I do in better?
 	if len(m.classes) != 0 {
 		return m.classes[0], nil
 	}

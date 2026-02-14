@@ -77,7 +77,6 @@ linters:
     - spancheck
     - sqlclosecheck
     - staticcheck
-    - tagalign
     - testableexamples
     - testifylint
     - thelper
@@ -91,6 +90,8 @@ linters:
     - wrapcheck
     - wsl_v5
     - zerologlint
+  distable:
+    - tagalign
 
   settings:
     revive:
@@ -125,6 +126,10 @@ linters:
       - path: assets/example/send_confirmation_email.go
         linters:
           - typecheck
+
+      - path: pkg/optional/optional.go
+        linters:
+          - ireturn
 
 formatters:
   enable:

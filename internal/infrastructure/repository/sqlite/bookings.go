@@ -13,17 +13,17 @@ import (
 	"gorm.io/gorm"
 )
 
-type BookingsRepo struct {
+type bookingsRepo struct {
 	db *gorm.DB
 }
 
-func NewBookingsRepo(db *gorm.DB) BookingsRepo {
-	return BookingsRepo{
+func NewBookingsRepo(db *gorm.DB) *bookingsRepo {
+	return &bookingsRepo{
 		db: db,
 	}
 }
 
-func (r BookingsRepo) GetByID(ctx context.Context, id uuid.UUID) (models.Booking, error) {
+func (r *bookingsRepo) GetByID(ctx context.Context, id uuid.UUID) (models.Booking, error) {
 	var sqlBooking db.SQLBooking
 
 	tx := r.db.WithContext(ctx).Where("id = ?", id).Preload("Class").First(&sqlBooking)
@@ -40,7 +40,7 @@ func (r BookingsRepo) GetByID(ctx context.Context, id uuid.UUID) (models.Booking
 	return sqlBooking.ToDomain(), nil
 }
 
-func (r BookingsRepo) GetByEmailAndClassID(
+func (r *bookingsRepo) GetByEmailAndClassID(
 	ctx context.Context,
 	classID uuid.UUID,
 	email string,
@@ -63,7 +63,7 @@ func (r BookingsRepo) GetByEmailAndClassID(
 	return sqlBooking.ToDomain(), nil
 }
 
-func (r BookingsRepo) GetIDsByEmail(ctx context.Context, email string, limit int) ([]uuid.UUID, error) {
+func (r *bookingsRepo) GetIDsByEmail(ctx context.Context, email string, limit int) ([]uuid.UUID, error) {
 	var sqlBookings []db.SQLBooking
 
 	if limit <= 0 {
@@ -87,7 +87,7 @@ func (r BookingsRepo) GetIDsByEmail(ctx context.Context, email string, limit int
 	return result, nil
 }
 
-func (r BookingsRepo) List(ctx context.Context) ([]models.Booking, error) {
+func (r *bookingsRepo) List(ctx context.Context) ([]models.Booking, error) {
 	var SQLBookings []db.SQLBooking
 
 	if err := r.db.WithContext(ctx).Preload("Class").Find(&SQLBookings).Error; err != nil {
@@ -103,7 +103,7 @@ func (r BookingsRepo) List(ctx context.Context) ([]models.Booking, error) {
 	return result, nil
 }
 
-func (r BookingsRepo) CountForClassID(ctx context.Context, classID uuid.UUID) (int, error) {
+func (r *bookingsRepo) CountForClassID(ctx context.Context, classID uuid.UUID) (int, error) {
 	var count int64
 
 	var SQLBooking db.SQLBooking
@@ -118,7 +118,7 @@ func (r BookingsRepo) CountForClassID(ctx context.Context, classID uuid.UUID) (i
 	return int(count), nil
 }
 
-func (r BookingsRepo) ListByClassID(
+func (r *bookingsRepo) ListByClassID(
 	ctx context.Context,
 	classID uuid.UUID,
 ) ([]models.Booking, error) {
@@ -140,7 +140,7 @@ func (r BookingsRepo) ListByClassID(
 	return result, nil
 }
 
-func (r BookingsRepo) Insert(
+func (r *bookingsRepo) Insert(
 	ctx context.Context,
 	booking models.Booking,
 ) (uuid.UUID, error) {
@@ -153,7 +153,7 @@ func (r BookingsRepo) Insert(
 	return booking.ID, nil
 }
 
-func (r BookingsRepo) Delete(ctx context.Context, id uuid.UUID) error {
+func (r *bookingsRepo) Delete(ctx context.Context, id uuid.UUID) error {
 	var sqlBooking db.SQLBooking
 
 	tx := r.db.WithContext(ctx).

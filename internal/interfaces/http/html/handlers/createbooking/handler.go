@@ -10,7 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type Handler struct {
+type handler struct {
 	bookingsService  services.IBookingsService
 	viewErrorHandler viewErrs.IErrorHandler
 }
@@ -18,14 +18,14 @@ type Handler struct {
 func NewHandler(
 	bookingService services.IBookingsService,
 	viewErrorHandler viewErrs.IErrorHandler,
-) *Handler {
-	return &Handler{
+) *handler {
+	return &handler{
 		bookingsService:  bookingService,
 		viewErrorHandler: viewErrorHandler,
 	}
 }
 
-func (h *Handler) Handle(c *gin.Context) {
+func (h *handler) Handle(c *gin.Context) {
 	var form dto.BookingCreateForm
 	if err := c.ShouldBindQuery(&form); err != nil {
 		viewErrs.ErrBadRequest(c, "err.tmpl", err)

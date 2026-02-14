@@ -11,7 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type Handler struct {
+type handler struct {
 	passesService   services.IPassesService
 	apiErrorHandler apiErrs.IErrorHandler
 }
@@ -19,14 +19,14 @@ type Handler struct {
 func NewHandler(
 	passesService services.IPassesService,
 	apiErrorHandler apiErrs.IErrorHandler,
-) *Handler {
-	return &Handler{
+) *handler {
+	return &handler{
 		passesService:   passesService,
 		apiErrorHandler: apiErrorHandler,
 	}
 }
 
-func (h *Handler) Handle(c *gin.Context) {
+func (h *handler) Handle(c *gin.Context) {
 	var dtoActivatePassRequest dto.ActivatePassRequest
 
 	err := c.ShouldBindJSON(&dtoActivatePassRequest)

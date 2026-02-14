@@ -181,7 +181,7 @@ func (s *service) handleBookingBeforeClassDeletion(
 	return nil
 }
 
-func (s service) updateSenderParamsWithPass(
+func (s *service) updateSenderParamsWithPass(
 	ctx context.Context,
 	bookingID uuid.UUID,
 	passOpt optional.Optional[models.Pass],

@@ -1,16 +1,17 @@
 package listbookingsbyclass
 
 import (
+	"net/http"
+
 	"main/internal/domain/repositories"
 	"main/internal/interfaces/http/api/dto"
 	apiErrs "main/internal/interfaces/http/api/errs"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
-type Handler struct {
+type handler struct {
 	bookingsRepo    repositories.IBookings
 	apiErrorHandler apiErrs.IErrorHandler
 }
@@ -18,14 +19,14 @@ type Handler struct {
 func NewHandler(
 	bookingsRepo repositories.IBookings,
 	apiErrorHandler apiErrs.IErrorHandler,
-) *Handler {
-	return &Handler{
+) *handler {
+	return &handler{
 		bookingsRepo:    bookingsRepo,
 		apiErrorHandler: apiErrorHandler,
 	}
 }
 
-func (h *Handler) Handle(c *gin.Context) {
+func (h *handler) Handle(c *gin.Context) {
 	classIDStr := c.Param("class_id")
 
 	classID, err := uuid.Parse(classIDStr)

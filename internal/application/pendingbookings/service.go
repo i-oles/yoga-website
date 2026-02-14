@@ -21,7 +21,7 @@ const (
 	tokenLength                 = 32
 )
 
-type Service struct {
+type service struct {
 	ClassesRepo         repositories.IClasses
 	PendingBookingsRepo repositories.IPendingBookings
 	BookingsRepo        repositories.IBookings
@@ -37,8 +37,8 @@ func NewService(
 	tokenGenerator services.ITokenGenerator,
 	messageSender sender.ISender,
 	domainAddr string,
-) *Service {
-	return &Service{
+) *service {
+	return &service{
 		ClassesRepo:         classesRepo,
 		PendingBookingsRepo: pendingBookingsRepo,
 		BookingsRepo:        bookingsRepo,
@@ -48,7 +48,7 @@ func NewService(
 	}
 }
 
-func (s *Service) CreatePendingBooking(
+func (s *service) CreatePendingBooking(
 	ctx context.Context,
 	pendingBookingParams models.PendingBookingParams,
 ) (uuid.UUID, error) {
@@ -129,7 +129,7 @@ func (s *Service) CreatePendingBooking(
 	return class.ID, nil
 }
 
-func (s *Service) ensurePendingBookingAvailability(
+func (s *service) ensurePendingBookingAvailability(
 	ctx context.Context,
 	classID uuid.UUID,
 	email string,

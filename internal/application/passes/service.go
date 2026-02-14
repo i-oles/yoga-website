@@ -12,7 +12,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type Service struct {
+type service struct {
 	passesRepo    repositories.IPasses
 	bookingsRepo  repositories.IBookings
 	messageSender sender.ISender
@@ -22,15 +22,15 @@ func NewService(
 	passesRepo repositories.IPasses,
 	bookingsRepo repositories.IBookings,
 	messageSender sender.ISender,
-) *Service {
-	return &Service{
+) *service {
+	return &service{
 		passesRepo:    passesRepo,
 		bookingsRepo:  bookingsRepo,
 		messageSender: messageSender,
 	}
 }
 
-func (s Service) ActivatePass(ctx context.Context, params models.PassActivationParams) (models.Pass, error) {
+func (s *service) ActivatePass(ctx context.Context, params models.PassActivationParams) (models.Pass, error) {
 	if params.UsedBookings > params.TotalBookings {
 		return models.Pass{},
 			api.ErrValidation(
@@ -92,7 +92,7 @@ func (s Service) ActivatePass(ctx context.Context, params models.PassActivationP
 	return newPass, nil
 }
 
-func (s Service) getUsedBookingIDsForPass(
+func (s *service) getUsedBookingIDsForPass(
 	ctx context.Context,
 	email string,
 	passUsedBookings int,

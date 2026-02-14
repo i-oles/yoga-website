@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type Handler struct {
+type handler struct {
 	bookingsService services.IBookingsService
 	apiErrorHandler apiErrs.IErrorHandler
 }
@@ -18,14 +18,14 @@ type Handler struct {
 func NewHandler(
 	bookingsService services.IBookingsService,
 	apiErrorHandler apiErrs.IErrorHandler,
-) *Handler {
-	return &Handler{
+) *handler {
+	return &handler{
 		bookingsService: bookingsService,
 		apiErrorHandler: apiErrorHandler,
 	}
 }
 
-func (h *Handler) Handle(c *gin.Context) {
+func (h *handler) Handle(c *gin.Context) {
 	bookingIDStr := c.Param("booking_id")
 
 	bookingID, err := uuid.Parse(bookingIDStr)

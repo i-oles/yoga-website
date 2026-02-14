@@ -19,8 +19,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// TODO: all services should be private?
-type Service struct {
+type service struct {
 	ClassesRepo         repositories.IClasses
 	BookingsRepo        repositories.IBookings
 	PendingBookingsRepo repositories.IPendingBookings
@@ -36,8 +35,8 @@ func NewService(
 	passesRepo repositories.IPasses,
 	messageSender sender.ISender,
 	domainAddr string,
-) *Service {
-	return &Service{
+) *service {
+	return &service{
 		ClassesRepo:         classesRepo,
 		BookingsRepo:        bookingsRepo,
 		PendingBookingsRepo: pendingBookingsRepo,
@@ -47,8 +46,7 @@ func NewService(
 	}
 }
 
-// CreateBooking TODO: this should return models.Booking with class field taken from relation.
-func (s *Service) CreateBooking(ctx context.Context, token string) (models.Class, error) {
+func (s *service) CreateBooking(ctx context.Context, token string) (models.Class, error) {
 	pendingBooking, err := s.PendingBookingsRepo.GetByConfirmationToken(ctx, token)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -138,7 +136,7 @@ func (s *Service) CreateBooking(ctx context.Context, token string) (models.Class
 	return class, nil
 }
 
-func (s *Service) checkClassAvailability(ctx context.Context, class models.Class) error {
+func (s *service) checkClassAvailability(ctx context.Context, class models.Class) error {
 	if class.StartTime.Before(time.Now()) {
 		return viewErrors.ErrClassExpired(class.ID, fmt.Errorf("class %s has expired at %v", class.ID, class.StartTime))
 	}
@@ -155,7 +153,7 @@ func (s *Service) checkClassAvailability(ctx context.Context, class models.Class
 	return nil
 }
 
-func (s *Service) CancelBooking(ctx context.Context, bookingID uuid.UUID, token string) error {
+func (s *service) CancelBooking(ctx context.Context, bookingID uuid.UUID, token string) error {
 	booking, err := s.BookingsRepo.GetByID(ctx, bookingID)
 	if err != nil {
 		return fmt.Errorf("could not get booking for id %s: %w", bookingID, err)
@@ -235,7 +233,7 @@ func (s *Service) CancelBooking(ctx context.Context, bookingID uuid.UUID, token 
 	return nil
 }
 
-func (s *Service) GetBookingForCancellation(
+func (s *service) GetBookingForCancellation(
 	ctx context.Context, bookingID uuid.UUID, token string,
 ) (models.Booking, error) {
 	booking, err := s.BookingsRepo.GetByID(ctx, bookingID)
@@ -250,7 +248,7 @@ func (s *Service) GetBookingForCancellation(
 	return booking, nil
 }
 
-func (s *Service) DeleteBooking(ctx context.Context, bookingID uuid.UUID) error {
+func (s *service) DeleteBooking(ctx context.Context, bookingID uuid.UUID) error {
 	booking, err := s.BookingsRepo.GetByID(ctx, bookingID)
 	if err != nil {
 		return fmt.Errorf("could get booking for id %s: %w", bookingID, err)
@@ -298,7 +296,7 @@ func (s *Service) DeleteBooking(ctx context.Context, bookingID uuid.UUID) error 
 	return nil
 }
 
-func (s Service) updateSenderParamsWithPass(
+func (s *service) updateSenderParamsWithPass(
 	ctx context.Context,
 	bookingID uuid.UUID,
 	passOpt optional.Optional[models.Pass],
