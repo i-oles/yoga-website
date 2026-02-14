@@ -80,7 +80,7 @@ func (s *service) CreateBooking(ctx context.Context, token string) (models.Class
 	senderParams := models.SenderParams{
 		RecipientEmail:     pendingBooking.Email,
 		RecipientFirstName: pendingBooking.FirstName,
-		RecipientLastName:  &pendingBooking.LastName,
+		RecipientLastName:  pendingBooking.LastName,
 		ClassName:          class.ClassName,
 		ClassLevel:         class.ClassLevel,
 		StartTime:          class.StartTime,
@@ -142,7 +142,7 @@ func (s *service) incrementPassIfValid(
 		pass := passOpt.Get()
 
 		if len(pass.UsedBookingIDs)+1 <= pass.TotalBookings {
-			updatedBookingIDs := pass.UsedBookingIDs
+			updatedBookingIDs = pass.UsedBookingIDs
 			updatedBookingIDs = append(updatedBookingIDs, bookingID)
 
 			err = s.PassesRepo.Update(ctx, pass.ID, updatedBookingIDs, pass.TotalBookings)
@@ -213,7 +213,7 @@ func (s *service) CancelBooking(ctx context.Context, bookingID uuid.UUID, token 
 
 	senderParams := models.SenderParams{
 		RecipientFirstName: booking.FirstName,
-		RecipientLastName:  &booking.LastName,
+		RecipientLastName:  booking.LastName,
 		RecipientEmail:     booking.Email,
 		ClassName:          booking.Class.ClassName,
 		ClassLevel:         booking.Class.ClassLevel,
@@ -273,7 +273,7 @@ func (s *service) DeleteBooking(ctx context.Context, bookingID uuid.UUID) error 
 
 	senderParams := models.SenderParams{
 		RecipientFirstName: booking.FirstName,
-		RecipientLastName:  &booking.LastName,
+		RecipientLastName:  booking.LastName,
 		RecipientEmail:     booking.Email,
 		ClassName:          booking.Class.ClassName,
 		ClassLevel:         booking.Class.ClassLevel,
@@ -314,7 +314,7 @@ func (s *service) decrementPassIfValid(
 	if passOpt.Exists() {
 		pass := passOpt.Get()
 
-		updatedBookingIDs, err := tools.RemoveFromSlice(pass.UsedBookingIDs, bookingID)
+		updatedBookingIDs, err = tools.RemoveFromSlice(pass.UsedBookingIDs, bookingID)
 		if errors.Is(err, sharedErrors.ErrBookingIDNotFoundInPass) {
 			return nil, nil, nil
 		}

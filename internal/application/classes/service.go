@@ -153,6 +153,7 @@ func (s *service) handleBookingBeforeClassDeletion(
 
 	senderParams := models.SenderParams{
 		RecipientFirstName: booking.FirstName,
+		RecipientLastName:  booking.LastName,
 		RecipientEmail:     booking.Email,
 		ClassName:          booking.Class.ClassName,
 		ClassLevel:         booking.Class.ClassLevel,
@@ -193,7 +194,7 @@ func (s *service) decrementPassIfValid(
 	if passOpt.Exists() {
 		pass := passOpt.Get()
 
-		updatedBookingIDs, err := tools.RemoveFromSlice(pass.UsedBookingIDs, bookingID)
+		updatedBookingIDs, err = tools.RemoveFromSlice(pass.UsedBookingIDs, bookingID)
 		if errors.Is(err, errs.ErrBookingIDNotFoundInPass) {
 			return nil, nil, nil
 		}

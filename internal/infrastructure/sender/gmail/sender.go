@@ -159,7 +159,7 @@ func (s *sender) buildMsgToOwner(
 
 	subject := fmt.Sprintf("%s %s %s %s",
 		params.RecipientFirstName,
-		*params.RecipientLastName,
+		params.RecipientLastName,
 		status,
 		passDetails,
 	)

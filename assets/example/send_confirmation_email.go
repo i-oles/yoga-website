@@ -34,6 +34,7 @@ func main() {
 	senderParams := models.SenderParams{
 		RecipientEmail:     "orth.quala@gmail.com",
 		RecipientFirstName: "orth",
+		RecipientLastName:  "quala",
 		ClassName:          "vinyasa",
 		ClassLevel:         "beginner",
 		StartTime:          time.Now(),

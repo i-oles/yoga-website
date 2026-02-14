@@ -9,7 +9,7 @@ import (
 type SenderParams struct {
 	RecipientEmail     string
 	RecipientFirstName string
-	RecipientLastName  *string
+	RecipientLastName  string
 	ClassName          string
 	ClassLevel         string
 	StartTime          time.Time
