@@ -85,9 +85,9 @@ func main() {
 	srv := &http.Server{
 		Addr:              cfg.ListenAddress,
 		Handler:           router,
-		ReadHeaderTimeout: cfg.ReadTimeout,
-		ReadTimeout:       cfg.ReadTimeout,
-		WriteTimeout:      cfg.WriteTimeout,
+		ReadHeaderTimeout: cfg.ReadTimeout.Duration,
+		ReadTimeout:       cfg.ReadTimeout.Duration,
+		WriteTimeout:      cfg.WriteTimeout.Duration,
 	}
 
 	runServer(srv, cfg)
@@ -124,11 +124,10 @@ func setupRouter(db *gorm.DB, cfg *configuration.Configuration) *gin.Engine {
 	emailSender := gmail.NewSender(
 		cfg.EmailSender.Host,
 		cfg.EmailSender.Port,
+		cfg.EmailSender.FromName,
 		cfg.EmailSender.User,
 		cfg.EmailSender.Password,
-		cfg.EmailSender.FromName,
 		cfg.BaseSenderTmplPath,
-		cfg.EmailSender.SkipVerification,
 	)
 
 	classesService := classes.NewService(classesRepo, bookingsRepo, passesRepo, emailSender)
@@ -226,7 +225,7 @@ func runServer(srv *http.Server, cfg *configuration.Configuration) {
 	<-quit
 	slog.Info("Shutting down server...")
 
-	ctx, cancel := context.WithTimeout(context.Background(), cfg.ContextTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), cfg.ContextTimeout.Duration)
 	defer cancel()
 
 	if err := srv.Shutdown(ctx); err != nil {

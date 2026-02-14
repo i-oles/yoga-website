@@ -23,11 +23,10 @@ func main() {
 	emailSender := gmail.NewSender(
 		cfg.EmailSender.Host,
 		cfg.EmailSender.Port,
+		cfg.EmailSender.FromName,
 		cfg.EmailSender.User,
 		cfg.EmailSender.Password,
-		cfg.EmailSender.FromName,
 		cfg.BaseSenderTmplPath,
-		cfg.EmailSender.SkipVerification,
 	)
 
 	four := 4

@@ -9,7 +9,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"main/internal/infrastructure/configuration"
 
@@ -34,9 +33,9 @@ func main() {
 	srv := &http.Server{
 		Addr:              ":8000",
 		Handler:           router,
-		ReadHeaderTimeout: cfg.ReadTimeout,
-		ReadTimeout:       cfg.ReadTimeout,
-		WriteTimeout:      cfg.WriteTimeout,
+		ReadHeaderTimeout: cfg.ReadTimeout.Duration,
+		ReadTimeout:       cfg.ReadTimeout.Duration,
+		WriteTimeout:      cfg.WriteTimeout.Duration,
 	}
 
 	runServer(srv, cfg)
@@ -84,7 +83,7 @@ func runServer(srv *http.Server, cfg *configuration.Configuration) {
 	<-quit
 	slog.Info("Shutting down server...")
 
-	ctx, cancel := context.WithTimeout(context.Background(), cfg.ContextTimeout*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), cfg.ContextTimeout.Duration)
 	defer cancel()
 
 	if err := srv.Shutdown(ctx); err != nil {

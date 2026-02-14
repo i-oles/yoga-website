@@ -46,4 +46,3 @@ func (h *Handler) Handle(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"bookingID": bookingID})
 }
-

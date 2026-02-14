@@ -17,3 +17,10 @@ type SenderParams struct {
 	PassUsedBookingIDs []uuid.UUID
 	PassTotalBookings  *int
 }
+
+type BookingStatus string
+
+const (
+	StatusBooked    BookingStatus = "booked"
+	StatusCancelled BookingStatus = "cancelled"
+)

@@ -182,11 +182,9 @@ func (m *mockClassesRepo) Update(_ context.Context, _ uuid.UUID, _ map[string]an
 	return m.error
 }
 
-type mockSender struct {
-	err error
-}
+type mockSender struct{}
 
-func newMockSender(err error) *mockSender {
+func newMockSender() *mockSender {
 	return &mockSender{}
 }
 
@@ -232,7 +230,9 @@ func (m *mockPassesRepo) Update(ctx context.Context, id int, usedBookingIDs []uu
 	return nil
 }
 
-func (m *mockPassesRepo) Insert(ctx context.Context, email string, usedBookingIDs []uuid.UUID, totalBookings int) (models.Pass, error) {
+func (m *mockPassesRepo) Insert(
+	ctx context.Context, email string, usedBookingIDs []uuid.UUID, totalBookings int,
+) (models.Pass, error) {
 	return models.Pass{}, nil
 }
 
@@ -472,8 +472,7 @@ func TestService_ListClasses(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var sender sender.ISender
-			sender = newMockSender(nil)
+			sender := newMockSender()
 
 			service := NewService(tt.classesRepo, tt.bookingsRepo, tt.passesRepo, sender)
 			ctx := context.Background()
@@ -636,7 +635,7 @@ func TestService_DeleteClass(t *testing.T) {
 			classesRepo:   newMockClassesRepo(futureClasses, nil),
 			bookingsRepo:  newMockBookingsRepo(testBooking, nil),
 			reasonMsg:     anyValuePtr("testReason"),
-			messageSender: newMockSender(errors.New("msgSender error")),
+			messageSender: newMockSender(),
 			wantError:     true,
 			error:         errors.New("msgSender error"),
 		},

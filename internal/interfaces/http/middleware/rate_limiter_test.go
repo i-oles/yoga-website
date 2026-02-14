@@ -44,12 +44,13 @@ func TestGlobalRateLimit(t *testing.T) {
 			handler := GlobalRateLimit(limiter)
 
 			var lastStatus int
-			for i := 0; i < tt.requests; i++ {
-				w := httptest.NewRecorder()
-				c, _ := gin.CreateTestContext(w)
 
-				router := gin.New()
-				router.Use(handler)
+			w := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(w)
+			router := gin.New()
+			router.Use(handler)
+
+			for range tt.requests {
 				router.GET("/test", func(c *gin.Context) {
 					c.JSON(http.StatusOK, gin.H{"message": "ok"})
 				})

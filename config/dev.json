@@ -12,7 +12,6 @@
     "user": "",
     "password": "",
     "fromName": "Igor",
-    "skipVerification": true
   },
   "postgres": {
     "dbName": "yoga",

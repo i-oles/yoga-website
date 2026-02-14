@@ -13,21 +13,40 @@ import (
 	"github.com/tkanos/gonfig"
 )
 
+type Duration struct {
+	time.Duration
+}
+
+func (d *Duration) UnmarshalJSON(b []byte) error {
+	var s string
+	if err := json.Unmarshal(b, &s); err != nil {
+		return fmt.Errorf("could not unmarshal duration string: %w", err)
+	}
+
+	parsed, err := time.ParseDuration(s)
+	if err != nil {
+		return fmt.Errorf("could not parse duration: %w", err)
+	}
+
+	d.Duration = parsed
+
+	return nil
+}
+
 type EmailSenderSettings struct {
-	Host             string
-	Port             int
-	User             string
-	Password         string
-	FromName         string
-	SkipVerification bool
+	Host     string
+	Port     int
+	User     string
+	Password string
+	FromName string
 }
 
 type Configuration struct {
 	ListenAddress                    string
 	DBPath                           string
-	ReadTimeout                      time.Duration
-	WriteTimeout                     time.Duration
-	ContextTimeout                   time.Duration
+	ReadTimeout                      Duration
+	WriteTimeout                     Duration
+	ContextTimeout                   Duration
 	AuthSecret                       string
 	LogBusinessErrors                bool
 	LogConfig                        bool

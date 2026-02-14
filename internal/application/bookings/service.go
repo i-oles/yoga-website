@@ -75,24 +75,9 @@ func (s *Service) CreateBooking(ctx context.Context, token string) (models.Class
 		)
 	}
 
-	if class.StartTime.Before(time.Now()) {
-		return models.Class{}, viewErrors.ErrClassExpired(
-			class.ID,
-			fmt.Errorf("class %s has expired at %v", pendingBooking.ClassID, class.StartTime),
-		)
-	}
-
-	bookingCount, err := s.BookingsRepo.CountForClassID(ctx, class.ID)
+	err = s.checkClassAvailability(ctx, class)
 	if err != nil {
-		return models.Class{}, fmt.Errorf(
-			"could not count bookings for class %v: %w ", class.ID, err,
-		)
-	}
-
-	if bookingCount == class.MaxCapacity {
-		return models.Class{}, viewErrors.ErrSomeoneBookedClassFaster(
-			fmt.Errorf("max capacity of class %d exceeded", class.MaxCapacity),
-		)
+		return models.Class{}, fmt.Errorf("class unavailable: %w", err)
 	}
 
 	booking := models.Booking{
@@ -125,20 +110,22 @@ func (s *Service) CreateBooking(ctx context.Context, token string) (models.Class
 		return models.Class{}, fmt.Errorf("could not get pass: %w", err)
 	}
 
-	pass := passOpt.Get()
+	if passOpt.Exists() {
+		pass := passOpt.Get()
 
-	if len(pass.UsedBookingIDs)+1 <= pass.TotalBookings {
-		updatedBookingIDs := pass.UsedBookingIDs
-		updatedBookingIDs = append(updatedBookingIDs, bookingID)
+		if len(pass.UsedBookingIDs)+1 <= pass.TotalBookings {
+			updatedBookingIDs := pass.UsedBookingIDs
+			updatedBookingIDs = append(updatedBookingIDs, bookingID)
 
-		err = s.PassesRepo.Update(ctx, pass.ID, updatedBookingIDs, pass.TotalBookings)
-		if err != nil {
-			return models.Class{},
-				fmt.Errorf("could not update pass for %s with %v, %d", pendingBooking.Email, updatedBookingIDs, pass.TotalBookings)
+			err = s.PassesRepo.Update(ctx, pass.ID, updatedBookingIDs, pass.TotalBookings)
+			if err != nil {
+				return models.Class{},
+					fmt.Errorf("could not update pass for %s with %v, %d", pendingBooking.Email, updatedBookingIDs, pass.TotalBookings)
+			}
+
+			senderParams.PassUsedBookingIDs = updatedBookingIDs
+			senderParams.PassTotalBookings = &pass.TotalBookings
 		}
-
-		senderParams.PassUsedBookingIDs = updatedBookingIDs
-		senderParams.PassTotalBookings = &pass.TotalBookings
 	}
 
 	cancellationLink := fmt.Sprintf("%s/bookings/%s/cancel_form?token=%s", s.DomainAddr, bookingID, token)
@@ -148,12 +135,24 @@ func (s *Service) CreateBooking(ctx context.Context, token string) (models.Class
 		return models.Class{}, fmt.Errorf("error while sending final-confirmation: %w", err)
 	}
 
-	err = s.PendingBookingsRepo.Delete(ctx, pendingBooking.ID)
-	if err != nil {
-		return models.Class{}, fmt.Errorf("could not delete pending booking: %w", err)
+	return class, nil
+}
+
+func (s *Service) checkClassAvailability(ctx context.Context, class models.Class) error {
+	if class.StartTime.Before(time.Now()) {
+		return viewErrors.ErrClassExpired(class.ID, fmt.Errorf("class %s has expired at %v", class.ID, class.StartTime))
 	}
 
-	return class, nil
+	bookingCount, err := s.BookingsRepo.CountForClassID(ctx, class.ID)
+	if err != nil {
+		return fmt.Errorf("could not count bookings for class %v: %w ", class.ID, err)
+	}
+
+	if bookingCount == class.MaxCapacity {
+		return viewErrors.ErrSomeoneBookedClassFaster(fmt.Errorf("max capacity of class %d exceeded", class.MaxCapacity))
+	}
+
+	return nil
 }
 
 func (s *Service) CancelBooking(ctx context.Context, bookingID uuid.UUID, token string) error {

@@ -28,20 +28,22 @@ type Sender struct {
 	BookingCancellationTmplPath        string
 	PassActivationTmplPath             string
 	Dialer                             *gomail.Dialer
-	SkipVerification                   bool
 }
 
 func NewSender(
 	host string,
 	port int,
+	senderName string,
 	senderEmail string,
 	password string,
-	senderName string,
 	baseSenderTmplPath string,
-	skipVerification bool,
 ) *Sender {
 	dialer := gomail.NewDialer(host, port, senderEmail, password)
-	dialer.TLSConfig = &tls.Config{InsecureSkipVerify: skipVerification}
+	dialer.TLSConfig = &tls.Config{
+		MinVersion:         tls.VersionTLS12,
+		ServerName:         host,
+		InsecureSkipVerify: false,
+	}
 
 	return &Sender{
 		SenderName:                         senderName,
@@ -135,14 +137,30 @@ func (s Sender) SendConfirmations(params models.SenderParams, cancellationLink s
 	msgToRecipient.SetHeader("Subject", "Yoga - Rezerwacja potwierdzona!")
 	msgToRecipient.SetBody("text/html", msgContent.String())
 
+	msgToOwner := s.buildMsgToOwner(isPass, models.StatusBooked, params, startTimeDetails)
+
+	if err = s.Dialer.DialAndSend(msgToRecipient, msgToOwner); err != nil {
+		return fmt.Errorf("failed to send emails: %w", err)
+	}
+
+	return nil
+}
+
+func (s Sender) buildMsgToOwner(
+	isPass bool,
+	status models.BookingStatus,
+	params models.SenderParams,
+	startTimeDetails timeDetails,
+) *gomail.Message {
 	passDetails := ""
 	if isPass {
 		passDetails = fmt.Sprintf("%s: %d/%d", PassValue, len(params.PassUsedBookingIDs), *params.PassTotalBookings)
 	}
 
-	subject := fmt.Sprintf("%s %s booked %s",
+	subject := fmt.Sprintf("%s %s %s %s",
 		params.RecipientFirstName,
 		*params.RecipientLastName,
+		status,
 		passDetails,
 	)
 
@@ -158,11 +176,7 @@ func (s Sender) SendConfirmations(params models.SenderParams, cancellationLink s
 	msgToOwner.SetHeader("Subject", subject)
 	msgToOwner.SetBody("text/html", msg)
 
-	if err = s.Dialer.DialAndSend(msgToRecipient, msgToOwner); err != nil {
-		return fmt.Errorf("failed to send emails: %w", err)
-	}
-
-	return nil
+	return msgToOwner
 }
 
 func getPassState(usedBookingIDs []uuid.UUID, totalBookings int) []bool {
