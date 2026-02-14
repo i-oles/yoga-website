@@ -12,7 +12,7 @@ import (
 
 const classViewLimit = 4
 
-type Handler struct {
+type handler struct {
 	classesService   services.IClassesService
 	viewErrorHandler viewErrs.IErrorHandler
 	isVacation       bool
@@ -22,15 +22,15 @@ func NewHandler(
 	classesService services.IClassesService,
 	viewErrorHandler viewErrs.IErrorHandler,
 	isVacation bool,
-) *Handler {
-	return &Handler{
+) *handler {
+	return &handler{
 		classesService:   classesService,
 		viewErrorHandler: viewErrorHandler,
 		isVacation:       isVacation,
 	}
 }
 
-func (h *Handler) Handle(c *gin.Context) {
+func (h *handler) Handle(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	limit := classViewLimit
@@ -50,6 +50,7 @@ func (h *Handler) Handle(c *gin.Context) {
 	}
 
 	c.HTML(http.StatusOK, "index.html", gin.H{
-		"Classes": classesView, "IsVacation": h.isVacation,
+		"Classes":    classesView,
+		"IsVacation": h.isVacation,
 	})
 }

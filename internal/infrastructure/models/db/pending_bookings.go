@@ -1,8 +1,9 @@
 package db
 
 import (
-	"main/internal/domain/models"
 	"time"
+
+	"main/internal/domain/models"
 
 	"github.com/google/uuid"
 )

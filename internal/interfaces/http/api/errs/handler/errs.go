@@ -9,13 +9,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type ErrorHandler struct{}
+type errorHandler struct{}
 
-func NewErrorHandler() ErrorHandler {
-	return ErrorHandler{}
+func NewErrorHandler() errorHandler {
+	return errorHandler{}
 }
 
-func (e ErrorHandler) Handle(c *gin.Context, err error) {
+func (e errorHandler) Handle(c *gin.Context, err error) {
 	var apiError *domainErrs.APIError
 	if errors.As(err, &apiError) {
 		switch apiError.Code {
@@ -33,6 +33,4 @@ func (e ErrorHandler) Handle(c *gin.Context, err error) {
 	}
 
 	c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-
-	return
 }

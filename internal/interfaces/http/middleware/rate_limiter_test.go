@@ -38,16 +38,19 @@ func TestGlobalRateLimit(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gin.SetMode(gin.TestMode)
+
 			limiter := rate.NewLimiter(rate.Limit(1), 2)
+
 			handler := GlobalRateLimit(limiter)
 
 			var lastStatus int
-			for i := 0; i < tt.requests; i++ {
-				w := httptest.NewRecorder()
-				c, _ := gin.CreateTestContext(w)
 
-				router := gin.New()
-				router.Use(handler)
+			w := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(w)
+			router := gin.New()
+			router.Use(handler)
+
+			for range tt.requests {
 				router.GET("/test", func(c *gin.Context) {
 					c.JSON(http.StatusOK, gin.H{"message": "ok"})
 				})

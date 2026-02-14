@@ -13,17 +13,17 @@ import (
 	"gorm.io/gorm"
 )
 
-type PassesRepo struct {
+type passesRepo struct {
 	db *gorm.DB
 }
 
-func NewPassesRepo(db *gorm.DB) PassesRepo {
-	return PassesRepo{
+func NewPassesRepo(db *gorm.DB) *passesRepo {
+	return &passesRepo{
 		db: db,
 	}
 }
 
-func (r PassesRepo) GetByEmail(ctx context.Context, email string) (optional.Optional[models.Pass], error) {
+func (r *passesRepo) GetByEmail(ctx context.Context, email string) (optional.Optional[models.Pass], error) {
 	var sqlPass db.SQLPass
 
 	result := r.db.WithContext(ctx).Where("email = ?", email).First(&sqlPass)
@@ -39,7 +39,7 @@ func (r PassesRepo) GetByEmail(ctx context.Context, email string) (optional.Opti
 	return optional.Of(sqlPass.ToDomain()), nil
 }
 
-func (r PassesRepo) Update(ctx context.Context, id int, usedBookingIDs []uuid.UUID, totalBookings int) error {
+func (r *passesRepo) Update(ctx context.Context, id int, usedBookingIDs []uuid.UUID, totalBookings int) error {
 	var pass db.SQLPass
 
 	if err := r.db.WithContext(ctx).First(&pass, id).Error; err != nil {
@@ -59,7 +59,12 @@ func (r PassesRepo) Update(ctx context.Context, id int, usedBookingIDs []uuid.UU
 	return nil
 }
 
-func (r PassesRepo) Insert(ctx context.Context, email string, usedBookingIDs []uuid.UUID, totalBookings int) (models.Pass, error) {
+func (r *passesRepo) Insert(
+	ctx context.Context,
+	email string,
+	usedBookingIDs []uuid.UUID,
+	totalBookings int,
+) (models.Pass, error) {
 	pass := db.SQLPass{
 		Email:          email,
 		UsedBookingIDs: usedBookingIDs,

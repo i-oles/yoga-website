@@ -12,7 +12,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type Handler struct {
+type handler struct {
 	bookingService   services.IBookingsService
 	viewErrorHandler viewErrs.IErrorHandler
 }
@@ -20,14 +20,14 @@ type Handler struct {
 func NewHandler(
 	bookingService services.IBookingsService,
 	viewErrorHandler viewErrs.IErrorHandler,
-) *Handler {
-	return &Handler{
+) *handler {
+	return &handler{
 		bookingService:   bookingService,
 		viewErrorHandler: viewErrorHandler,
 	}
 }
 
-func (h *Handler) Handle(c *gin.Context) {
+func (h *handler) Handle(c *gin.Context) {
 	var uri dto.BookingCancelURI
 
 	if err := c.ShouldBindUri(&uri); err != nil {

@@ -3,10 +3,10 @@ package dto
 import "github.com/google/uuid"
 
 type PendingBookingForm struct {
+	Email     string `binding:"required,email" form:"email"`
 	ClassID   string `binding:"required,uuid" form:"class_id"`
-	FirstName string `form:"first_name" binding:"required,min=3,max=30"`
-	LastName  string `form:"last_name" binding:"required,max=30"`
-	Email     string `form:"email" binding:"required,email"`
+	LastName  string `binding:"required,max=30" form:"last_name"`
+	FirstName string `binding:"required,min=3,max=30" form:"first_name"`
 }
 
 type PendingBookingView struct {

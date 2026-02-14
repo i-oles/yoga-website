@@ -13,17 +13,17 @@ import (
 	"gorm.io/gorm"
 )
 
-type PendingBookingsRepo struct {
+type pendingBookingsRepo struct {
 	db *gorm.DB
 }
 
-func NewPendingBookingsRepo(db *gorm.DB) *PendingBookingsRepo {
-	return &PendingBookingsRepo{
+func NewPendingBookingsRepo(db *gorm.DB) *pendingBookingsRepo {
+	return &pendingBookingsRepo{
 		db: db,
 	}
 }
 
-func (r PendingBookingsRepo) Insert(
+func (r *pendingBookingsRepo) Insert(
 	ctx context.Context,
 	pendingBooking models.PendingBooking,
 ) error {
@@ -36,7 +36,7 @@ func (r PendingBookingsRepo) Insert(
 	return nil
 }
 
-func (r PendingBookingsRepo) GetByConfirmationToken(
+func (r *pendingBookingsRepo) GetByConfirmationToken(
 	ctx context.Context,
 	token string,
 ) (models.PendingBooking, error) {
@@ -55,7 +55,7 @@ func (r PendingBookingsRepo) GetByConfirmationToken(
 	return sqlPendingBooking.ToDomain(), nil
 }
 
-func (r PendingBookingsRepo) Delete(ctx context.Context, id uuid.UUID) error {
+func (r *pendingBookingsRepo) Delete(ctx context.Context, id uuid.UUID) error {
 	var sqlPendingBooking db.SQLPendingBooking
 
 	tx := r.db.WithContext(ctx).Where("id = ?", id).Delete(&sqlPendingBooking)
@@ -70,7 +70,7 @@ func (r PendingBookingsRepo) Delete(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
-func (r PendingBookingsRepo) List(ctx context.Context) ([]models.PendingBooking, error) {
+func (r *pendingBookingsRepo) List(ctx context.Context) ([]models.PendingBooking, error) {
 	var SQLPendingBookings []db.SQLPendingBooking
 
 	if err := r.db.WithContext(ctx).Find(&SQLPendingBookings).Error; err != nil {

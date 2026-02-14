@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type Handler struct {
+type handler struct {
 	classesService  services.IClassesService
 	apiErrorHandler apiErrs.IErrorHandler
 }
@@ -19,14 +19,14 @@ type Handler struct {
 func NewHandler(
 	classesService services.IClassesService,
 	apiErrorHandler apiErrs.IErrorHandler,
-) *Handler {
-	return &Handler{
+) *handler {
+	return &handler{
 		classesService:  classesService,
 		apiErrorHandler: apiErrorHandler,
 	}
 }
 
-func (h *Handler) Handle(c *gin.Context) {
+func (h *handler) Handle(c *gin.Context) {
 	var dtoDeleteClassRequest dto.DeleteClassRequest
 
 	err := c.ShouldBindJSON(&dtoDeleteClassRequest)

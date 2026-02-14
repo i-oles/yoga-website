@@ -12,13 +12,12 @@ import (
 	"main/internal/domain/repositories"
 	"main/internal/domain/sender"
 	repositoryError "main/internal/infrastructure/errs"
-	"main/pkg/optional"
 	"main/pkg/tools"
 
 	"github.com/google/uuid"
 )
 
-type Service struct {
+type service struct {
 	classesRepo   repositories.IClasses
 	bookingsRepo  repositories.IBookings
 	passesRepo    repositories.IPasses
@@ -30,8 +29,8 @@ func NewService(
 	bookingsRepo repositories.IBookings,
 	passesRepo repositories.IPasses,
 	messageSender sender.ISender,
-) *Service {
-	return &Service{
+) *service {
+	return &service{
 		classesRepo:   classesRepo,
 		bookingsRepo:  bookingsRepo,
 		passesRepo:    passesRepo,
@@ -39,7 +38,7 @@ func NewService(
 	}
 }
 
-func (s *Service) ListClasses(
+func (s *service) ListClasses(
 	ctx context.Context,
 	onlyUpcomingClasses bool,
 	classesLimit *int,
@@ -95,7 +94,7 @@ func (s *Service) ListClasses(
 	return result, nil
 }
 
-func (s *Service) CreateClasses(
+func (s *service) CreateClasses(
 	ctx context.Context, classes []models.Class,
 ) ([]models.Class, error) {
 	err := validateClasses(classes)
@@ -111,7 +110,7 @@ func (s *Service) CreateClasses(
 	return insertedClasses, nil
 }
 
-func (s *Service) DeleteClass(ctx context.Context, classID uuid.UUID, msg *string) error {
+func (s *service) DeleteClass(ctx context.Context, classID uuid.UUID, msg *string) error {
 	bookings, err := s.bookingsRepo.ListByClassID(ctx, classID)
 	if err != nil {
 		return fmt.Errorf("could not get classes for classID %v: %w", classID, err)
@@ -124,39 +123,9 @@ func (s *Service) DeleteClass(ctx context.Context, classID uuid.UUID, msg *strin
 	}
 
 	for _, booking := range bookings {
-		if booking.Class == nil {
-			return errors.New("class field should not be empty")
-		}
-
-		err = s.bookingsRepo.Delete(ctx, booking.ID)
+		err = s.handleBookingBeforeClassDeletion(ctx, booking, msg)
 		if err != nil {
-			return fmt.Errorf("could not delete booking for id %v: %w", booking.ID, err)
-		}
-
-		passOpt, err := s.passesRepo.GetByEmail(ctx, booking.Email)
-		if err != nil {
-			return fmt.Errorf("could not delete booking for id %v: %w", booking.ID, err)
-		}
-
-		senderParams := models.SenderParams{
-			RecipientFirstName: booking.FirstName,
-			RecipientEmail:     booking.Email,
-			ClassName:          booking.Class.ClassName,
-			ClassLevel:         booking.Class.ClassLevel,
-			StartTime:          booking.Class.StartTime,
-			Location:           booking.Class.Location,
-		}
-
-		if passOpt.Exists() {
-			senderParams, err = s.updateSenderParamsWithPass(ctx, booking.ID, passOpt, senderParams)
-			if err != nil {
-				return fmt.Errorf("could not send info about cancellation to %s: %w", booking.Email, err)
-			}
-		}
-
-		err = s.MessageSender.SendInfoAboutClassCancellation(senderParams, *msg)
-		if err != nil {
-			return fmt.Errorf("could not send info about class cancellation: %w", err)
+			return fmt.Errorf("could not handle booking before class deletion: %w", err)
 		}
 	}
 
@@ -168,37 +137,85 @@ func (s *Service) DeleteClass(ctx context.Context, classID uuid.UUID, msg *strin
 	return nil
 }
 
-func (s Service) updateSenderParamsWithPass(
+func (s *service) handleBookingBeforeClassDeletion(
 	ctx context.Context,
-	bookingID uuid.UUID,
-	passOpt optional.Optional[models.Pass],
-	senderParams models.SenderParams,
-) (models.SenderParams, error) {
-	pass := passOpt.Get()
+	booking models.Booking,
+	msgToUser *string,
+) error {
+	if booking.Class == nil {
+		return errors.New("class field should not be empty")
+	}
 
-	if len(pass.UsedBookingIDs) > 0 {
-		updatedBookingIDs, err := tools.RemoveFromSlice(pass.UsedBookingIDs, bookingID)
+	err := s.bookingsRepo.Delete(ctx, booking.ID)
+	if err != nil {
+		return fmt.Errorf("could not delete booking for id %v: %w", booking.ID, err)
+	}
+
+	senderParams := models.SenderParams{
+		RecipientFirstName: booking.FirstName,
+		RecipientLastName:  booking.LastName,
+		RecipientEmail:     booking.Email,
+		ClassName:          booking.Class.ClassName,
+		ClassLevel:         booking.Class.ClassLevel,
+		StartTime:          booking.Class.StartTime,
+		Location:           booking.Class.Location,
+	}
+
+	usedBookingIDs, totalBookings, err := s.decrementPassIfValid(ctx, booking.Email, booking.ID)
+	if err != nil {
+		return fmt.Errorf("could not dectemetnt pass for %s: %w", booking.Email, err)
+	}
+
+	senderParams.PassUsedBookingIDs = usedBookingIDs
+	senderParams.PassTotalBookings = totalBookings
+
+	err = s.MessageSender.SendInfoAboutClassCancellation(senderParams, *msgToUser)
+	if err != nil {
+		return fmt.Errorf("could not send info about class cancellation: %w", err)
+	}
+
+	return nil
+}
+
+func (s *service) decrementPassIfValid(
+	ctx context.Context,
+	email string,
+	bookingID uuid.UUID,
+) ([]uuid.UUID, *int, error) {
+	passOpt, err := s.passesRepo.GetByEmail(ctx, email)
+	if err != nil && passOpt.Exists() {
+		return nil, nil, fmt.Errorf("could not get pass: %w", err)
+	}
+
+	var updatedBookingIDs []uuid.UUID
+
+	var totalBookings *int
+
+	if passOpt.Exists() {
+		pass := passOpt.Get()
+
+		updatedBookingIDs, err = tools.RemoveFromSlice(pass.UsedBookingIDs, bookingID)
 		if errors.Is(err, errs.ErrBookingIDNotFoundInPass) {
-			return senderParams, nil
+			return nil, nil, nil
 		}
 
 		if err != nil {
-			return models.SenderParams{}, fmt.Errorf("could not remove bookingID %v from usedBookingIDs: %v", bookingID, pass.UsedBookingIDs)
+			return nil, nil, fmt.Errorf("could not remove bookingID %v from usedBookingIDs", bookingID)
 		}
 
 		err = s.passesRepo.Update(ctx, pass.ID, updatedBookingIDs, pass.TotalBookings)
 		if err != nil {
-			return models.SenderParams{}, fmt.Errorf("could not update pass for %s with %v: %w", pass.Email, updatedBookingIDs, err)
+			return nil, nil,
+				fmt.Errorf("could not update pass for %s with %v: %w", pass.Email, updatedBookingIDs, err)
 		}
 
-		senderParams.PassUsedBookingIDs = updatedBookingIDs
-		senderParams.PassTotalBookings = &pass.TotalBookings
+		totalBookings = &pass.TotalBookings
 	}
 
-	return senderParams, nil
+	return updatedBookingIDs, totalBookings, nil
 }
 
-func (s *Service) UpdateClass(
+func (s *service) UpdateClass(
 	ctx context.Context, id uuid.UUID, update models.UpdateClass,
 ) (models.Class, error) {
 	err := validateClassUpdate(update)
@@ -238,7 +255,7 @@ func (s *Service) UpdateClass(
 	return updatedClass, nil
 }
 
-func (s *Service) sendInformationAboutClassUpdateToUsers(
+func (s *service) sendInformationAboutClassUpdateToUsers(
 	ctx context.Context, update models.UpdateClass, updatedClass models.Class,
 ) error {
 	if update.Location == nil && update.StartTime == nil {
@@ -270,8 +287,8 @@ func (s *Service) sendInformationAboutClassUpdateToUsers(
 	return nil
 }
 
-func getDataForClassUpdate(update models.UpdateClass) (map[string]interface{}, error) {
-	updateData := map[string]interface{}{}
+func getDataForClassUpdate(update models.UpdateClass) (map[string]any, error) {
+	updateData := map[string]any{}
 	if update.StartTime != nil {
 		updateData["start_time"] = *update.StartTime
 	}

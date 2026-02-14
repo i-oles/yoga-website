@@ -9,6 +9,8 @@ import (
 	"main/internal/domain/models"
 	"main/internal/infrastructure/configuration"
 	"main/internal/infrastructure/sender/gmail"
+
+	"github.com/google/uuid"
 )
 
 func main() {
@@ -21,24 +23,24 @@ func main() {
 	emailSender := gmail.NewSender(
 		cfg.EmailSender.Host,
 		cfg.EmailSender.Port,
+		cfg.EmailSender.FromName,
 		cfg.EmailSender.User,
 		cfg.EmailSender.Password,
-		cfg.EmailSender.FromName,
 		cfg.BaseSenderTmplPath,
 	)
 
-	three := 3
 	four := 4
 
 	senderParams := models.SenderParams{
 		RecipientEmail:     "orth.quala@gmail.com",
 		RecipientFirstName: "orth",
+		RecipientLastName:  "quala",
 		ClassName:          "vinyasa",
 		ClassLevel:         "beginner",
 		StartTime:          time.Now(),
 		Location:           "dom",
-		UsedBookins:        *three,
-		TotalPassBookings:  *four,
+		PassUsedBookingIDs: []uuid.UUID{},
+		PassTotalBookings:  &four,
 	}
 
 	cancellationLink := "http://testlink.com"

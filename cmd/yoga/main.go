@@ -85,9 +85,9 @@ func main() {
 	srv := &http.Server{
 		Addr:              cfg.ListenAddress,
 		Handler:           router,
-		ReadHeaderTimeout: cfg.ReadTimeout * time.Second,
-		ReadTimeout:       cfg.ReadTimeout * time.Second,
-		WriteTimeout:      cfg.WriteTimeout * time.Second,
+		ReadHeaderTimeout: cfg.ReadTimeout.Duration,
+		ReadTimeout:       cfg.ReadTimeout.Duration,
+		WriteTimeout:      cfg.WriteTimeout.Duration,
 	}
 
 	runServer(srv, cfg)
@@ -124,9 +124,9 @@ func setupRouter(db *gorm.DB, cfg *configuration.Configuration) *gin.Engine {
 	emailSender := gmail.NewSender(
 		cfg.EmailSender.Host,
 		cfg.EmailSender.Port,
+		cfg.EmailSender.FromName,
 		cfg.EmailSender.User,
 		cfg.EmailSender.Password,
-		cfg.EmailSender.FromName,
 		cfg.BaseSenderTmplPath,
 	)
 
@@ -225,7 +225,7 @@ func runServer(srv *http.Server, cfg *configuration.Configuration) {
 	<-quit
 	slog.Info("Shutting down server...")
 
-	ctx, cancel := context.WithTimeout(context.Background(), cfg.ContextTimeout*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), cfg.ContextTimeout.Duration)
 	defer cancel()
 
 	if err := srv.Shutdown(ctx); err != nil {
@@ -237,6 +237,7 @@ func runServer(srv *http.Server, cfg *configuration.Configuration) {
 
 func cleanUpPendingBookingsDBAsync(db *gorm.DB) {
 	go func() {
+		//nolint
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 

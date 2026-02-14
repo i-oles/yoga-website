@@ -9,56 +9,37 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type ErrorHandler struct{}
+type errorHandler struct{}
 
-func NewErrorHandler() ErrorHandler {
-	return ErrorHandler{}
+func NewErrorHandler() errorHandler {
+	return errorHandler{}
 }
 
-func (e ErrorHandler) Handle(c *gin.Context, tmplName string, err error) {
+func (e errorHandler) Handle(c *gin.Context, tmplName string, err error) {
 	var viewError *domainErrs.ViewError
 	if errors.As(err, &viewError) {
 		switch viewError.Code {
-		case domainErrs.BookingNotFoundCode:
+		case domainErrs.BookingNotFoundCode,
+			domainErrs.ClassExpiredCode,
+			domainErrs.ClassEmptyCode:
 			c.HTML(http.StatusNotFound, tmplName, gin.H{
 				"ID":    viewError.ClassID,
 				"Error": viewError.Message,
 			})
-		case domainErrs.BookingAlreadyExistsCode:
+		case domainErrs.BookingAlreadyExistsCode,
+			domainErrs.TooManyPendingBookingsCode,
+			domainErrs.ClassFullyBookedCode:
 			c.HTML(http.StatusConflict, tmplName, gin.H{
 				"ID":    viewError.ClassID,
 				"Error": viewError.Message,
 			})
-		case domainErrs.ClassExpiredCode:
+		case domainErrs.PendingBookingNotFoundCode,
+			domainErrs.InvalidCancellationLinkCode:
 			c.HTML(http.StatusNotFound, tmplName, gin.H{
-				"ID":    viewError.ClassID,
-				"Error": viewError.Message,
-			})
-		case domainErrs.PendingBookingNotFoundCode:
-			c.HTML(http.StatusNotFound, tmplName, gin.H{
-				"Error": viewError.Message,
-			})
-		case domainErrs.TooManyPendingBookingsCode:
-			c.HTML(http.StatusConflict, tmplName, gin.H{
-				"ID":    viewError.ClassID,
-				"Error": viewError.Message,
-			})
-		case domainErrs.ClassFullyBookedCode:
-			c.HTML(http.StatusConflict, tmplName, gin.H{
-				"ID":    viewError.ClassID,
 				"Error": viewError.Message,
 			})
 		case domainErrs.SomeoneBookedClassFasterCode:
 			c.HTML(http.StatusConflict, tmplName, gin.H{
-				"Error": viewError.Message,
-			})
-		case domainErrs.ClassEmptyCode:
-			c.HTML(http.StatusNotFound, tmplName, gin.H{
-				"ID":    viewError.ClassID,
-				"Error": viewError.Message,
-			})
-		case domainErrs.InvalidCancellationLinkCode:
-			c.HTML(http.StatusNotFound, tmplName, gin.H{
 				"Error": viewError.Message,
 			})
 		default:
@@ -73,6 +54,4 @@ func (e ErrorHandler) Handle(c *gin.Context, tmplName string, err error) {
 	c.HTML(http.StatusInternalServerError, "err.tmpl", gin.H{
 		"Error": "Coś poszło nie tak... Skontaktuj się ze mną :)",
 	})
-
-	return
 }

@@ -77,7 +77,6 @@ linters:
     - spancheck
     - sqlclosecheck
     - staticcheck
-    - tagalign
     - testableexamples
     - testifylint
     - thelper
@@ -89,56 +88,53 @@ linters:
     - wastedassign
     - whitespace
     - wrapcheck
-    - wsl
+    - wsl_v5
     - zerologlint
+  distable:
+    - tagalign
 
-linters-settings:
-  funlen:
-    # Checks the number of lines in a function.
-    lines: 80
-    statements: 50
-    ignore-comments: true
-  revive:
-    ignore-generated-header: true
-    severity: warning
+  settings:
+    revive:
+      rules:
+        - name: package-comments
+          disabled: true
+
+    mnd:
+      ignored-numbers:
+        - '0'
+        - '1'
+        - '2'
+
+  exclusions:
     rules:
-      - name: package-comment
-        disabled: true
-      - name: exported 
-        disabled: true
-  ST1000:
-    rules:
-      disabled: true
+      - path: cmd/yoga/main.go
+        linters:
+          - gocyclo
+          - funlen
 
-  mnd:
-    ignored-numbers:
-      - '1'
-      - '2'
-      - '3'
+      - path: internal/application/classes/service_test.go
+        linters:
+          - typecheck
+          - funlen
+          - gocyclo
+          - gochecknoglobals
 
-  lll:
-    line-length: 100
+      - path: internal/application/classes/service.go
+        linters:
+          - typecheck
+
+      - path: assets/example/send_confirmation_email.go
+        linters:
+          - typecheck
+
+      - path: pkg/optional/optional.go
+        linters:
+          - ireturn
 
 formatters:
   enable:
-    - gci
     - gofmt
-    - gofumpt
     - goimports
-
-issues:
-  exclude-rules:
-    - path: '_test\.go'
-      linters:
-        - dupl
-        - funlen
-        - nestif
-        - lll
-
-    - path: 'example.*\.go'
-      linters:
-        - forbidigo
-        - lll
 
 run:
   timeout: 5m

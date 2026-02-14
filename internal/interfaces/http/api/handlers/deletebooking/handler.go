@@ -1,30 +1,31 @@
 package deletebooking
 
 import (
+	"net/http"
+
 	"main/internal/domain/services"
 	apiErrs "main/internal/interfaces/http/api/errs"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
-type Handler struct {
-	bookingsService    services.IBookingsService
+type handler struct {
+	bookingsService services.IBookingsService
 	apiErrorHandler apiErrs.IErrorHandler
 }
 
 func NewHandler(
 	bookingsService services.IBookingsService,
 	apiErrorHandler apiErrs.IErrorHandler,
-) *Handler {
-	return &Handler{
+) *handler {
+	return &handler{
 		bookingsService: bookingsService,
 		apiErrorHandler: apiErrorHandler,
 	}
 }
 
-func (h *Handler) Handle(c *gin.Context) {
+func (h *handler) Handle(c *gin.Context) {
 	bookingIDStr := c.Param("booking_id")
 
 	bookingID, err := uuid.Parse(bookingIDStr)

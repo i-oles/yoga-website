@@ -6,13 +6,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type Handler struct {
+type handler struct{}
+
+func NewHandler() *handler {
+	return &handler{}
 }
 
-func NewHandler() *Handler {
-	return &Handler{}
-}
-
-func (h *Handler) Handle(c *gin.Context) {
+func (h *handler) Handle(c *gin.Context) {
 	c.HTML(http.StatusOK, "pending_booking_form.tmpl", gin.H{"ID": c.Param("class_id")})
 }

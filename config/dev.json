@@ -1,8 +1,8 @@
 {
   "listenAddress": ":8080",
-  "readTimeout": 5,
-  "writeTimeout": 10,
-  "contextTimeout": 5,
+  "readTimeout": "5s",
+  "writeTimeout": "10s",
+  "contextTimeout": "5s",
   "logBusinessErrors": true,
   "logConfig": true,
   "authSecret": "",
@@ -11,7 +11,7 @@
     "port": 587,
     "user": "",
     "password": "",
-    "fromName": "Igor"
+    "fromName": "Igor",
   },
   "postgres": {
     "dbName": "yoga",

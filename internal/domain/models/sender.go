@@ -9,7 +9,7 @@ import (
 type SenderParams struct {
 	RecipientEmail     string
 	RecipientFirstName string
-	RecipientLastName  *string
+	RecipientLastName  string
 	ClassName          string
 	ClassLevel         string
 	StartTime          time.Time
@@ -17,3 +17,10 @@ type SenderParams struct {
 	PassUsedBookingIDs []uuid.UUID
 	PassTotalBookings  *int
 }
+
+type BookingStatus string
+
+const (
+	StatusBooked    BookingStatus = "booked"
+	StatusCancelled BookingStatus = "cancelled"
+)
