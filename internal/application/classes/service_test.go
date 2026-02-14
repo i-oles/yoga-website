@@ -195,10 +195,6 @@ func (m *mockSender) SendConfirmations(_ models.SenderParams, _ string) error {
 	return nil
 }
 
-func (m *mockSender) SendInfoAboutCancellationToOwner(_, _ string, _ time.Time) error {
-	return nil
-}
-
 func (m *mockSender) SendInfoAboutClassCancellation(_ models.SenderParams, _ string) error {
 	return nil
 }

@@ -12,7 +12,6 @@ import (
 	"main/internal/domain/repositories"
 	"main/internal/domain/sender"
 	repositoryError "main/internal/infrastructure/errs"
-	"main/pkg/optional"
 	"main/pkg/tools"
 
 	"github.com/google/uuid"
@@ -152,11 +151,6 @@ func (s *service) handleBookingBeforeClassDeletion(
 		return fmt.Errorf("could not delete booking for id %v: %w", booking.ID, err)
 	}
 
-	passOpt, err := s.passesRepo.GetByEmail(ctx, booking.Email)
-	if err != nil {
-		return fmt.Errorf("could not delete booking for id %v: %w", booking.ID, err)
-	}
-
 	senderParams := models.SenderParams{
 		RecipientFirstName: booking.FirstName,
 		RecipientEmail:     booking.Email,
@@ -166,12 +160,13 @@ func (s *service) handleBookingBeforeClassDeletion(
 		Location:           booking.Class.Location,
 	}
 
-	if passOpt.Exists() {
-		senderParams, err = s.updateSenderParamsWithPass(ctx, booking.ID, passOpt, senderParams)
-		if err != nil {
-			return fmt.Errorf("could not send info about cancellation to %s: %w", booking.Email, err)
-		}
+	usedBookingIDs, totalBookings, err := s.decrementPassIfValid(ctx, booking.Email, booking.ID)
+	if err != nil {
+		return fmt.Errorf("could not dectemetnt pass for %s: %w", booking.Email, err)
 	}
+
+	senderParams.PassUsedBookingIDs = usedBookingIDs
+	senderParams.PassTotalBookings = totalBookings
 
 	err = s.MessageSender.SendInfoAboutClassCancellation(senderParams, *msgToUser)
 	if err != nil {
@@ -181,36 +176,42 @@ func (s *service) handleBookingBeforeClassDeletion(
 	return nil
 }
 
-func (s *service) updateSenderParamsWithPass(
+func (s *service) decrementPassIfValid(
 	ctx context.Context,
+	email string,
 	bookingID uuid.UUID,
-	passOpt optional.Optional[models.Pass],
-	senderParams models.SenderParams,
-) (models.SenderParams, error) {
-	pass := passOpt.Get()
+) ([]uuid.UUID, *int, error) {
+	passOpt, err := s.passesRepo.GetByEmail(ctx, email)
+	if err != nil && passOpt.Exists() {
+		return nil, nil, fmt.Errorf("could not get pass: %w", err)
+	}
 
-	if len(pass.UsedBookingIDs) > 0 {
+	var updatedBookingIDs []uuid.UUID
+
+	var totalBookings *int
+
+	if passOpt.Exists() {
+		pass := passOpt.Get()
+
 		updatedBookingIDs, err := tools.RemoveFromSlice(pass.UsedBookingIDs, bookingID)
 		if errors.Is(err, errs.ErrBookingIDNotFoundInPass) {
-			return senderParams, nil
+			return nil, nil, nil
 		}
 
 		if err != nil {
-			return models.SenderParams{},
-				fmt.Errorf("could not remove bookingID %v from usedBookingIDs: %v", bookingID, pass.UsedBookingIDs)
+			return nil, nil, fmt.Errorf("could not remove bookingID %v from usedBookingIDs", bookingID)
 		}
 
 		err = s.passesRepo.Update(ctx, pass.ID, updatedBookingIDs, pass.TotalBookings)
 		if err != nil {
-			return models.SenderParams{},
+			return nil, nil,
 				fmt.Errorf("could not update pass for %s with %v: %w", pass.Email, updatedBookingIDs, err)
 		}
 
-		senderParams.PassUsedBookingIDs = updatedBookingIDs
-		senderParams.PassTotalBookings = &pass.TotalBookings
+		totalBookings = &pass.TotalBookings
 	}
 
-	return senderParams, nil
+	return updatedBookingIDs, totalBookings, nil
 }
 
 func (s *service) UpdateClass(
