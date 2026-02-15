@@ -59,7 +59,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	db, err := gorm.Open(sqlite.Open(cfg.DBPath), &gorm.Config{
+	database, err := gorm.Open(sqlite.Open(cfg.DBPath), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
 	if err != nil {
@@ -68,7 +68,7 @@ func main() {
 
 	slog.Info("Successfully connected to database")
 
-	err = db.AutoMigrate(
+	err = database.AutoMigrate(
 		&dbModels.SQLClass{},
 		&dbModels.SQLPendingBooking{},
 		&dbModels.SQLBooking{},
@@ -78,9 +78,9 @@ func main() {
 		log.Fatal(err)
 	}
 
-	cleanUpPendingBookingsDBAsync(db)
+	cleanUpPendingBookingsDBAsync(database)
 
-	router := setupRouter(db, cfg)
+	router := setupRouter(database, cfg)
 
 	srv := &http.Server{
 		Addr:              cfg.ListenAddress,
@@ -108,17 +108,17 @@ func loadConfig() (*configuration.Configuration, error) {
 	return cfg, nil
 }
 
-func setupRouter(db *gorm.DB, cfg *configuration.Configuration) *gin.Engine {
+func setupRouter(database *gorm.DB, cfg *configuration.Configuration) *gin.Engine {
 	router := gin.Default()
 
 	router.Static("web/static", "./web/static")
 	router.LoadHTMLGlob("web/templates/*")
 	api := router.Group("/")
 
-	classesRepo := sqliteRepo.NewClassesRepo(db)
-	bookingsRepo := sqliteRepo.NewBookingsRepo(db)
-	pendingBookingsRepo := sqliteRepo.NewPendingBookingsRepo(db)
-	passesRepo := sqliteRepo.NewPassesRepo(db)
+	classesRepo := sqliteRepo.NewClassesRepo(database)
+	bookingsRepo := sqliteRepo.NewBookingsRepo(database)
+	pendingBookingsRepo := sqliteRepo.NewPendingBookingsRepo(database)
+	passesRepo := sqliteRepo.NewPassesRepo(database)
 
 	tokenGenerator := token.NewGenerator()
 	emailSender := gmail.NewSender(
@@ -235,7 +235,7 @@ func runServer(srv *http.Server, cfg *configuration.Configuration) {
 	slog.Info("Server stopped")
 }
 
-func cleanUpPendingBookingsDBAsync(db *gorm.DB) {
+func cleanUpPendingBookingsDBAsync(database *gorm.DB) {
 	go func() {
 		//nolint
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -243,9 +243,11 @@ func cleanUpPendingBookingsDBAsync(db *gorm.DB) {
 
 		oneHourAgo := time.Now().UTC().Add(-1 * time.Hour)
 
-		result := db.WithContext(ctx).
+		var pendingBooking dbModels.SQLPendingBooking
+
+		result := database.WithContext(ctx).
 			Where("created_at < ?", oneHourAgo).
-			Delete(&dbModels.SQLPendingBooking{})
+			Delete(&pendingBooking)
 
 		if result.Error != nil {
 			if errors.Is(result.Error, context.DeadlineExceeded) {

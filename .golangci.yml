@@ -18,6 +18,7 @@ linters:
     - durationcheck
     - errcheck
     - errname
+    - err113
     - errorlint
     - exhaustive
     - fatcontext
@@ -65,6 +66,7 @@ linters:
     - nolintlint
     - nonamedreturns
     - nosprintfhostport
+    - paralleltest
     - perfsprint
     - prealloc
     - predeclared
@@ -77,7 +79,7 @@ linters:
     - spancheck
     - sqlclosecheck
     - staticcheck
-    - testableexamples
+    - tagliatelle
     - testifylint
     - thelper
     - tparallel
@@ -85,15 +87,25 @@ linters:
     - unparam
     - unused
     - usestdlibvars
+    - varnamelen
     - wastedassign
     - whitespace
     - wrapcheck
     - wsl_v5
     - zerologlint
-  distable:
+
+  disable:
     - tagalign
 
   settings:
+
+    lll:
+      line-length: 100
+
+    gosec:
+      severity: medium
+      confidence: medium
+
     revive:
       rules:
         - name: package-comments
@@ -101,9 +113,45 @@ linters:
 
     mnd:
       ignored-numbers:
-        - '0'
-        - '1'
-        - '2'
+        - "0"
+        - "1"
+        - "2"
+
+    tagliatelle:
+      case:
+        rules:
+          json: snake
+          yaml: snake
+          form: snake
+
+    depguard:
+      rules:
+
+        domain:
+          files:
+            - "internal/domain/**"
+          deny:
+            - pkg: "internal/application"
+            - pkg: "internal/interfaces"
+            - pkg: "internal/infrastructure"
+
+        application:
+          files:
+            - "internal/application/**"
+          deny:
+            - pkg: "internal/interfaces"
+
+        interfaces:
+          files:
+            - "internal/interfaces/**"
+          deny:
+            - pkg: "internal/infrastructure"
+
+        infrastructure:
+          files:
+            - "internal/infrastructure/**"
+          deny:
+            - pkg: "internal/interfaces"
 
   exclusions:
     rules:
@@ -111,6 +159,7 @@ linters:
         linters:
           - gocyclo
           - funlen
+          - lll
 
       - path: internal/application/classes/service_test.go
         linters:
