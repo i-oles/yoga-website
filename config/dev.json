@@ -6,12 +6,12 @@
   "logBusinessErrors": true,
   "logConfig": true,
   "authSecret": "",
-  "emailSender": {
+  "notifier": {
     "host": "smtp.gmail.com",
     "port": 587,
-    "user": "",
+    "login": "",
     "password": "",
-    "fromName": "Igor",
+    "signature": "Igor",
   },
   "postgres": {
     "dbName": "yoga",

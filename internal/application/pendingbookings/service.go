@@ -8,8 +8,8 @@ import (
 
 	viewErrors "main/internal/domain/errs/view"
 	"main/internal/domain/models"
+	"main/internal/domain/notifier"
 	"main/internal/domain/repositories"
-	"main/internal/domain/sender"
 	"main/internal/domain/services"
 	"main/internal/infrastructure/errs"
 
@@ -26,7 +26,7 @@ type service struct {
 	PendingBookingsRepo repositories.IPendingBookings
 	BookingsRepo        repositories.IBookings
 	TokenGenerator      services.ITokenGenerator
-	MessageSender       sender.ISender
+	MessageSender       notifier.ISender
 	DomainAddr          string
 }
 
@@ -35,7 +35,7 @@ func NewService(
 	pendingBookingsRepo repositories.IPendingBookings,
 	bookingsRepo repositories.IBookings,
 	tokenGenerator services.ITokenGenerator,
-	messageSender sender.ISender,
+	messageSender notifier.ISender,
 	domainAddr string,
 ) *service {
 	return &service{

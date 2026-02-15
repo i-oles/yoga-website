@@ -20,18 +20,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	emailSender := gmail.NewSender(
-		cfg.EmailSender.Host,
-		cfg.EmailSender.Port,
-		cfg.EmailSender.FromName,
-		cfg.EmailSender.User,
-		cfg.EmailSender.Password,
+	emailSender := gmail.NewNotifier(
+		cfg.Notifier.Host,
+		cfg.Notifier.Port,
+		cfg.Notifier.Signature,
+		cfg.Notifier.Login,
+		cfg.Notifier.Password,
 		cfg.BaseSenderTmplPath,
 	)
 
 	four := 4
 
-	senderParams := models.SenderParams{
+	senderParams := models.NotifierParams{
 		RecipientEmail:     "orth.quala@gmail.com",
 		RecipientFirstName: "orth",
 		RecipientLastName:  "quala",
@@ -45,7 +45,7 @@ func main() {
 
 	cancellationLink := "http://testlink.com"
 
-	err = emailSender.SendConfirmations(senderParams, cancellationLink)
+	err = emailSender.NotifyBookingConfirmation(senderParams, cancellationLink)
 	if err != nil {
 		slog.Error(err.Error())
 	}

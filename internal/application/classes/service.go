@@ -151,7 +151,7 @@ func (s *service) handleBookingBeforeClassDeletion(
 		return fmt.Errorf("could not delete booking for id %v: %w", booking.ID, err)
 	}
 
-	senderParams := models.SenderParams{
+	senderParams := models.NotifierParams{
 		RecipientFirstName: booking.FirstName,
 		RecipientLastName:  booking.LastName,
 		RecipientEmail:     booking.Email,

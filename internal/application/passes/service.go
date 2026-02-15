@@ -6,8 +6,8 @@ import (
 
 	"main/internal/domain/errs/api"
 	"main/internal/domain/models"
+	"main/internal/domain/notifier"
 	"main/internal/domain/repositories"
-	"main/internal/domain/sender"
 
 	"github.com/google/uuid"
 )
@@ -15,13 +15,13 @@ import (
 type service struct {
 	passesRepo    repositories.IPasses
 	bookingsRepo  repositories.IBookings
-	messageSender sender.ISender
+	messageSender notifier.ISender
 }
 
 func NewService(
 	passesRepo repositories.IPasses,
 	bookingsRepo repositories.IBookings,
-	messageSender sender.ISender,
+	messageSender notifier.ISender,
 ) *service {
 	return &service{
 		passesRepo:    passesRepo,
