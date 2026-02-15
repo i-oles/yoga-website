@@ -121,7 +121,7 @@ func setupRouter(database *gorm.DB, cfg *configuration.Configuration) *gin.Engin
 	passesRepo := sqliteRepo.NewPassesRepo(database)
 
 	tokenGenerator := token.NewGenerator()
-	emailSender := gmail.NewNotifier(
+	emailNotifier := gmail.NewNotifier(
 		cfg.Notifier.Host,
 		cfg.Notifier.Port,
 		cfg.Notifier.Signature,
@@ -130,19 +130,19 @@ func setupRouter(database *gorm.DB, cfg *configuration.Configuration) *gin.Engin
 		cfg.BaseSenderTmplPath,
 	)
 
-	classesService := classes.NewService(classesRepo, bookingsRepo, passesRepo, emailSender)
+	classesService := classes.NewService(classesRepo, bookingsRepo, passesRepo, emailNotifier)
 	bookingsService := bookings.NewService(
-		classesRepo, bookingsRepo, pendingBookingsRepo, passesRepo, emailSender, cfg.DomainAddr,
+		classesRepo, bookingsRepo, pendingBookingsRepo, passesRepo, emailNotifier, cfg.DomainAddr,
 	)
 	pendingBookingsService := pendingbookings.NewService(
 		classesRepo,
 		pendingBookingsRepo,
 		bookingsRepo,
 		tokenGenerator,
-		emailSender,
+		emailNotifier,
 		cfg.DomainAddr,
 	)
-	passesService := passes.NewService(passesRepo, bookingsRepo, emailSender)
+	passesService := passes.NewService(passesRepo, bookingsRepo, emailNotifier)
 
 	var viewErrorHandler viewErrs.IErrorHandler
 
