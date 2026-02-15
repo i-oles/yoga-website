@@ -191,11 +191,11 @@ func (m *mockSender) SendLinkToConfirmation(_, _, _ string) error {
 	return nil
 }
 
-func (m *mockSender) SendConfirmations(_ models.SenderParams, _ string) error {
+func (m *mockSender) SendConfirmations(_ models.NotifierParams, _ string) error {
 	return nil
 }
 
-func (m *mockSender) SendInfoAboutClassCancellation(_ models.SenderParams, _ string) error {
+func (m *mockSender) SendInfoAboutClassCancellation(_ models.NotifierParams, _ string) error {
 	return nil
 }
 
@@ -203,7 +203,7 @@ func (m *mockSender) SendInfoAboutUpdate(_, _, _ string, _ models.Class) error {
 	return nil
 }
 
-func (m *mockSender) SendInfoAboutBookingCancellation(_ models.SenderParams) error {
+func (m *mockSender) SendInfoAboutBookingCancellation(_ models.NotifierParams) error {
 	return nil
 }
 

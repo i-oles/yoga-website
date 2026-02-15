@@ -10,8 +10,8 @@ import (
 	sharedErrors "main/internal/domain/errs"
 	viewErrors "main/internal/domain/errs/view"
 	"main/internal/domain/models"
+	"main/internal/domain/notifier"
 	"main/internal/domain/repositories"
-	"main/internal/domain/sender"
 	"main/internal/infrastructure/errs"
 	"main/pkg/tools"
 
@@ -23,7 +23,7 @@ type service struct {
 	BookingsRepo        repositories.IBookings
 	PendingBookingsRepo repositories.IPendingBookings
 	PassesRepo          repositories.IPasses
-	MessageSender       sender.ISender
+	MessageSender       notifier.ISender
 	DomainAddr          string
 }
 
@@ -32,7 +32,7 @@ func NewService(
 	bookingsRepo repositories.IBookings,
 	pendingBookingsRepo repositories.IPendingBookings,
 	passesRepo repositories.IPasses,
-	messageSender sender.ISender,
+	messageSender notifier.ISender,
 	domainAddr string,
 ) *service {
 	return &service{
@@ -105,7 +105,7 @@ func (s *service) sendConfirmationEmails(
 	token string,
 	bookingID uuid.UUID,
 ) error {
-	senderParams := models.SenderParams{
+	senderParams := models.NotifierParams{
 		RecipientEmail:     pendingBooking.Email,
 		RecipientFirstName: pendingBooking.FirstName,
 		RecipientLastName:  pendingBooking.LastName,
@@ -223,7 +223,7 @@ func (s *service) CancelBooking(ctx context.Context, bookingID uuid.UUID, token 
 		return fmt.Errorf("could not dectemetnt pass for %s: %w", booking.Email, err)
 	}
 
-	senderParams := models.SenderParams{
+	senderParams := models.NotifierParams{
 		RecipientFirstName: booking.FirstName,
 		RecipientLastName:  booking.LastName,
 		RecipientEmail:     booking.Email,
@@ -305,7 +305,7 @@ func (s *service) DeleteBooking(ctx context.Context, bookingID uuid.UUID) error 
 		return nil
 	}
 
-	senderParams := models.SenderParams{
+	senderParams := models.NotifierParams{
 		RecipientFirstName: booking.FirstName,
 		RecipientLastName:  booking.LastName,
 		RecipientEmail:     booking.Email,

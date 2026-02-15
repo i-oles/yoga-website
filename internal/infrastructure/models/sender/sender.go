@@ -1,26 +1,6 @@
 package sender
 
-type ConfirmationRequestTmplData struct {
-	SenderName         string
-	RecipientFirstName string
-	LinkToConfirmation string
-}
-
-type ConfirmationTmplData struct {
-	SenderName         string
-	RecipientFirstName string
-	ClassName          string
-	ClassLevel         string
-	WeekDay            string
-	Hour               string
-	Date               string
-	Location           string
-	CancellationLink   string
-	PassState          []bool
-}
-
-type BookingCancellationTmplData struct {
-	SenderName         string
+type BaseTmplData struct {
 	RecipientFirstName string
 	ClassName          string
 	ClassLevel         string
@@ -29,19 +9,23 @@ type BookingCancellationTmplData struct {
 	Date               string
 	Location           string
 	PassState          []bool
+	Signature          string
+}
+
+type BookingConfirmationTmpl struct {
+	BaseTmplData     BaseTmplData
+	CancellationLink string
 }
 
 type TmplWithMsg struct {
-	SenderName         string
+	BaseTmplData BaseTmplData
+	Message      string
+}
+
+type BookingConfirmationRequestTmpl struct {
 	RecipientFirstName string
-	ClassName          string
-	ClassLevel         string
-	WeekDay            string
-	Hour               string
-	Date               string
-	Location           string
-	Message            string
-	PassState          []bool
+	ConfirmationLink   string
+	Signture           string
 }
 
 type PassActivationTmplData struct {

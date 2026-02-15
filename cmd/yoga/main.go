@@ -121,12 +121,12 @@ func setupRouter(database *gorm.DB, cfg *configuration.Configuration) *gin.Engin
 	passesRepo := sqliteRepo.NewPassesRepo(database)
 
 	tokenGenerator := token.NewGenerator()
-	emailSender := gmail.NewSender(
-		cfg.EmailSender.Host,
-		cfg.EmailSender.Port,
-		cfg.EmailSender.FromName,
-		cfg.EmailSender.User,
-		cfg.EmailSender.Password,
+	emailSender := gmail.NewNotifier(
+		cfg.Notifier.Host,
+		cfg.Notifier.Port,
+		cfg.Notifier.Signature,
+		cfg.Notifier.Login,
+		cfg.Notifier.Password,
 		cfg.BaseSenderTmplPath,
 	)
 
