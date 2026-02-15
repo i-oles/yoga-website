@@ -59,12 +59,14 @@ func (s *service) CreateBooking(ctx context.Context, token string) (models.Class
 
 	_, err = s.BookingsRepo.GetByEmailAndClassID(ctx, pendingBooking.ClassID, pendingBooking.Email)
 	if err == nil {
-		return models.Class{}, viewErrors.ErrBookingAlreadyExists(pendingBooking.ClassID, pendingBooking.Email, err)
+		return models.Class{},
+			viewErrors.ErrBookingAlreadyExists(pendingBooking.ClassID, pendingBooking.Email, err)
 	}
 
 	class, err := s.ClassesRepo.Get(ctx, pendingBooking.ClassID)
 	if err != nil {
-		return models.Class{}, fmt.Errorf("could not get class with id: %s, %w", pendingBooking.ClassID, err)
+		return models.Class{},
+			fmt.Errorf("could not get class with id: %s, %w", pendingBooking.ClassID, err)
 	}
 
 	err = s.checkClassAvailability(ctx, class)
@@ -74,9 +76,35 @@ func (s *service) CreateBooking(ctx context.Context, token string) (models.Class
 
 	bookingID, err := s.createBooking(ctx, pendingBooking)
 	if err != nil {
-		return models.Class{}, fmt.Errorf("could not create booking for pendingBooking %+v: %w", pendingBooking, err)
+		return models.Class{},
+			fmt.Errorf("could not create booking for pendingBooking %+v: %w", pendingBooking, err)
 	}
 
+	usedBookingIDs, totalBookings, err := s.incrementPassIfValid(ctx, pendingBooking.Email, bookingID)
+	if err != nil {
+		return models.Class{},
+			fmt.Errorf("could not increment pass for %s: %w", pendingBooking.Email, err)
+	}
+
+	err = s.sendConfirmationEmails(
+		pendingBooking, class, usedBookingIDs, totalBookings, token, bookingID,
+	)
+	if err != nil {
+		return models.Class{},
+			fmt.Errorf("could not send confirmation email %s: %w", pendingBooking.Email, err)
+	}
+
+	return class, nil
+}
+
+func (s *service) sendConfirmationEmails(
+	pendingBooking models.PendingBooking,
+	class models.Class,
+	passUsedBookingIDs []uuid.UUID,
+	passTotalBookingIDs *int,
+	token string,
+	bookingID uuid.UUID,
+) error {
 	senderParams := models.SenderParams{
 		RecipientEmail:     pendingBooking.Email,
 		RecipientFirstName: pendingBooking.FirstName,
@@ -85,24 +113,20 @@ func (s *service) CreateBooking(ctx context.Context, token string) (models.Class
 		ClassLevel:         class.ClassLevel,
 		StartTime:          class.StartTime,
 		Location:           class.Location,
+		PassUsedBookingIDs: passUsedBookingIDs,
+		PassTotalBookings:  passTotalBookingIDs,
 	}
 
-	usedBookingIDs, totalBookings, err := s.incrementPassIfValid(ctx, pendingBooking.Email, bookingID)
+	cancellationLink := fmt.Sprintf(
+		"%s/bookings/%s/cancel_form?token=%s", s.DomainAddr, bookingID, token,
+	)
+
+	err := s.MessageSender.SendConfirmations(senderParams, cancellationLink)
 	if err != nil {
-		return models.Class{}, fmt.Errorf("could not increment pass for %s: %w", pendingBooking.Email, err)
+		return fmt.Errorf("error while sending final-confirmation: %w", err)
 	}
 
-	senderParams.PassUsedBookingIDs = usedBookingIDs
-	senderParams.PassTotalBookings = totalBookings
-
-	cancellationLink := fmt.Sprintf("%s/bookings/%s/cancel_form?token=%s", s.DomainAddr, bookingID, token)
-
-	err = s.MessageSender.SendConfirmations(senderParams, cancellationLink)
-	if err != nil {
-		return models.Class{}, fmt.Errorf("error while sending final-confirmation: %w", err)
-	}
-
-	return class, nil
+	return nil
 }
 
 func (s *service) createBooking(ctx context.Context, pendingBooking models.PendingBooking) (uuid.UUID, error) {
@@ -176,29 +200,12 @@ func (s *service) checkClassAvailability(ctx context.Context, class models.Class
 }
 
 func (s *service) CancelBooking(ctx context.Context, bookingID uuid.UUID, token string) error {
-	booking, err := s.BookingsRepo.GetByID(ctx, bookingID)
+	booking, err := s.ensureBookingCancellationAllowed(ctx, bookingID, token)
 	if err != nil {
-		return fmt.Errorf("could not get booking for id %s: %w", bookingID, err)
+		return fmt.Errorf("booking cancellation not allowed for bookingID %s: %w", bookingID, err)
 	}
 
-	if booking.ConfirmationToken != token {
-		return viewErrors.ErrInvalidCancellationLink(
-			fmt.Errorf("cancel booking failed due to invalid token: %s for email: %s", booking.Email, token),
-		)
-	}
-
-	if booking.Class == nil {
-		return errors.New("booking.Class field should not be empty")
-	}
-
-	if booking.Class.StartTime.Before(time.Now()) {
-		return viewErrors.ErrClassExpired(
-			booking.Class.ID,
-			fmt.Errorf("class %s has expired at %v", booking.ClassID, booking.Class.StartTime),
-		)
-	}
-
-	err = s.BookingsRepo.Delete(ctx, booking.ID)
+	err = s.BookingsRepo.Delete(ctx, bookingID)
 	if err != nil {
 		if errors.Is(err, errs.ErrNoRowsAffected) {
 			return viewErrors.ErrBookingNotFound(
@@ -211,6 +218,11 @@ func (s *service) CancelBooking(ctx context.Context, bookingID uuid.UUID, token 
 		return fmt.Errorf("could not delete booking: %w", err)
 	}
 
+	usedBookingIDs, totalBookings, err := s.decrementPassIfValid(ctx, booking.Email, bookingID)
+	if err != nil {
+		return fmt.Errorf("could not dectemetnt pass for %s: %w", booking.Email, err)
+	}
+
 	senderParams := models.SenderParams{
 		RecipientFirstName: booking.FirstName,
 		RecipientLastName:  booking.LastName,
@@ -219,15 +231,9 @@ func (s *service) CancelBooking(ctx context.Context, bookingID uuid.UUID, token 
 		ClassLevel:         booking.Class.ClassLevel,
 		StartTime:          booking.Class.StartTime,
 		Location:           booking.Class.Location,
+		PassUsedBookingIDs: usedBookingIDs,
+		PassTotalBookings:  totalBookings,
 	}
-
-	usedBookingIDs, totalBookings, err := s.decrementPassIfValid(ctx, booking.Email, bookingID)
-	if err != nil {
-		return fmt.Errorf("could not dectemetnt pass for %s: %w", booking.Email, err)
-	}
-
-	senderParams.PassUsedBookingIDs = usedBookingIDs
-	senderParams.PassTotalBookings = totalBookings
 
 	err = s.MessageSender.SendInfoAboutBookingCancellation(senderParams)
 	if err != nil {
@@ -235,6 +241,34 @@ func (s *service) CancelBooking(ctx context.Context, bookingID uuid.UUID, token 
 	}
 
 	return nil
+}
+
+func (s *service) ensureBookingCancellationAllowed(
+	ctx context.Context, bookingID uuid.UUID, token string,
+) (models.Booking, error) {
+	booking, err := s.BookingsRepo.GetByID(ctx, bookingID)
+	if err != nil {
+		return models.Booking{}, fmt.Errorf("could not get booking for id %s: %w", bookingID, err)
+	}
+
+	if booking.ConfirmationToken != token {
+		return models.Booking{}, viewErrors.ErrInvalidCancellationLink(
+			fmt.Errorf("cancel booking failed due to invalid token: %s for email: %s", booking.Email, token),
+		)
+	}
+
+	if booking.Class == nil {
+		return models.Booking{}, errors.New("booking.Class field should not be empty")
+	}
+
+	if booking.Class.StartTime.Before(time.Now()) {
+		return models.Booking{}, viewErrors.ErrClassExpired(
+			booking.Class.ID,
+			fmt.Errorf("class %s has expired at %v", booking.ClassID, booking.Class.StartTime),
+		)
+	}
+
+	return booking, nil
 }
 
 func (s *service) GetBookingForCancellation(

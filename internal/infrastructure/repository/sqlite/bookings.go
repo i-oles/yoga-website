@@ -23,18 +23,20 @@ func NewBookingsRepo(db *gorm.DB) *bookingsRepo {
 	}
 }
 
-func (r *bookingsRepo) GetByID(ctx context.Context, id uuid.UUID) (models.Booking, error) {
+func (r *bookingsRepo) GetByID(
+	ctx context.Context, bookingID uuid.UUID,
+) (models.Booking, error) {
 	var sqlBooking db.SQLBooking
 
-	tx := r.db.WithContext(ctx).Where("id = ?", id).Preload("Class").First(&sqlBooking)
+	result := r.db.WithContext(ctx).Where("id = ?", bookingID).Preload("Class").First(&sqlBooking)
 
-	if tx.Error != nil {
-		if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return models.Booking{}, errs.ErrNotFound
 		}
 
 		return models.Booking{},
-			fmt.Errorf("could not get booking for id %s: %w", id, tx.Error)
+			fmt.Errorf("could not get booking for id %s: %w", bookingID, result.Error)
 	}
 
 	return sqlBooking.ToDomain(), nil
@@ -47,23 +49,25 @@ func (r *bookingsRepo) GetByEmailAndClassID(
 ) (models.Booking, error) {
 	var sqlBooking db.SQLBooking
 
-	tx := r.db.WithContext(ctx).
+	result := r.db.WithContext(ctx).
 		Where("class_id = ? AND email = ?", classID, email).
 		First(&sqlBooking)
 
-	if tx.Error != nil {
-		if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return models.Booking{}, errs.ErrNotFound
 		}
 
 		return models.Booking{},
-			fmt.Errorf("could not get booking for email %s and classID %s: %w", email, classID, tx.Error)
+			fmt.Errorf("could not get booking by email %s, classID %s: %w", email, classID, result.Error)
 	}
 
 	return sqlBooking.ToDomain(), nil
 }
 
-func (r *bookingsRepo) GetIDsByEmail(ctx context.Context, email string, limit int) ([]uuid.UUID, error) {
+func (r *bookingsRepo) GetIDsByEmail(
+	ctx context.Context, email string, limit int) ([]uuid.UUID, error,
+) {
 	var sqlBookings []db.SQLBooking
 
 	if limit <= 0 {
@@ -156,14 +160,14 @@ func (r *bookingsRepo) Insert(
 func (r *bookingsRepo) Delete(ctx context.Context, id uuid.UUID) error {
 	var sqlBooking db.SQLBooking
 
-	tx := r.db.WithContext(ctx).
+	result := r.db.WithContext(ctx).
 		Where("id = ?", id).
 		Delete(&sqlBooking)
-	if tx.Error != nil {
-		return fmt.Errorf("could not delete booking: %w", tx.Error)
+	if result.Error != nil {
+		return fmt.Errorf("could not delete booking: %w", result.Error)
 	}
 
-	if tx.RowsAffected == 0 {
+	if result.RowsAffected == 0 {
 		return errs.ErrNoRowsAffected
 	}
 

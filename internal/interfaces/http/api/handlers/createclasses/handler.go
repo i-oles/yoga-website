@@ -28,12 +28,12 @@ func NewHandler(
 	}
 }
 
-func (h *handler) Handle(c *gin.Context) {
+func (h *handler) Handle(ginCtx *gin.Context) {
 	var dtoClasses []dto.CreateClassRequest
 
-	err := c.ShouldBindJSON(&dtoClasses)
+	err := ginCtx.ShouldBindJSON(&dtoClasses)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		ginCtx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 
 		return
 	}
@@ -53,21 +53,21 @@ func (h *handler) Handle(c *gin.Context) {
 		classes = append(classes, class)
 	}
 
-	ctx := c.Request.Context()
+	ctx := ginCtx.Request.Context()
 
 	createdClasses, err := h.classesService.CreateClasses(ctx, classes)
 	if err != nil {
-		h.apiErrorHandler.Handle(c, err)
+		h.apiErrorHandler.Handle(ginCtx, err)
 
 		return
 	}
 
 	classesResp, err := sharedDTO.ToClassesDTO(createdClasses)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "DTOResponse: " + err.Error()})
+		ginCtx.JSON(http.StatusInternalServerError, gin.H{"error": "DTOResponse: " + err.Error()})
 
 		return
 	}
 
-	c.JSON(http.StatusCreated, classesResp)
+	ginCtx.JSON(http.StatusCreated, classesResp)
 }
