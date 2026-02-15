@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"main/internal/domain/models"
-	notifierModels "main/internal/infrastructure/models/sender"
+	notifierModels "main/internal/infrastructure/models/notifier"
 	"main/pkg/converter"
 	"main/pkg/translator"
 
