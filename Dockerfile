@@ -21,6 +21,6 @@ WORKDIR /app
 COPY --from=builder /yoga /app/yoga
 COPY --from=builder /app/config /app/config
 COPY --from=builder /app/web /app/web
-COPY --from=builder /app/internal/infrastructure/sender/templates /app/internal/infrastructure/sender/templates
+COPY --from=builder /app/internal/infrastructure/notifier/templates /app/internal/infrastructure/notifier/templates
 
 ENTRYPOINT ["/app/yoga"]

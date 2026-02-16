@@ -8,8 +8,8 @@ services:
       - "8080:8080"
     environment:
       - DATABASE_URL=sqlite:///./data/database.sqlite3
-      - EMAIL_SENDER_USER=${EMAIL_SENDER_USER}
-      - EMAIL_SENDER_PASSWORD=${EMAIL_SENDER_PASSWORD}
+      - NOTIFIER_LOGIN=${NOTIFIER_LOGIN}
+      - NOTIFIER_PASSWORD=${NOTIFIER_PASSWORD}
       - AUTH_SECRET=${AUTH_SECRET}
       - CONFIG=${CONFIG}
     volumes:

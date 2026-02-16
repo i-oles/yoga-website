@@ -62,8 +62,8 @@ func (n *notifier) NotifyPassActivation(pass models.Pass) error {
 	passState := getPassState(pass.UsedBookingIDs, pass.TotalBookings)
 
 	tmplData := notifierModels.PassActivationTmplData{
-		SenderName: n.Signature,
-		PassState:  passState,
+		Signature: n.Signature,
+		PassState: passState,
 	}
 
 	tmpl, err := template.ParseFiles(n.PassActivationTmplPath)
@@ -89,7 +89,7 @@ func (n *notifier) NotifyConfirmationLink(email, firstName, confirmationLink str
 	tmplData := notifierModels.BookingConfirmationRequestTmpl{
 		RecipientFirstName: firstName,
 		ConfirmationLink:   confirmationLink,
-		Signture:           n.Signature,
+		Signature:          n.Signature,
 	}
 
 	tmpl, err := template.ParseFiles(n.BookingConfirmationRequestTmplPath)
@@ -153,7 +153,7 @@ func (n *notifier) NotifyBookingCancellation(params models.NotifierParams) error
 		return fmt.Errorf("could not get class start time details: %w", err)
 	}
 
-	baseTmplData := n.getBaseTmplData(params, classStartTimeDetails)
+	tmplData := n.getBaseTmplData(params, classStartTimeDetails)
 
 	tmpl, err := template.ParseFiles(n.BookingCancellationTmplPath)
 	if err != nil {
@@ -162,12 +162,12 @@ func (n *notifier) NotifyBookingCancellation(params models.NotifierParams) error
 
 	subject := "Yoga - Rezerwacja odwołana!"
 
-	msgToRecipient, err := n.buildMsgToRecipient(params.RecipientEmail, subject, tmpl, baseTmplData)
+	msgToRecipient, err := n.buildMsgToRecipient(params.RecipientEmail, subject, tmpl, tmplData)
 	if err != nil {
 		return fmt.Errorf("could not build msg to recipient %s: %w", params.RecipientEmail, err)
 	}
 
-	msgToOwner := n.buildMsgToOwner(models.StatusCancelled, params, baseTmplData)
+	msgToOwner := n.buildMsgToOwner(models.StatusCancelled, params, tmplData)
 
 	if err = n.Dialer.DialAndSend(msgToRecipient, msgToOwner); err != nil {
 		return fmt.Errorf("failed to send email: %w", err)

@@ -54,7 +54,7 @@ type Configuration struct {
 	DomainAddr                       string
 	ConfirmationRequestEmailTmplPath string
 	ConfirmationEmailTmplPath        string
-	BaseSenderTmplPath               string
+	BaseNotifierTmplPath             string
 	IsVacation                       bool
 }
 
@@ -92,11 +92,11 @@ func GetConfig(cfgPath string) (*Configuration, error) {
 }
 
 func loadEnvs(cfg *Configuration) {
-	if login := os.Getenv("EMAIL_SENDER_USER"); login != "" {
+	if login := os.Getenv("NOTIFIER_LOGIN"); login != "" {
 		cfg.Notifier.Login = login
 	}
 
-	if password := os.Getenv("EMAIL_SENDER_PASSWORD"); password != "" {
+	if password := os.Getenv("NOTIFIER_PASSWORD"); password != "" {
 		cfg.Notifier.Password = password
 	}
 

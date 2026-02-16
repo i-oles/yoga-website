@@ -19,8 +19,8 @@ import (
 	"main/internal/infrastructure/configuration"
 	"main/internal/infrastructure/generator/token"
 	dbModels "main/internal/infrastructure/models/db"
+	"main/internal/infrastructure/notifier/gmail"
 	sqliteRepo "main/internal/infrastructure/repository/sqlite"
-	"main/internal/infrastructure/sender/gmail"
 	apiErrs "main/internal/interfaces/http/api/errs"
 	apiErrHandler "main/internal/interfaces/http/api/errs/handler"
 	"main/internal/interfaces/http/api/errs/wrapper"
@@ -124,10 +124,10 @@ func setupRouter(database *gorm.DB, cfg *configuration.Configuration) *gin.Engin
 	emailNotifier := gmail.NewNotifier(
 		cfg.Notifier.Host,
 		cfg.Notifier.Port,
-		cfg.Notifier.Signature,
 		cfg.Notifier.Login,
 		cfg.Notifier.Password,
-		cfg.BaseSenderTmplPath,
+		cfg.Notifier.Signature,
+		cfg.BaseNotifierTmplPath,
 	)
 
 	classesService := classes.NewService(classesRepo, bookingsRepo, passesRepo, emailNotifier)

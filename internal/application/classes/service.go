@@ -9,8 +9,8 @@ import (
 	"main/internal/domain/errs"
 	"main/internal/domain/errs/api"
 	"main/internal/domain/models"
+	"main/internal/domain/notifier"
 	"main/internal/domain/repositories"
-	"main/internal/domain/sender"
 	repositoryError "main/internal/infrastructure/errs"
 	"main/pkg/tools"
 
@@ -18,23 +18,23 @@ import (
 )
 
 type service struct {
-	classesRepo   repositories.IClasses
-	bookingsRepo  repositories.IBookings
-	passesRepo    repositories.IPasses
-	MessageSender sender.ISender
+	classesRepo  repositories.IClasses
+	bookingsRepo repositories.IBookings
+	passesRepo   repositories.IPasses
+	notifier     notifier.INotifier
 }
 
 func NewService(
 	classesRepo repositories.IClasses,
 	bookingsRepo repositories.IBookings,
 	passesRepo repositories.IPasses,
-	messageSender sender.ISender,
+	notifier notifier.INotifier,
 ) *service {
 	return &service{
-		classesRepo:   classesRepo,
-		bookingsRepo:  bookingsRepo,
-		passesRepo:    passesRepo,
-		MessageSender: messageSender,
+		classesRepo:  classesRepo,
+		bookingsRepo: bookingsRepo,
+		passesRepo:   passesRepo,
+		notifier:     notifier,
 	}
 }
 
@@ -151,7 +151,12 @@ func (s *service) handleBookingBeforeClassDeletion(
 		return fmt.Errorf("could not delete booking for id %v: %w", booking.ID, err)
 	}
 
-	senderParams := models.NotifierParams{
+	usedBookingIDs, totalBookings, err := s.decrementPassIfValid(ctx, booking.Email, booking.ID)
+	if err != nil {
+		return fmt.Errorf("could not dectemetnt pass for %s: %w", booking.Email, err)
+	}
+
+	notifierParams := models.NotifierParams{
 		RecipientFirstName: booking.FirstName,
 		RecipientLastName:  booking.LastName,
 		RecipientEmail:     booking.Email,
@@ -159,19 +164,13 @@ func (s *service) handleBookingBeforeClassDeletion(
 		ClassLevel:         booking.Class.ClassLevel,
 		StartTime:          booking.Class.StartTime,
 		Location:           booking.Class.Location,
+		PassUsedBookingIDs: usedBookingIDs,
+		PassTotalBookings:  totalBookings,
 	}
 
-	usedBookingIDs, totalBookings, err := s.decrementPassIfValid(ctx, booking.Email, booking.ID)
+	err = s.notifier.NotifyClassCancellation(notifierParams, *msgToUser)
 	if err != nil {
-		return fmt.Errorf("could not dectemetnt pass for %s: %w", booking.Email, err)
-	}
-
-	senderParams.PassUsedBookingIDs = usedBookingIDs
-	senderParams.PassTotalBookings = totalBookings
-
-	err = s.MessageSender.SendInfoAboutClassCancellation(senderParams, *msgToUser)
-	if err != nil {
-		return fmt.Errorf("could not send info about class cancellation: %w", err)
+		return fmt.Errorf("could not notify class cancellation with %+v: %w", notifierParams, err)
 	}
 
 	return nil
@@ -273,14 +272,19 @@ func (s *service) sendInformationAboutClassUpdateToUsers(
 	}
 
 	for _, booking := range bookings {
-		err = s.MessageSender.SendInfoAboutUpdate(
-			booking.Email,
-			booking.FirstName,
-			msg,
-			updatedClass,
-		)
+		notifierParams := models.NotifierParams{
+			RecipientEmail:     booking.Email,
+			RecipientFirstName: booking.FirstName,
+			RecipientLastName:  booking.LastName,
+			ClassName:          updatedClass.ClassName,
+			ClassLevel:         updatedClass.ClassLevel,
+			StartTime:          updatedClass.StartTime,
+			Location:           updatedClass.Location,
+		}
+
+		err = s.notifier.NotifyClassUpdate(notifierParams, msg)
 		if err != nil {
-			return fmt.Errorf("could not send info about class update to %s: %w", booking.Email, err)
+			return fmt.Errorf("could not notify class update to with %+v: %w", notifierParams, err)
 		}
 	}
 

@@ -21,5 +21,5 @@
   },
   "isVacation": false,
   "domainAddr": "http://localhost:8080",
-  "baseSenderTmplPath" : "internal/infrastructure/sender/templates/"
+  "baseNotifierTmplPath" : "internal/infrastructure/notifier/templates/"
 }

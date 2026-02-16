@@ -1,4 +1,4 @@
-package sender
+package notifier
 
 type BaseTmplData struct {
 	RecipientFirstName string
@@ -25,10 +25,10 @@ type TmplWithMsg struct {
 type BookingConfirmationRequestTmpl struct {
 	RecipientFirstName string
 	ConfirmationLink   string
-	Signture           string
+	Signature          string
 }
 
 type PassActivationTmplData struct {
-	SenderName string
-	PassState  []bool
+	PassState []bool
+	Signature string
 }
