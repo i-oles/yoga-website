@@ -28,32 +28,32 @@ func NewHandler(
 	}
 }
 
-func (h *handler) Handle(c *gin.Context) {
+func (h *handler) Handle(ginCtx *gin.Context) {
 	var dtoUpdateClass dto.UpdateClassRequest
 
-	err := c.ShouldBindJSON(&dtoUpdateClass)
+	err := ginCtx.ShouldBindJSON(&dtoUpdateClass)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		ginCtx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 
 		return
 	}
 
 	var uri dto.UpdateClassURI
 
-	if err := c.ShouldBindUri(&uri); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := ginCtx.ShouldBindUri(&uri); err != nil {
+		ginCtx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 
 		return
 	}
 
 	parsedUUID, err := uuid.Parse(uri.ClassID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		ginCtx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 
 		return
 	}
 
-	ctx := c.Request.Context()
+	ctx := ginCtx.Request.Context()
 
 	update := models.UpdateClass{
 		StartTime:   dtoUpdateClass.StartTime,
@@ -65,17 +65,17 @@ func (h *handler) Handle(c *gin.Context) {
 
 	updatedClass, err := h.classesService.UpdateClass(ctx, parsedUUID, update)
 	if err != nil {
-		h.apiErrorHandler.Handle(c, err)
+		h.apiErrorHandler.Handle(ginCtx, err)
 
 		return
 	}
 
 	resp, err := sharedDTO.ToClassDTO(updatedClass)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "DTOResponse: " + err.Error()})
+		ginCtx.JSON(http.StatusInternalServerError, gin.H{"error": "DTOResponse: " + err.Error()})
 
 		return
 	}
 
-	c.JSON(http.StatusOK, resp)
+	ginCtx.JSON(http.StatusOK, resp)
 }

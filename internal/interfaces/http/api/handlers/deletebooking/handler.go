@@ -25,24 +25,24 @@ func NewHandler(
 	}
 }
 
-func (h *handler) Handle(c *gin.Context) {
-	bookingIDStr := c.Param("booking_id")
+func (h *handler) Handle(ginCtx *gin.Context) {
+	bookingIDStr := ginCtx.Param("booking_id")
 
 	bookingID, err := uuid.Parse(bookingIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		ginCtx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 
 		return
 	}
 
-	ctx := c.Request.Context()
+	ctx := ginCtx.Request.Context()
 
 	err = h.bookingsService.DeleteBooking(ctx, bookingID)
 	if err != nil {
-		h.apiErrorHandler.Handle(c, err)
+		h.apiErrorHandler.Handle(ginCtx, err)
 
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"bookingID": bookingID})
+	ginCtx.JSON(http.StatusOK, gin.H{"bookingID": bookingID})
 }

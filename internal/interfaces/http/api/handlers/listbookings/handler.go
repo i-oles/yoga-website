@@ -25,22 +25,22 @@ func NewHandler(
 	}
 }
 
-func (h *handler) Handle(c *gin.Context) {
-	ctx := c.Request.Context()
+func (h *handler) Handle(ginCtx *gin.Context) {
+	ctx := ginCtx.Request.Context()
 
 	allBookings, err := h.bookingsRepo.List(ctx)
 	if err != nil {
-		h.apiErrorHandler.Handle(c, err)
+		h.apiErrorHandler.Handle(ginCtx, err)
 
 		return
 	}
 
 	bookingsListResponse, err := dto.ToBookingsListResponse(allBookings)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "DTOResponse: " + err.Error()})
+		ginCtx.JSON(http.StatusInternalServerError, gin.H{"error": "DTOResponse: " + err.Error()})
 
 		return
 	}
 
-	c.JSON(http.StatusOK, bookingsListResponse)
+	ginCtx.JSON(http.StatusOK, bookingsListResponse)
 }

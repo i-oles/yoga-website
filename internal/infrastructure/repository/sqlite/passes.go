@@ -23,7 +23,9 @@ func NewPassesRepo(db *gorm.DB) *passesRepo {
 	}
 }
 
-func (r *passesRepo) GetByEmail(ctx context.Context, email string) (optional.Optional[models.Pass], error) {
+func (r *passesRepo) GetByEmail(
+	ctx context.Context, email string,
+) (optional.Optional[models.Pass], error) {
 	var sqlPass db.SQLPass
 
 	result := r.db.WithContext(ctx).Where("email = ?", email).First(&sqlPass)
@@ -39,7 +41,9 @@ func (r *passesRepo) GetByEmail(ctx context.Context, email string) (optional.Opt
 	return optional.Of(sqlPass.ToDomain()), nil
 }
 
-func (r *passesRepo) Update(ctx context.Context, id int, usedBookingIDs []uuid.UUID, totalBookings int) error {
+func (r *passesRepo) Update(
+	ctx context.Context, id int, usedBookingIDs []uuid.UUID, totalBookings int,
+) error {
 	var pass db.SQLPass
 
 	if err := r.db.WithContext(ctx).First(&pass, id).Error; err != nil {

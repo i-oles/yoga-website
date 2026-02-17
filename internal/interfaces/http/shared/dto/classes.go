@@ -22,15 +22,19 @@ type ClassWithCurrentCapacityDTO struct {
 	Location        string    `json:"location"`
 }
 
-func ToClassWithCurrentCapacityDTO(class models.ClassWithCurrentCapacity) (ClassWithCurrentCapacityDTO, error) {
+func ToClassWithCurrentCapacityDTO(
+	class models.ClassWithCurrentCapacity,
+) (ClassWithCurrentCapacityDTO, error) {
 	warsawTime, err := converter.ConvertToWarsawTime(class.StartTime)
 	if err != nil {
-		return ClassWithCurrentCapacityDTO{}, fmt.Errorf("error while converting time to warsaw time: %w", err)
+		return ClassWithCurrentCapacityDTO{},
+			fmt.Errorf("error while converting time to warsaw time: %w", err)
 	}
 
 	weekday, err := translator.TranslateToWeekDayToPolish(warsawTime.Weekday())
 	if err != nil {
-		return ClassWithCurrentCapacityDTO{}, fmt.Errorf("error while translating week day to polish: %w", err)
+		return ClassWithCurrentCapacityDTO{},
+			fmt.Errorf("error while translating week day to polish: %w", err)
 	}
 
 	return ClassWithCurrentCapacityDTO{
@@ -46,16 +50,18 @@ func ToClassWithCurrentCapacityDTO(class models.ClassWithCurrentCapacity) (Class
 	}, nil
 }
 
-func ToClassesWithCurrentCapacityDTO(classes []models.ClassWithCurrentCapacity) ([]ClassWithCurrentCapacityDTO, error) {
+func ToClassesWithCurrentCapacityDTO(
+	classes []models.ClassWithCurrentCapacity,
+) ([]ClassWithCurrentCapacityDTO, error) {
 	classesResponse := make([]ClassWithCurrentCapacityDTO, len(classes))
 
-	for i, class := range classes {
+	for idx, class := range classes {
 		classResponse, err := ToClassWithCurrentCapacityDTO(class)
 		if err != nil {
 			return nil, fmt.Errorf("could not convert class to classResponse: %w", err)
 		}
 
-		classesResponse[i] = classResponse
+		classesResponse[idx] = classResponse
 	}
 
 	return classesResponse, nil
@@ -98,13 +104,13 @@ func ToClassDTO(class models.Class) (ClassDTO, error) {
 func ToClassesDTO(classes []models.Class) ([]ClassDTO, error) {
 	classesResponse := make([]ClassDTO, len(classes))
 
-	for i, class := range classes {
+	for idx, class := range classes {
 		classResponse, err := ToClassDTO(class)
 		if err != nil {
 			return nil, fmt.Errorf("could not convert class to classResponse: %w", err)
 		}
 
-		classesResponse[i] = classResponse
+		classesResponse[idx] = classResponse
 	}
 
 	return classesResponse, nil

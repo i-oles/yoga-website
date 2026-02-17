@@ -26,12 +26,12 @@ func NewHandler(
 	}
 }
 
-func (h *handler) Handle(c *gin.Context) {
+func (h *handler) Handle(ginCtx *gin.Context) {
 	var dtoActivatePassRequest dto.ActivatePassRequest
 
-	err := c.ShouldBindJSON(&dtoActivatePassRequest)
+	err := ginCtx.ShouldBindJSON(&dtoActivatePassRequest)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		ginCtx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 
 		return
 	}
@@ -42,21 +42,21 @@ func (h *handler) Handle(c *gin.Context) {
 		TotalBookings: dtoActivatePassRequest.TotalBookings,
 	}
 
-	ctx := c.Request.Context()
+	ctx := ginCtx.Request.Context()
 
 	pass, err := h.passesService.ActivatePass(ctx, params)
 	if err != nil {
-		h.apiErrorHandler.Handle(c, err)
+		h.apiErrorHandler.Handle(ginCtx, err)
 
 		return
 	}
 
 	passResp, err := dto.ToPassDTO(pass)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "DTOResponse: " + err.Error()})
+		ginCtx.JSON(http.StatusInternalServerError, gin.H{"error": "DTOResponse: " + err.Error()})
 
 		return
 	}
 
-	c.JSON(http.StatusOK, passResp)
+	ginCtx.JSON(http.StatusOK, passResp)
 }

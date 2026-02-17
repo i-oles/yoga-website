@@ -32,13 +32,13 @@ func (s SQLClass) ToDomain() models.Class {
 	}
 }
 
-func SQLClassFromDomain(c models.Class) SQLClass {
+func SQLClassFromDomain(class models.Class) SQLClass {
 	return SQLClass{
-		ID:          c.ID,
-		StartTime:   c.StartTime,
-		ClassLevel:  c.ClassLevel,
-		ClassName:   c.ClassName,
-		MaxCapacity: c.MaxCapacity,
-		Location:    c.Location,
+		ID:          class.ID,
+		StartTime:   class.StartTime,
+		ClassLevel:  class.ClassLevel,
+		ClassName:   class.ClassName,
+		MaxCapacity: class.MaxCapacity,
+		Location:    class.Location,
 	}
 }

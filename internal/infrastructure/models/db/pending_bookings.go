@@ -34,14 +34,14 @@ func (s SQLPendingBooking) ToDomain() models.PendingBooking {
 	}
 }
 
-func SQLPendingBookingFromDomain(d models.PendingBooking) SQLPendingBooking {
+func SQLPendingBookingFromDomain(pendingBooking models.PendingBooking) SQLPendingBooking {
 	return SQLPendingBooking{
-		ID:                d.ID,
-		ClassID:           d.ClassID,
-		Email:             d.Email,
-		FirstName:         d.FirstName,
-		LastName:          d.LastName,
-		ConfirmationToken: d.ConfirmationToken,
-		CreatedAt:         d.CreatedAt,
+		ID:                pendingBooking.ID,
+		ClassID:           pendingBooking.ClassID,
+		Email:             pendingBooking.Email,
+		FirstName:         pendingBooking.FirstName,
+		LastName:          pendingBooking.LastName,
+		ConfirmationToken: pendingBooking.ConfirmationToken,
+		CreatedAt:         pendingBooking.CreatedAt,
 	}
 }

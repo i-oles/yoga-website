@@ -10,8 +10,8 @@ import (
 	sharedErrors "main/internal/domain/errs"
 	viewErrors "main/internal/domain/errs/view"
 	"main/internal/domain/models"
+	"main/internal/domain/notifier"
 	"main/internal/domain/repositories"
-	"main/internal/domain/sender"
 	"main/internal/infrastructure/errs"
 	"main/pkg/tools"
 
@@ -23,7 +23,7 @@ type service struct {
 	BookingsRepo        repositories.IBookings
 	PendingBookingsRepo repositories.IPendingBookings
 	PassesRepo          repositories.IPasses
-	MessageSender       sender.ISender
+	Notifier            notifier.INotifier
 	DomainAddr          string
 }
 
@@ -32,7 +32,7 @@ func NewService(
 	bookingsRepo repositories.IBookings,
 	pendingBookingsRepo repositories.IPendingBookings,
 	passesRepo repositories.IPasses,
-	messageSender sender.ISender,
+	notifier notifier.INotifier,
 	domainAddr string,
 ) *service {
 	return &service{
@@ -40,7 +40,7 @@ func NewService(
 		BookingsRepo:        bookingsRepo,
 		PendingBookingsRepo: pendingBookingsRepo,
 		PassesRepo:          passesRepo,
-		MessageSender:       messageSender,
+		Notifier:            notifier,
 		DomainAddr:          domainAddr,
 	}
 }
@@ -105,7 +105,7 @@ func (s *service) sendConfirmationEmails(
 	token string,
 	bookingID uuid.UUID,
 ) error {
-	senderParams := models.SenderParams{
+	notifierParams := models.NotifierParams{
 		RecipientEmail:     pendingBooking.Email,
 		RecipientFirstName: pendingBooking.FirstName,
 		RecipientLastName:  pendingBooking.LastName,
@@ -121,15 +121,17 @@ func (s *service) sendConfirmationEmails(
 		"%s/bookings/%s/cancel_form?token=%s", s.DomainAddr, bookingID, token,
 	)
 
-	err := s.MessageSender.SendConfirmations(senderParams, cancellationLink)
+	err := s.Notifier.NotifyBookingConfirmation(notifierParams, cancellationLink)
 	if err != nil {
-		return fmt.Errorf("error while sending final-confirmation: %w", err)
+		return fmt.Errorf("could not notify booking confirmation: %w", err)
 	}
 
 	return nil
 }
 
-func (s *service) createBooking(ctx context.Context, pendingBooking models.PendingBooking) (uuid.UUID, error) {
+func (s *service) createBooking(
+	ctx context.Context, pendingBooking models.PendingBooking,
+) (uuid.UUID, error) {
 	booking := models.Booking{
 		ID:                uuid.New(),
 		ClassID:           pendingBooking.ClassID,
@@ -223,7 +225,7 @@ func (s *service) CancelBooking(ctx context.Context, bookingID uuid.UUID, token 
 		return fmt.Errorf("could not dectemetnt pass for %s: %w", booking.Email, err)
 	}
 
-	senderParams := models.SenderParams{
+	notifierParams := models.NotifierParams{
 		RecipientFirstName: booking.FirstName,
 		RecipientLastName:  booking.LastName,
 		RecipientEmail:     booking.Email,
@@ -235,9 +237,9 @@ func (s *service) CancelBooking(ctx context.Context, bookingID uuid.UUID, token 
 		PassTotalBookings:  totalBookings,
 	}
 
-	err = s.MessageSender.SendInfoAboutBookingCancellation(senderParams)
+	err = s.Notifier.NotifyBookingCancellation(notifierParams)
 	if err != nil {
-		return fmt.Errorf("could not send info about cancellation to %s: %w", booking.Email, err)
+		return fmt.Errorf("could not notify booking cancellation with %+v: %w", notifierParams, err)
 	}
 
 	return nil
@@ -305,7 +307,12 @@ func (s *service) DeleteBooking(ctx context.Context, bookingID uuid.UUID) error 
 		return nil
 	}
 
-	senderParams := models.SenderParams{
+	usedBookingIDs, totalBookings, err := s.decrementPassIfValid(ctx, booking.Email, bookingID)
+	if err != nil {
+		return fmt.Errorf("could not dectemetnt pass for %s: %w", booking.Email, err)
+	}
+
+	notifierParams := models.NotifierParams{
 		RecipientFirstName: booking.FirstName,
 		RecipientLastName:  booking.LastName,
 		RecipientEmail:     booking.Email,
@@ -313,19 +320,13 @@ func (s *service) DeleteBooking(ctx context.Context, bookingID uuid.UUID) error 
 		ClassLevel:         booking.Class.ClassLevel,
 		StartTime:          booking.Class.StartTime,
 		Location:           booking.Class.Location,
+		PassUsedBookingIDs: usedBookingIDs,
+		PassTotalBookings:  totalBookings,
 	}
 
-	usedBookingIDs, totalBookings, err := s.decrementPassIfValid(ctx, booking.Email, bookingID)
+	err = s.Notifier.NotifyBookingCancellation(notifierParams)
 	if err != nil {
-		return fmt.Errorf("could not dectemetnt pass for %s: %w", booking.Email, err)
-	}
-
-	senderParams.PassUsedBookingIDs = usedBookingIDs
-	senderParams.PassTotalBookings = totalBookings
-
-	err = s.MessageSender.SendInfoAboutBookingCancellation(senderParams)
-	if err != nil {
-		return fmt.Errorf("could not send info about cancellation to %s: %w", booking.Email, err)
+		return fmt.Errorf("could not nofify booking cancellation with %+v: %w", notifierParams, err)
 	}
 
 	return nil

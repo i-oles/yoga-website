@@ -33,12 +33,12 @@ func (d *Duration) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-type EmailSenderSettings struct {
-	Host     string
-	Port     int
-	User     string
-	Password string
-	FromName string
+type Notifier struct {
+	Host      string
+	Port      int
+	Login     string
+	Password  string
+	Signature string
 }
 
 type Configuration struct {
@@ -50,11 +50,11 @@ type Configuration struct {
 	AuthSecret                       string
 	LogBusinessErrors                bool
 	LogConfig                        bool
-	EmailSender                      EmailSenderSettings
+	Notifier                         Notifier
 	DomainAddr                       string
 	ConfirmationRequestEmailTmplPath string
 	ConfirmationEmailTmplPath        string
-	BaseSenderTmplPath               string
+	BaseNotifierTmplPath             string
 	IsVacation                       bool
 }
 
@@ -83,21 +83,21 @@ func GetConfig(cfgPath string) (*Configuration, error) {
 
 	loadEnvs(cfg)
 
-	if cfg.EmailSender.User == "" || cfg.EmailSender.Password == "" {
+	if cfg.Notifier.Login == "" || cfg.Notifier.Password == "" {
 		return nil,
-			errors.New("provide envs for email sender")
+			errors.New("provide envs for notifier")
 	}
 
 	return cfg, nil
 }
 
 func loadEnvs(cfg *Configuration) {
-	if emailSenderUser := os.Getenv("EMAIL_SENDER_USER"); emailSenderUser != "" {
-		cfg.EmailSender.User = emailSenderUser
+	if login := os.Getenv("NOTIFIER_LOGIN"); login != "" {
+		cfg.Notifier.Login = login
 	}
 
-	if emailSenderPassword := os.Getenv("EMAIL_SENDER_PASSWORD"); emailSenderPassword != "" {
-		cfg.EmailSender.Password = emailSenderPassword
+	if password := os.Getenv("NOTIFIER_PASSWORD"); password != "" {
+		cfg.Notifier.Password = password
 	}
 
 	if authSecret := os.Getenv("AUTH_SECRET"); authSecret != "" {

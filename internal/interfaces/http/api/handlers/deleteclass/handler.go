@@ -26,33 +26,33 @@ func NewHandler(
 	}
 }
 
-func (h *handler) Handle(c *gin.Context) {
+func (h *handler) Handle(ginCtx *gin.Context) {
 	var dtoDeleteClassRequest dto.DeleteClassRequest
 
-	err := c.ShouldBindJSON(&dtoDeleteClassRequest)
+	err := ginCtx.ShouldBindJSON(&dtoDeleteClassRequest)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		ginCtx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 
 		return
 	}
 
-	classIDStr := c.Param("class_id")
+	classIDStr := ginCtx.Param("class_id")
 
 	classID, err := uuid.Parse(classIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		ginCtx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 
 		return
 	}
 
-	ctx := c.Request.Context()
+	ctx := ginCtx.Request.Context()
 
 	err = h.classesService.DeleteClass(ctx, classID, dtoDeleteClassRequest.Message)
 	if err != nil {
-		h.apiErrorHandler.Handle(c, err)
+		h.apiErrorHandler.Handle(ginCtx, err)
 
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"class_id": classID})
+	ginCtx.JSON(http.StatusOK, gin.H{"class_id": classID})
 }

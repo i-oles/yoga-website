@@ -8,7 +8,7 @@ import (
 
 	"main/internal/domain/models"
 	"main/internal/infrastructure/configuration"
-	"main/internal/infrastructure/sender/gmail"
+	"main/internal/infrastructure/notifier/gmail"
 
 	"github.com/google/uuid"
 )
@@ -20,18 +20,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	emailSender := gmail.NewSender(
-		cfg.EmailSender.Host,
-		cfg.EmailSender.Port,
-		cfg.EmailSender.FromName,
-		cfg.EmailSender.User,
-		cfg.EmailSender.Password,
-		cfg.BaseSenderTmplPath,
+	notifier := gmail.NewNotifier(
+		cfg.Notifier.Host,
+		cfg.Notifier.Port,
+		cfg.Notifier.Signature,
+		cfg.Notifier.Login,
+		cfg.Notifier.Password,
+		cfg.BaseNotifierTmplPath,
 	)
 
 	four := 4
 
-	senderParams := models.SenderParams{
+	notifierParams := models.NotifierParams{
 		RecipientEmail:     "orth.quala@gmail.com",
 		RecipientFirstName: "orth",
 		RecipientLastName:  "quala",
@@ -45,7 +45,7 @@ func main() {
 
 	cancellationLink := "http://testlink.com"
 
-	err = emailSender.SendConfirmations(senderParams, cancellationLink)
+	err = notifier.NotifyBookingConfirmation(notifierParams, cancellationLink)
 	if err != nil {
 		slog.Error(err.Error())
 	}

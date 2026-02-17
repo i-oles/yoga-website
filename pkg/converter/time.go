@@ -11,7 +11,7 @@ const (
 	HourLayout = "15:04"
 )
 
-func ConvertToWarsawTime(t time.Time) (time.Time, error) {
+func ConvertToWarsawTime(t time.Time) (time.Time, error) { //nolint
 	loc, err := time.LoadLocation("Europe/Warsaw")
 	if err != nil {
 		return time.Time{}, fmt.Errorf("error while loading location: %w", err)

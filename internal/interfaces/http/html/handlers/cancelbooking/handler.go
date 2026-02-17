@@ -26,38 +26,38 @@ func NewHandler(
 	}
 }
 
-func (h *handler) Handle(c *gin.Context) {
+func (h *handler) Handle(ginCtx *gin.Context) {
 	var uri dto.BookingCancelURI
 
-	if err := c.ShouldBindUri(&uri); err != nil {
-		viewErrs.ErrBadRequest(c, "cancel_booking_form.tmpl", err)
+	if err := ginCtx.ShouldBindUri(&uri); err != nil {
+		viewErrs.ErrBadRequest(ginCtx, "cancel_booking_form.tmpl", err)
 
 		return
 	}
 
 	var form dto.BookingCancelForm
 
-	if err := c.ShouldBindQuery(&form); err != nil {
-		viewErrs.ErrBadRequest(c, "cancel_booking_form.tmpl", err)
+	if err := ginCtx.ShouldBindQuery(&form); err != nil {
+		viewErrs.ErrBadRequest(ginCtx, "cancel_booking_form.tmpl", err)
 
 		return
 	}
 
 	bookingID, err := uuid.Parse(uri.BookingID)
 	if err != nil {
-		viewErrs.ErrBadRequest(c, "cancel_booking_form.tmpl", err)
+		viewErrs.ErrBadRequest(ginCtx, "cancel_booking_form.tmpl", err)
 
 		return
 	}
 
-	ctx := c.Request.Context()
+	ctx := ginCtx.Request.Context()
 
 	err = h.bookingService.CancelBooking(ctx, bookingID, form.Token)
 	if err != nil {
-		h.viewErrorHandler.Handle(c, "cancel_booking_form.tmpl", err)
+		h.viewErrorHandler.Handle(ginCtx, "cancel_booking_form.tmpl", err)
 
 		return
 	}
 
-	c.HTML(http.StatusOK, "confirmation_cancel_booking.tmpl", gin.H{})
+	ginCtx.HTML(http.StatusOK, "confirmation_cancel_booking.tmpl", gin.H{})
 }

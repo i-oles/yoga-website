@@ -51,13 +51,13 @@ func ToBookingResponse(booking domainModels.Booking) (BookingResponse, error) {
 func ToBookingsListResponse(bookings []domainModels.Booking) ([]BookingResponse, error) {
 	bookingsListResponse := make([]BookingResponse, len(bookings))
 
-	for i, booking := range bookings {
+	for idx, booking := range bookings {
 		bookingResponse, err := ToBookingResponse(booking)
 		if err != nil {
 			return nil, fmt.Errorf("could not convert booking to bookingResponse: %w", err)
 		}
 
-		bookingsListResponse[i] = bookingResponse
+		bookingsListResponse[idx] = bookingResponse
 	}
 
 	return bookingsListResponse, nil

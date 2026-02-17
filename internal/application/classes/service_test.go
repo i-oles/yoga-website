@@ -11,8 +11,8 @@ import (
 
 	"main/internal/domain/errs/api"
 	"main/internal/domain/models"
+	"main/internal/domain/notifier"
 	"main/internal/domain/repositories"
-	"main/internal/domain/sender"
 	"main/pkg/optional"
 
 	"github.com/google/uuid"
@@ -169,7 +169,9 @@ func (m *mockClassesRepo) List(_ context.Context) ([]models.Class, error) {
 	return m.classes, m.error
 }
 
-func (m *mockClassesRepo) Insert(_ context.Context, classes []models.Class) ([]models.Class, error) {
+func (m *mockClassesRepo) Insert(
+	_ context.Context, classes []models.Class,
+) ([]models.Class, error) {
 	return classes, m.error
 }
 
@@ -181,33 +183,33 @@ func (m *mockClassesRepo) Update(_ context.Context, _ uuid.UUID, _ map[string]an
 	return m.error
 }
 
-type mockSender struct{}
+type mockNotifier struct{}
 
-func newMockSender() *mockSender {
-	return &mockSender{}
+func newMockNotifier() *mockNotifier {
+	return &mockNotifier{}
 }
 
-func (m *mockSender) SendLinkToConfirmation(_, _, _ string) error {
+func (m *mockNotifier) NotifyConfirmationLink(_, _, _ string) error {
 	return nil
 }
 
-func (m *mockSender) SendConfirmations(_ models.SenderParams, _ string) error {
+func (m *mockNotifier) NotifyBookingConfirmation(_ models.NotifierParams, _ string) error {
 	return nil
 }
 
-func (m *mockSender) SendInfoAboutClassCancellation(_ models.SenderParams, _ string) error {
+func (m *mockNotifier) NotifyClassCancellation(_ models.NotifierParams, _ string) error {
 	return nil
 }
 
-func (m *mockSender) SendInfoAboutUpdate(_, _, _ string, _ models.Class) error {
+func (m *mockNotifier) NotifyClassUpdate(_ models.NotifierParams, _ string) error {
 	return nil
 }
 
-func (m *mockSender) SendInfoAboutBookingCancellation(_ models.SenderParams) error {
+func (m *mockNotifier) NotifyBookingCancellation(_ models.NotifierParams) error {
 	return nil
 }
 
-func (m *mockSender) SendPass(_ models.Pass) error {
+func (m *mockNotifier) NotifyPassActivation(_ models.Pass) error {
 	return nil
 }
 
@@ -217,11 +219,15 @@ func newMockPassesRepo() *mockPassesRepo {
 	return &mockPassesRepo{}
 }
 
-func (m *mockPassesRepo) GetByEmail(ctx context.Context, email string) (optional.Optional[models.Pass], error) {
+func (m *mockPassesRepo) GetByEmail(
+	ctx context.Context, email string,
+) (optional.Optional[models.Pass], error) {
 	return optional.Empty[models.Pass](), nil
 }
 
-func (m *mockPassesRepo) Update(ctx context.Context, id int, usedBookingIDs []uuid.UUID, totalBookings int) error {
+func (m *mockPassesRepo) Update(
+	ctx context.Context, id int, usedBookingIDs []uuid.UUID, totalBookings int,
+) error {
 	return nil
 }
 
@@ -268,7 +274,9 @@ func (m *mockBookingsRepo) GetByID(_ context.Context, _ uuid.UUID) (models.Booki
 	return models.Booking{}, m.error
 }
 
-func (m *mockBookingsRepo) GetByEmailAndClassID(_ context.Context, _ uuid.UUID, _ string) (models.Booking, error) {
+func (m *mockBookingsRepo) GetByEmailAndClassID(
+	_ context.Context, _ uuid.UUID, _ string,
+) (models.Booking, error) {
 	return models.Booking{}, m.error
 }
 
@@ -280,7 +288,9 @@ func (m *mockBookingsRepo) List(_ context.Context) ([]models.Booking, error) {
 	return []models.Booking{}, m.error
 }
 
-func (m *mockBookingsRepo) ListByClassID(_ context.Context, classID uuid.UUID) ([]models.Booking, error) {
+func (m *mockBookingsRepo) ListByClassID(
+	_ context.Context, classID uuid.UUID,
+) ([]models.Booking, error) {
 	if m.testBooking.ClassID != classID {
 		return []models.Booking{}, nil
 	}
@@ -467,9 +477,9 @@ func TestService_ListClasses(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			sender := newMockSender()
+			notifier := newMockNotifier()
 
-			service := NewService(tt.classesRepo, tt.bookingsRepo, tt.passesRepo, sender)
+			service := NewService(tt.classesRepo, tt.bookingsRepo, tt.passesRepo, notifier)
 			ctx := context.Background()
 
 			classes, err := service.ListClasses(ctx, tt.onlyUpcomingClasses, tt.classesLimit)
@@ -544,12 +554,12 @@ func TestService_CreateClasses(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			sender := &mockSender{}
+			notifier := &mockNotifier{}
 			passesRepo := &mockPassesRepo{}
 
 			bookingsRepo := newMockBookingsRepo(testBooking, nil)
 
-			service := NewService(tt.classesRepo, bookingsRepo, passesRepo, sender)
+			service := NewService(tt.classesRepo, bookingsRepo, passesRepo, notifier)
 			ctx := context.Background()
 
 			result, err := service.CreateClasses(ctx, tt.classes)
@@ -579,89 +589,89 @@ func TestService_CreateClasses(t *testing.T) {
 
 func TestService_DeleteClass(t *testing.T) {
 	tests := []struct {
-		name          string
-		classID       uuid.UUID
-		reasonMsg     *string
-		classesRepo   repositories.IClasses
-		bookingsRepo  repositories.IBookings
-		messageSender sender.ISender
-		wantError     bool
-		error         error
+		name         string
+		classID      uuid.UUID
+		reasonMsg    *string
+		classesRepo  repositories.IClasses
+		bookingsRepo repositories.IBookings
+		notifier     notifier.INotifier
+		wantError    bool
+		error        error
 	}{
 		{
-			name:          "delete class: success",
-			classID:       testID1,
-			reasonMsg:     anyValuePtr("testReason"),
-			classesRepo:   newMockClassesRepo(futureClasses, nil),
-			bookingsRepo:  newMockBookingsRepo(testBooking, nil),
-			messageSender: &mockSender{},
+			name:         "delete class: success",
+			classID:      testID1,
+			reasonMsg:    anyValuePtr("testReason"),
+			classesRepo:  newMockClassesRepo(futureClasses, nil),
+			bookingsRepo: newMockBookingsRepo(testBooking, nil),
+			notifier:     &mockNotifier{},
 		},
 		{
-			name:          "delete class: success with no bookings and no reason msg",
-			classID:       testID2,
-			classesRepo:   newMockClassesRepo(futureClasses, nil),
-			bookingsRepo:  newMockBookingsRepo(testBooking, nil),
-			messageSender: &mockSender{},
+			name:         "delete class: success with no bookings and no reason msg",
+			classID:      testID2,
+			classesRepo:  newMockClassesRepo(futureClasses, nil),
+			bookingsRepo: newMockBookingsRepo(testBooking, nil),
+			notifier:     &mockNotifier{},
 		},
 		{
-			name:          "delete class: error reasonMsg empty",
-			classID:       testID1,
-			classesRepo:   newMockClassesRepo(futureClasses, nil),
-			bookingsRepo:  newMockBookingsRepo(testBooking, nil),
-			messageSender: &mockSender{},
-			wantError:     true,
+			name:         "delete class: error reasonMsg empty",
+			classID:      testID1,
+			classesRepo:  newMockClassesRepo(futureClasses, nil),
+			bookingsRepo: newMockBookingsRepo(testBooking, nil),
+			notifier:     &mockNotifier{},
+			wantError:    true,
 			error: api.ErrValidation(
 				errors.New("reason msg can not be empty, when classes has bookings"),
 			),
 		},
 		{
-			name:          "delete class: error class not empty",
-			classID:       testID1,
-			classesRepo:   newMockClassesRepo(futureClasses, nil),
-			bookingsRepo:  newMockBookingsRepo(testBookingWithoutClass, nil),
-			reasonMsg:     anyValuePtr("testReason"),
-			messageSender: &mockSender{},
-			wantError:     true,
-			error:         errors.New("class field should not be empty"),
+			name:         "delete class: error class not empty",
+			classID:      testID1,
+			classesRepo:  newMockClassesRepo(futureClasses, nil),
+			bookingsRepo: newMockBookingsRepo(testBookingWithoutClass, nil),
+			reasonMsg:    anyValuePtr("testReason"),
+			notifier:     &mockNotifier{},
+			wantError:    true,
+			error:        errors.New("class field should not be empty"),
 		},
 		{
-			name:          "delete class: messageSender error",
-			classID:       testID1,
-			classesRepo:   newMockClassesRepo(futureClasses, nil),
-			bookingsRepo:  newMockBookingsRepo(testBooking, nil),
-			reasonMsg:     anyValuePtr("testReason"),
-			messageSender: newMockSender(),
-			wantError:     true,
-			error:         errors.New("msgSender error"),
+			name:         "delete class: notifier error",
+			classID:      testID1,
+			classesRepo:  newMockClassesRepo(futureClasses, nil),
+			bookingsRepo: newMockBookingsRepo(testBooking, nil),
+			reasonMsg:    anyValuePtr("testReason"),
+			notifier:     newMockNotifier(),
+			wantError:    true,
+			error:        errors.New("notifier error"),
 		},
 		{
-			name:          "delete class: no bookings and no reason msg, classRepo.Delete() error",
-			classID:       testID2,
-			classesRepo:   newMockClassesRepo(futureClasses, errors.New("db error")),
-			bookingsRepo:  newMockBookingsRepo(testBooking, nil),
-			messageSender: &mockSender{},
-			wantError:     true,
-			error:         errors.New("db error"),
+			name:         "delete class: no bookings and no reason msg, classRepo.Delete() error",
+			classID:      testID2,
+			classesRepo:  newMockClassesRepo(futureClasses, errors.New("db error")),
+			bookingsRepo: newMockBookingsRepo(testBooking, nil),
+			notifier:     &mockNotifier{},
+			wantError:    true,
+			error:        errors.New("db error"),
 		},
 		{
-			name:          "delete class: classRepo.Delete() error",
-			classID:       testID1,
-			classesRepo:   newMockClassesRepo(futureClasses, nil),
-			bookingsRepo:  newMockBookingsRepo(testBooking, errors.New("db error")),
-			reasonMsg:     anyValuePtr("testReason"),
-			messageSender: &mockSender{},
-			wantError:     true,
-			error:         errors.New("db error"),
+			name:         "delete class: classRepo.Delete() error",
+			classID:      testID1,
+			classesRepo:  newMockClassesRepo(futureClasses, nil),
+			bookingsRepo: newMockBookingsRepo(testBooking, errors.New("db error")),
+			reasonMsg:    anyValuePtr("testReason"),
+			notifier:     &mockNotifier{},
+			wantError:    true,
+			error:        errors.New("db error"),
 		},
 		{
-			name:          "delete class: classRepo.Delete() error",
-			classID:       testID1,
-			classesRepo:   newMockClassesRepo(futureClasses, nil),
-			bookingsRepo:  newMockBookingsRepo(testBooking, errors.New("db error")),
-			reasonMsg:     anyValuePtr("testReason"),
-			messageSender: &mockSender{},
-			wantError:     true,
-			error:         errors.New("db error"),
+			name:         "delete class: classRepo.Delete() error",
+			classID:      testID1,
+			classesRepo:  newMockClassesRepo(futureClasses, nil),
+			bookingsRepo: newMockBookingsRepo(testBooking, errors.New("db error")),
+			reasonMsg:    anyValuePtr("testReason"),
+			notifier:     &mockNotifier{},
+			wantError:    true,
+			error:        errors.New("db error"),
 		},
 	}
 
@@ -669,7 +679,7 @@ func TestService_DeleteClass(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			passesRepo := mockPassesRepo{}
 
-			service := NewService(tt.classesRepo, tt.bookingsRepo, &passesRepo, tt.messageSender)
+			service := NewService(tt.classesRepo, tt.bookingsRepo, &passesRepo, tt.notifier)
 			ctx := context.Background()
 
 			err := service.DeleteClass(ctx, tt.classID, tt.reasonMsg)

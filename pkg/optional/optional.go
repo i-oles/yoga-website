@@ -1,6 +1,6 @@
 package optional
 
-// from https://github.com/frenchie4111/go-generic-optional/blob/main/opt.go
+// Optional from https://github.com/frenchie4111/go-generic-optional/blob/main/opt.go
 type Optional[T any] struct {
 	value  T
 	exists bool

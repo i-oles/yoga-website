@@ -20,12 +20,12 @@ func NewErrorHandler(
 	}
 }
 
-func (e ErrorHandler) Handle(c *gin.Context, err error) {
+func (e ErrorHandler) Handle(ctx *gin.Context, err error) {
 	slog.Error("APIError",
 		slog.String("error", err.Error()),
-		slog.Any("params", c.Request.URL.Query()),
-		slog.String("endpoint", c.FullPath()),
+		slog.Any("params", ctx.Request.URL.Query()),
+		slog.String("endpoint", ctx.FullPath()),
 	)
 
-	e.apiErrorHandler.Handle(c, err)
+	e.apiErrorHandler.Handle(ctx, err)
 }

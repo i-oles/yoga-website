@@ -19,8 +19,8 @@ import (
 	"main/internal/infrastructure/configuration"
 	"main/internal/infrastructure/generator/token"
 	dbModels "main/internal/infrastructure/models/db"
+	"main/internal/infrastructure/notifier/gmail"
 	sqliteRepo "main/internal/infrastructure/repository/sqlite"
-	"main/internal/infrastructure/sender/gmail"
 	apiErrs "main/internal/interfaces/http/api/errs"
 	apiErrHandler "main/internal/interfaces/http/api/errs/handler"
 	"main/internal/interfaces/http/api/errs/wrapper"
@@ -121,28 +121,28 @@ func setupRouter(database *gorm.DB, cfg *configuration.Configuration) *gin.Engin
 	passesRepo := sqliteRepo.NewPassesRepo(database)
 
 	tokenGenerator := token.NewGenerator()
-	emailSender := gmail.NewSender(
-		cfg.EmailSender.Host,
-		cfg.EmailSender.Port,
-		cfg.EmailSender.FromName,
-		cfg.EmailSender.User,
-		cfg.EmailSender.Password,
-		cfg.BaseSenderTmplPath,
+	emailNotifier := gmail.NewNotifier(
+		cfg.Notifier.Host,
+		cfg.Notifier.Port,
+		cfg.Notifier.Login,
+		cfg.Notifier.Password,
+		cfg.Notifier.Signature,
+		cfg.BaseNotifierTmplPath,
 	)
 
-	classesService := classes.NewService(classesRepo, bookingsRepo, passesRepo, emailSender)
+	classesService := classes.NewService(classesRepo, bookingsRepo, passesRepo, emailNotifier)
 	bookingsService := bookings.NewService(
-		classesRepo, bookingsRepo, pendingBookingsRepo, passesRepo, emailSender, cfg.DomainAddr,
+		classesRepo, bookingsRepo, pendingBookingsRepo, passesRepo, emailNotifier, cfg.DomainAddr,
 	)
 	pendingBookingsService := pendingbookings.NewService(
 		classesRepo,
 		pendingBookingsRepo,
 		bookingsRepo,
 		tokenGenerator,
-		emailSender,
+		emailNotifier,
 		cfg.DomainAddr,
 	)
-	passesService := passes.NewService(passesRepo, bookingsRepo, emailSender)
+	passesService := passes.NewService(passesRepo, bookingsRepo, emailNotifier)
 
 	var viewErrorHandler viewErrs.IErrorHandler
 

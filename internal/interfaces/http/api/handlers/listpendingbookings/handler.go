@@ -25,22 +25,22 @@ func NewHandler(
 	}
 }
 
-func (h *handler) Handle(c *gin.Context) {
-	ctx := c.Request.Context()
+func (h *handler) Handle(ginCtx *gin.Context) {
+	ctx := ginCtx.Request.Context()
 
 	allPendingBookings, err := h.pendingBookingsRepo.List(ctx)
 	if err != nil {
-		h.apiErrorHandler.Handle(c, err)
+		h.apiErrorHandler.Handle(ginCtx, err)
 
 		return
 	}
 
 	pendingBookingsListResponse, err := dto.ToPendingBookingsListResponse(allPendingBookings)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "DTOResponse: " + err.Error()})
+		ginCtx.JSON(http.StatusInternalServerError, gin.H{"error": "DTOResponse: " + err.Error()})
 
 		return
 	}
 
-	c.JSON(http.StatusOK, pendingBookingsListResponse)
+	ginCtx.JSON(http.StatusOK, pendingBookingsListResponse)
 }

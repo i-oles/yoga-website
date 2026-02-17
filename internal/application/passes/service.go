@@ -6,36 +6,36 @@ import (
 
 	"main/internal/domain/errs/api"
 	"main/internal/domain/models"
+	"main/internal/domain/notifier"
 	"main/internal/domain/repositories"
-	"main/internal/domain/sender"
 
 	"github.com/google/uuid"
 )
 
 type service struct {
-	passesRepo    repositories.IPasses
-	bookingsRepo  repositories.IBookings
-	messageSender sender.ISender
+	passesRepo   repositories.IPasses
+	bookingsRepo repositories.IBookings
+	notifier     notifier.INotifier
 }
 
 func NewService(
 	passesRepo repositories.IPasses,
 	bookingsRepo repositories.IBookings,
-	messageSender sender.ISender,
+	notifier notifier.INotifier,
 ) *service {
 	return &service{
-		passesRepo:    passesRepo,
-		bookingsRepo:  bookingsRepo,
-		messageSender: messageSender,
+		passesRepo:   passesRepo,
+		bookingsRepo: bookingsRepo,
+		notifier:     notifier,
 	}
 }
 
-func (s *service) ActivatePass(ctx context.Context, params models.PassActivationParams) (models.Pass, error) {
+func (s *service) ActivatePass(
+	ctx context.Context, params models.PassActivationParams,
+) (models.Pass, error) {
 	if params.UsedBookings > params.TotalBookings {
 		return models.Pass{},
-			api.ErrValidation(
-				fmt.Errorf("usedBookings: %d can not be grater than totalBookings: %d", params.UsedBookings, params.TotalBookings),
-			)
+			api.ErrValidation(fmt.Errorf("usedBookings: %d is grater than totalBookings: %d", params.UsedBookings, params.TotalBookings))
 	}
 
 	passOpt, err := s.passesRepo.GetByEmail(ctx, params.Email)
@@ -46,7 +46,8 @@ func (s *service) ActivatePass(ctx context.Context, params models.PassActivation
 	// when user booked one or more classes in future - system needs to add this bookings to Pass
 	usedBookingIDs, err := s.getUsedBookingIDsForPass(ctx, params.Email, params.UsedBookings)
 	if err != nil {
-		return models.Pass{}, fmt.Errorf("could not get usedBookingIDs for email %s: %w", params.Email, err)
+		return models.Pass{},
+			fmt.Errorf("could not get usedBookingIDs for email %s: %w", params.Email, err)
 	}
 
 	if !passOpt.Exists() {
@@ -60,7 +61,7 @@ func (s *service) ActivatePass(ctx context.Context, params models.PassActivation
 			return models.Pass{}, fmt.Errorf("could not insert pass for %s: %w", params.Email, err)
 		}
 
-		err = s.messageSender.SendPass(pass)
+		err = s.notifier.NotifyPassActivation(pass)
 		if err != nil {
 			return models.Pass{}, fmt.Errorf("could not send pass %v: %w", pass, err)
 		}
@@ -84,9 +85,9 @@ func (s *service) ActivatePass(ctx context.Context, params models.PassActivation
 		UpdatedAt:      pass.UpdatedAt,
 	}
 
-	err = s.messageSender.SendPass(newPass)
+	err = s.notifier.NotifyPassActivation(newPass)
 	if err != nil {
-		return models.Pass{}, fmt.Errorf("could not send pass: %w", err)
+		return models.Pass{}, fmt.Errorf("could notify pass activation with %v: %w", pass, err)
 	}
 
 	return newPass, nil
