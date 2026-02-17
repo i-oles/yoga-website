@@ -61,7 +61,7 @@ func NewNotifier(
 func (n *notifier) NotifyPassActivation(pass models.Pass) error {
 	passState := getPassState(pass.UsedBookingIDs, pass.TotalBookings)
 
-	tmplData := notifierModels.PassActivationTmplData{
+	tmplData := notifierModels.PassActivationTmpl{
 		Signature: n.signature,
 		PassState: passState,
 	}
@@ -186,7 +186,7 @@ func (n *notifier) NotifyClassUpdate(
 
 	baseTmplData := n.getBaseTmplData(params, classStartTimeDetails)
 
-	tmplData := notifierModels.TmplWithMsg{
+	tmplData := notifierModels.BaseTmplWithMsg{
 		BaseTmplData: baseTmplData,
 		Message:      msg,
 	}
@@ -218,7 +218,7 @@ func (n *notifier) NotifyClassCancellation(params models.NotifierParams, msg str
 
 	basetmpldata := n.getBaseTmplData(params, classStartTimeDetails)
 
-	tmplData := notifierModels.TmplWithMsg{
+	tmplData := notifierModels.BaseTmplWithMsg{
 		BaseTmplData: basetmpldata,
 		Message:      msg,
 	}
@@ -267,7 +267,7 @@ func (n *notifier) buildMsgToRecipient(
 func (n *notifier) buildMsgToOwner(
 	status models.OperationStatus,
 	params models.NotifierParams,
-	baseTmplData notifierModels.BaseTmplData,
+	baseTmplData notifierModels.BaseTmpl,
 ) *gomail.Message {
 	subject := fmt.Sprintf("%s %s %s",
 		params.RecipientFirstName,
@@ -335,8 +335,8 @@ func getClassStartTimeDetails(t time.Time) (timeDetails, error) {
 
 func (n *notifier) getBaseTmplData(
 	params models.NotifierParams, classStartTimeDetails timeDetails,
-) notifierModels.BaseTmplData {
-	tmplData := notifierModels.BaseTmplData{
+) notifierModels.BaseTmpl {
+	tmplData := notifierModels.BaseTmpl{
 		RecipientFirstName: params.RecipientFirstName,
 		ClassName:          params.ClassName,
 		ClassLevel:         params.ClassLevel,

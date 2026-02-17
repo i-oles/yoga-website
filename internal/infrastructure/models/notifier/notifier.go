@@ -1,6 +1,6 @@
 package notifier
 
-type BaseTmplData struct {
+type BaseTmpl struct {
 	RecipientFirstName string
 	ClassName          string
 	ClassLevel         string
@@ -12,14 +12,14 @@ type BaseTmplData struct {
 	Signature          string
 }
 
-type BookingConfirmationTmpl struct {
-	BaseTmplData     BaseTmplData
-	CancellationLink string
+type BaseTmplWithMsg struct {
+	BaseTmplData BaseTmpl
+	Message      string
 }
 
-type TmplWithMsg struct {
-	BaseTmplData BaseTmplData
-	Message      string
+type BookingConfirmationTmpl struct {
+	BaseTmplData     BaseTmpl
+	CancellationLink string
 }
 
 type BookingConfirmationRequestTmpl struct {
@@ -28,7 +28,7 @@ type BookingConfirmationRequestTmpl struct {
 	Signature          string
 }
 
-type PassActivationTmplData struct {
+type PassActivationTmpl struct {
 	PassState []bool
 	Signature string
 }
