@@ -5,7 +5,7 @@ import (
 )
 
 type CreateClassRequest struct {
-	StartTime   time.Time `binding:"required" json:"start_time"  time_format:"2006-01-02T15:04:05Z07:00"`
+	StartTime   time.Time `binding:"required" json:"start_time"  time_format:"2006-01-02T15:04:05Z07:00"` //nolint
 	ClassLevel  string    `binding:"required,min=3,max=40" json:"class_level"`
 	ClassName   string    `binding:"required,min=3,max=40" json:"class_name"`
 	MaxCapacity int       `binding:"gte=1" json:"max_capacity"`

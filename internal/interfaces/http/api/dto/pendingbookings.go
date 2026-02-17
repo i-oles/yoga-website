@@ -19,7 +19,9 @@ type PendingBookingResponse struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
-func ToPendingBookingResponse(pendingBooking models.PendingBooking) (PendingBookingResponse, error) {
+func ToPendingBookingResponse(
+	pendingBooking models.PendingBooking,
+) (PendingBookingResponse, error) {
 	createdAtWarsawTime, err := converter.ConvertToWarsawTime(pendingBooking.CreatedAt)
 	if err != nil {
 		return PendingBookingResponse{}, fmt.Errorf("could not convert createdAt to warsaw time: %w", err)
@@ -35,16 +37,18 @@ func ToPendingBookingResponse(pendingBooking models.PendingBooking) (PendingBook
 	}, nil
 }
 
-func ToPendingBookingsListResponse(pendingBookings []models.PendingBooking) ([]PendingBookingResponse, error) {
+func ToPendingBookingsListResponse(
+	pendingBookings []models.PendingBooking,
+) ([]PendingBookingResponse, error) {
 	pendingBookingsListResponse := make([]PendingBookingResponse, len(pendingBookings))
 
-	for i, pendingBooking := range pendingBookings {
+	for idx, pendingBooking := range pendingBookings {
 		resp, err := ToPendingBookingResponse(pendingBooking)
 		if err != nil {
 			return nil, fmt.Errorf("could not convert booking to bookingResponse: %w", err)
 		}
 
-		pendingBookingsListResponse[i] = resp
+		pendingBookingsListResponse[idx] = resp
 	}
 
 	return pendingBookingsListResponse, nil

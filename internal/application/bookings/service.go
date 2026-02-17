@@ -123,13 +123,15 @@ func (s *service) sendConfirmationEmails(
 
 	err := s.Notifier.NotifyBookingConfirmation(notifierParams, cancellationLink)
 	if err != nil {
-		return fmt.Errorf("error while sending final-confirmation: %w", err)
+		return fmt.Errorf("could not notify booking confirmation: %w", err)
 	}
 
 	return nil
 }
 
-func (s *service) createBooking(ctx context.Context, pendingBooking models.PendingBooking) (uuid.UUID, error) {
+func (s *service) createBooking(
+	ctx context.Context, pendingBooking models.PendingBooking,
+) (uuid.UUID, error) {
 	booking := models.Booking{
 		ID:                uuid.New(),
 		ClassID:           pendingBooking.ClassID,

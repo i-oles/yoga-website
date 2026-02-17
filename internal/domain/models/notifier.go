@@ -18,9 +18,9 @@ type NotifierParams struct {
 	PassTotalBookings  *int
 }
 
-type BookingStatus string
+type OperationStatus string
 
 const (
-	StatusBooked    BookingStatus = "booked"
-	StatusCancelled BookingStatus = "cancelled"
+	StatusBooked    OperationStatus = "booked"
+	StatusCancelled OperationStatus = "cancelled"
 )

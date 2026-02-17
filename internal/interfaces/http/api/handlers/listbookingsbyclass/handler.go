@@ -26,31 +26,31 @@ func NewHandler(
 	}
 }
 
-func (h *handler) Handle(c *gin.Context) {
-	classIDStr := c.Param("class_id")
+func (h *handler) Handle(ginCtx *gin.Context) {
+	classIDStr := ginCtx.Param("class_id")
 
 	classID, err := uuid.Parse(classIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		ginCtx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 
 		return
 	}
 
-	ctx := c.Request.Context()
+	ctx := ginCtx.Request.Context()
 
 	allBookingsForClass, err := h.bookingsRepo.ListByClassID(ctx, classID)
 	if err != nil {
-		h.apiErrorHandler.Handle(c, err)
+		h.apiErrorHandler.Handle(ginCtx, err)
 
 		return
 	}
 
 	response, err := dto.ToBookingsListResponse(allBookingsForClass)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "DTOResponse: " + err.Error()})
+		ginCtx.JSON(http.StatusInternalServerError, gin.H{"error": "DTOResponse: " + err.Error()})
 
 		return
 	}
 
-	c.JSON(http.StatusOK, response)
+	ginCtx.JSON(http.StatusOK, response)
 }

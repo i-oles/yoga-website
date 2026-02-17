@@ -45,8 +45,8 @@ func TestGlobalRateLimit(t *testing.T) {
 
 			var lastStatus int
 
-			w := httptest.NewRecorder()
-			c, _ := gin.CreateTestContext(w)
+			recorder := httptest.NewRecorder()
+			ctx, _ := gin.CreateTestContext(recorder)
 			router := gin.New()
 			router.Use(handler)
 
@@ -55,10 +55,10 @@ func TestGlobalRateLimit(t *testing.T) {
 					c.JSON(http.StatusOK, gin.H{"message": "ok"})
 				})
 
-				req, _ := http.NewRequestWithContext(c, http.MethodGet, "/test", nil)
-				router.ServeHTTP(w, req)
+				req, _ := http.NewRequestWithContext(ctx, http.MethodGet, "/test", nil)
+				router.ServeHTTP(recorder, req)
 
-				lastStatus = w.Code
+				lastStatus = recorder.Code
 			}
 
 			if lastStatus != tt.expectedStatus {

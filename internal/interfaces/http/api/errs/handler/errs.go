@@ -15,22 +15,22 @@ func NewErrorHandler() errorHandler {
 	return errorHandler{}
 }
 
-func (e errorHandler) Handle(c *gin.Context, err error) {
+func (e errorHandler) Handle(ctx *gin.Context, err error) {
 	var apiError *domainErrs.APIError
 	if errors.As(err, &apiError) {
 		switch apiError.Code {
 		case domainErrs.BadRequestCode:
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		case domainErrs.ConflictCode:
-			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+			ctx.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 		case domainErrs.NotFoundCode:
-			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		default:
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		}
 
 		return
 	}
 
-	c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 }

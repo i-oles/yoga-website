@@ -8,15 +8,15 @@ import (
 )
 
 func GlobalRateLimit(l *rate.Limiter) gin.HandlerFunc {
-	return func(c *gin.Context) {
+	return func(ctx *gin.Context) {
 		if !l.Allow() {
-			c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{
+			ctx.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{
 				"error": "Too Many Requests",
 			})
 
 			return
 		}
 
-		c.Next()
+		ctx.Next()
 	}
 }

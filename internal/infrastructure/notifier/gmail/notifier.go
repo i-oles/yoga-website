@@ -19,15 +19,15 @@ import (
 const PassValue = "KARNET"
 
 type notifier struct {
-	Dialer                             *gomail.Dialer
-	Login                              string
-	Signature                          string
-	BookingConfirmationRequestTmplPath string
-	BookingConfirmationTmplPath        string
-	ClassCancellationTmplPath          string
-	ClassUpdateTmplPath                string
-	BookingCancellationTmplPath        string
-	PassActivationTmplPath             string
+	dialer                             *gomail.Dialer
+	login                              string
+	bookingConfirmationRequestTmplPath string
+	bookingConfirmationTmplPath        string
+	classCancellationTmplPath          string
+	classUpdateTmplPath                string
+	bookingCancellationTmplPath        string
+	passActivationTmplPath             string
+	signature                          string
 }
 
 func NewNotifier(
@@ -46,15 +46,15 @@ func NewNotifier(
 	}
 
 	return &notifier{
-		Dialer:                             dialer,
-		Login:                              login,
-		Signature:                          signature,
-		BookingConfirmationRequestTmplPath: baseTmplPath + "booking_confirmation_request.tmpl",
-		BookingConfirmationTmplPath:        baseTmplPath + "booking_confirmation.tmpl",
-		ClassCancellationTmplPath:          baseTmplPath + "class_cancellation.tmpl",
-		ClassUpdateTmplPath:                baseTmplPath + "class_update.tmpl",
-		BookingCancellationTmplPath:        baseTmplPath + "booking_cancellation.tmpl",
-		PassActivationTmplPath:             baseTmplPath + "pass_activation.tmpl",
+		dialer:                             dialer,
+		login:                              login,
+		signature:                          signature,
+		bookingConfirmationRequestTmplPath: baseTmplPath + "booking_confirmation_request.tmpl",
+		bookingConfirmationTmplPath:        baseTmplPath + "booking_confirmation.tmpl",
+		classCancellationTmplPath:          baseTmplPath + "class_cancellation.tmpl",
+		classUpdateTmplPath:                baseTmplPath + "class_update.tmpl",
+		bookingCancellationTmplPath:        baseTmplPath + "booking_cancellation.tmpl",
+		passActivationTmplPath:             baseTmplPath + "pass_activation.tmpl",
 	}
 }
 
@@ -62,11 +62,11 @@ func (n *notifier) NotifyPassActivation(pass models.Pass) error {
 	passState := getPassState(pass.UsedBookingIDs, pass.TotalBookings)
 
 	tmplData := notifierModels.PassActivationTmplData{
-		Signature: n.Signature,
+		Signature: n.signature,
 		PassState: passState,
 	}
 
-	tmpl, err := template.ParseFiles(n.PassActivationTmplPath)
+	tmpl, err := template.ParseFiles(n.passActivationTmplPath)
 	if err != nil {
 		return fmt.Errorf("could not parse template: %w", err)
 	}
@@ -78,7 +78,7 @@ func (n *notifier) NotifyPassActivation(pass models.Pass) error {
 		return fmt.Errorf("could not build msg to recipient %s: %w", pass.Email, err)
 	}
 
-	if err = n.Dialer.DialAndSend(msgToRecipient); err != nil {
+	if err = n.dialer.DialAndSend(msgToRecipient); err != nil {
 		return fmt.Errorf("failed to send email: %w", err)
 	}
 
@@ -89,10 +89,10 @@ func (n *notifier) NotifyConfirmationLink(email, firstName, confirmationLink str
 	tmplData := notifierModels.BookingConfirmationRequestTmpl{
 		RecipientFirstName: firstName,
 		ConfirmationLink:   confirmationLink,
-		Signature:          n.Signature,
+		Signature:          n.signature,
 	}
 
-	tmpl, err := template.ParseFiles(n.BookingConfirmationRequestTmplPath)
+	tmpl, err := template.ParseFiles(n.bookingConfirmationRequestTmplPath)
 	if err != nil {
 		return fmt.Errorf("could not parse template: %w", err)
 	}
@@ -104,7 +104,7 @@ func (n *notifier) NotifyConfirmationLink(email, firstName, confirmationLink str
 		return fmt.Errorf("could not build msg to recipient %s: %w", email, err)
 	}
 
-	if err = n.Dialer.DialAndSend(msgToRecipient); err != nil {
+	if err = n.dialer.DialAndSend(msgToRecipient); err != nil {
 		return fmt.Errorf("failed to send email: %w", err)
 	}
 
@@ -126,7 +126,7 @@ func (n *notifier) NotifyBookingConfirmation(
 		CancellationLink: cancellationLink,
 	}
 
-	tmpl, err := template.ParseFiles(n.BookingConfirmationTmplPath)
+	tmpl, err := template.ParseFiles(n.bookingConfirmationTmplPath)
 	if err != nil {
 		return fmt.Errorf("could not parse template: %w", err)
 	}
@@ -140,7 +140,7 @@ func (n *notifier) NotifyBookingConfirmation(
 
 	msgToOwner := n.buildMsgToOwner(models.StatusBooked, params, baseTmplData)
 
-	if err = n.Dialer.DialAndSend(msgToRecipient, msgToOwner); err != nil {
+	if err = n.dialer.DialAndSend(msgToRecipient, msgToOwner); err != nil {
 		return fmt.Errorf("failed to send emails: %w", err)
 	}
 
@@ -155,7 +155,7 @@ func (n *notifier) NotifyBookingCancellation(params models.NotifierParams) error
 
 	tmplData := n.getBaseTmplData(params, classStartTimeDetails)
 
-	tmpl, err := template.ParseFiles(n.BookingCancellationTmplPath)
+	tmpl, err := template.ParseFiles(n.bookingCancellationTmplPath)
 	if err != nil {
 		return fmt.Errorf("could not parse template: %w", err)
 	}
@@ -169,7 +169,7 @@ func (n *notifier) NotifyBookingCancellation(params models.NotifierParams) error
 
 	msgToOwner := n.buildMsgToOwner(models.StatusCancelled, params, tmplData)
 
-	if err = n.Dialer.DialAndSend(msgToRecipient, msgToOwner); err != nil {
+	if err = n.dialer.DialAndSend(msgToRecipient, msgToOwner); err != nil {
 		return fmt.Errorf("failed to send email: %w", err)
 	}
 
@@ -191,7 +191,7 @@ func (n *notifier) NotifyClassUpdate(
 		Message:      msg,
 	}
 
-	tmpl, err := template.ParseFiles(n.ClassUpdateTmplPath)
+	tmpl, err := template.ParseFiles(n.classUpdateTmplPath)
 	if err != nil {
 		return fmt.Errorf("could not parse template: %w", err)
 	}
@@ -203,7 +203,7 @@ func (n *notifier) NotifyClassUpdate(
 		return fmt.Errorf("could not build msg to recipient %s: %w", params.RecipientEmail, err)
 	}
 
-	if err = n.Dialer.DialAndSend(msgToRecipient); err != nil {
+	if err = n.dialer.DialAndSend(msgToRecipient); err != nil {
 		return fmt.Errorf("failed to send email: %w", err)
 	}
 
@@ -223,7 +223,7 @@ func (n *notifier) NotifyClassCancellation(params models.NotifierParams, msg str
 		Message:      msg,
 	}
 
-	tmpl, err := template.ParseFiles(n.ClassCancellationTmplPath)
+	tmpl, err := template.ParseFiles(n.classCancellationTmplPath)
 	if err != nil {
 		return fmt.Errorf("could not parse template: %w", err)
 	}
@@ -235,7 +235,7 @@ func (n *notifier) NotifyClassCancellation(params models.NotifierParams, msg str
 		return fmt.Errorf("could not build msg to recipient %s: %w", params.RecipientEmail, err)
 	}
 
-	if err = n.Dialer.DialAndSend(msgToRecipient); err != nil {
+	if err = n.dialer.DialAndSend(msgToRecipient); err != nil {
 		return fmt.Errorf("failed to send email: %w", err)
 	}
 
@@ -256,7 +256,7 @@ func (n *notifier) buildMsgToRecipient(
 	}
 
 	msg := gomail.NewMessage()
-	msg.SetHeader("From", n.Login)
+	msg.SetHeader("From", n.login)
 	msg.SetHeader("To", email)
 	msg.SetHeader("Subject", subject)
 	msg.SetBody("text/html", body.String())
@@ -265,7 +265,7 @@ func (n *notifier) buildMsgToRecipient(
 }
 
 func (n *notifier) buildMsgToOwner(
-	status models.BookingStatus,
+	status models.OperationStatus,
 	params models.NotifierParams,
 	baseTmplData notifierModels.BaseTmplData,
 ) *gomail.Message {
@@ -288,8 +288,8 @@ func (n *notifier) buildMsgToOwner(
 	)
 
 	msgToOwner := gomail.NewMessage()
-	msgToOwner.SetHeader("From", n.Login)
-	msgToOwner.SetHeader("To", n.Login)
+	msgToOwner.SetHeader("From", n.login)
+	msgToOwner.SetHeader("To", n.login)
 	msgToOwner.SetHeader("Subject", subject)
 	msgToOwner.SetBody("text/html", msg)
 
@@ -312,7 +312,6 @@ type timeDetails struct {
 	weekDayInPolish string
 }
 
-// TODO: is this code duplicated?
 func getClassStartTimeDetails(t time.Time) (timeDetails, error) {
 	timeWarsawUTC, err := converter.ConvertToWarsawTime(t)
 	if err != nil {
@@ -345,7 +344,7 @@ func (n *notifier) getBaseTmplData(
 		WeekDay:            classStartTimeDetails.weekDayInPolish,
 		Date:               classStartTimeDetails.startDate,
 		Location:           params.Location,
-		Signature:          n.Signature,
+		Signature:          n.signature,
 	}
 
 	if params.PassUsedBookingIDs != nil && params.PassTotalBookings != nil {

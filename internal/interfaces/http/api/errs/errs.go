@@ -1,4 +1,4 @@
-package apiErrs
+package apierrs
 
 import "github.com/gin-gonic/gin"
 

@@ -81,14 +81,14 @@ func (r *classesRepo) Insert(ctx context.Context, classes []models.Class) ([]mod
 func (r *classesRepo) Delete(ctx context.Context, id uuid.UUID) error {
 	var sqlClass db.SQLClass
 
-	tx := r.db.WithContext(ctx).
+	result := r.db.WithContext(ctx).
 		Where("id = ?", id).
 		Delete(&sqlClass)
-	if tx.Error != nil {
-		return fmt.Errorf("could not delete class: %w", tx.Error)
+	if result.Error != nil {
+		return fmt.Errorf("could not delete class: %w", result.Error)
 	}
 
-	if tx.RowsAffected == 0 {
+	if result.RowsAffected == 0 {
 		return errs.ErrNoRowsAffected
 	}
 

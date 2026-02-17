@@ -25,29 +25,29 @@ func NewHandler(
 	}
 }
 
-func (h *handler) Handle(c *gin.Context) {
+func (h *handler) Handle(ginCtx *gin.Context) {
 	var form dto.BookingCreateForm
-	if err := c.ShouldBindQuery(&form); err != nil {
-		viewErrs.ErrBadRequest(c, "err.tmpl", err)
+	if err := ginCtx.ShouldBindQuery(&form); err != nil {
+		viewErrs.ErrBadRequest(ginCtx, "err.tmpl", err)
 
 		return
 	}
 
-	ctx := c.Request.Context()
+	ctx := ginCtx.Request.Context()
 
 	class, err := h.bookingsService.CreateBooking(ctx, form.Token)
 	if err != nil {
-		h.viewErrorHandler.Handle(c, "err.tmpl", err)
+		h.viewErrorHandler.Handle(ginCtx, "err.tmpl", err)
 
 		return
 	}
 
 	view, err := dto.ToClassView(class)
 	if err != nil {
-		viewErrs.ErrDTOConversion(c, "err.tmpl", err)
+		viewErrs.ErrDTOConversion(ginCtx, "err.tmpl", err)
 
 		return
 	}
 
-	c.HTML(http.StatusOK, "confirmation_create_booking.tmpl", view)
+	ginCtx.HTML(http.StatusOK, "confirmation_create_booking.tmpl", view)
 }

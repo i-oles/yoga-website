@@ -7,16 +7,16 @@ import (
 )
 
 func Auth(secret string) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		authHeader := c.GetHeader("Authorization")
+	return func(ctx *gin.Context) {
+		authHeader := ctx.GetHeader("Authorization")
 		expected := "Bearer " + secret
 
 		if authHeader != expected {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 
 			return
 		}
 
-		c.Next()
+		ctx.Next()
 	}
 }

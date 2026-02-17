@@ -215,20 +215,20 @@ func (s *service) decrementPassIfValid(
 }
 
 func (s *service) UpdateClass(
-	ctx context.Context, id uuid.UUID, update models.UpdateClass,
+	ctx context.Context, classID uuid.UUID, update models.UpdateClass,
 ) (models.Class, error) {
 	err := validateClassUpdate(update)
 	if err != nil {
 		return models.Class{}, api.ErrValidation(err)
 	}
 
-	_, err = s.classesRepo.Get(ctx, id)
+	_, err = s.classesRepo.Get(ctx, classID)
 	if err != nil {
 		if errors.Is(err, repositoryError.ErrNotFound) {
 			return models.Class{}, api.ErrNotFound(err)
 		}
 
-		return models.Class{}, fmt.Errorf("could not get class for class_id %v: %w", id, err)
+		return models.Class{}, fmt.Errorf("could not get class for class_id %v: %w", classID, err)
 	}
 
 	updateData, err := getDataForClassUpdate(update)
@@ -236,12 +236,12 @@ func (s *service) UpdateClass(
 		return models.Class{}, fmt.Errorf("could not get data for class update: %w", err)
 	}
 
-	err = s.classesRepo.Update(ctx, id, updateData)
+	err = s.classesRepo.Update(ctx, classID, updateData)
 	if err != nil {
 		return models.Class{}, fmt.Errorf("could not update class: %w", err)
 	}
 
-	updatedClass, err := s.classesRepo.Get(ctx, id)
+	updatedClass, err := s.classesRepo.Get(ctx, classID)
 	if err != nil {
 		return models.Class{}, fmt.Errorf("could not get class after update: %w", err)
 	}

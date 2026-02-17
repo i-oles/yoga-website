@@ -30,26 +30,26 @@ func NewHandler(
 	}
 }
 
-func (h *handler) Handle(c *gin.Context) {
-	ctx := c.Request.Context()
+func (h *handler) Handle(ginCtx *gin.Context) {
+	ctx := ginCtx.Request.Context()
 
 	limit := classViewLimit
 
 	classes, err := h.classesService.ListClasses(ctx, true, &limit)
 	if err != nil {
-		h.viewErrorHandler.Handle(c, "err.tmpl", err)
+		h.viewErrorHandler.Handle(ginCtx, "err.tmpl", err)
 
 		return
 	}
 
 	classesView, err := sharedDTO.ToClassesWithCurrentCapacityDTO(classes)
 	if err != nil {
-		viewErrs.ErrDTOConversion(c, "err.tmpl", err)
+		viewErrs.ErrDTOConversion(ginCtx, "err.tmpl", err)
 
 		return
 	}
 
-	c.HTML(http.StatusOK, "index.html", gin.H{
+	ginCtx.HTML(http.StatusOK, "index.html", gin.H{
 		"Classes":    classesView,
 		"IsVacation": h.isVacation,
 	})

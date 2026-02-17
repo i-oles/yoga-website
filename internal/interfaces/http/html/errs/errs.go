@@ -1,4 +1,4 @@
-package viewErrs
+package viewerrs
 
 import (
 	"log/slog"
