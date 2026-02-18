@@ -241,7 +241,7 @@ func cleanUpPendingBookingsDBAsync(database *gorm.DB) {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 
-		oneHourAgo := time.Now().UTC().Add(-1 * time.Hour)
+		oneHourAgo := time.Now().UTC().Add(-1 * time.Minute)
 
 		var pendingBooking dbModels.SQLPendingBooking
 

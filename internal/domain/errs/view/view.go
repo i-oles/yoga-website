@@ -52,7 +52,7 @@ func ErrClassExpired(classID uuid.UUID, err error) *ViewError {
 	return &ViewError{
 		ClassID: &classID,
 		Code:    ClassExpiredCode,
-		Message: "Rezerwacja niedostępna – zajęcia już się zaczęły albo odbyły",
+		Message: "Rezerwacja niedostępna – zajęcia już się zaczęły albo odbyły.",
 		Err:     err,
 	}
 }
@@ -60,7 +60,7 @@ func ErrClassExpired(classID uuid.UUID, err error) *ViewError {
 func ErrPendingBookingNotFound(err error) *ViewError {
 	return &ViewError{
 		Code:    PendingBookingNotFoundCode,
-		Message: "Twój link potwierdzający operację wygasł, stwórz nową sesję.",
+		Message: "Link potwierdzający rezerwację wygasł, rozpocznij nową rezerwację.",
 		Err:     err,
 	}
 }
@@ -95,7 +95,7 @@ func ErrSomeoneBookedClassFaster(err error) *ViewError {
 func ErrInvalidCancellationLink(err error) *ViewError {
 	return &ViewError{
 		Code:    InvalidCancellationLinkCode,
-		Message: "Twój link do odwołania rezerwacji wygasł albo jest nieprawidłowy, skontaktuj się ze mną...",
+		Message: "Link do odwołania rezerwacji wygasł albo jest nieprawidłowy, skontaktuj się ze mną.",
 		Err:     err,
 	}
 }

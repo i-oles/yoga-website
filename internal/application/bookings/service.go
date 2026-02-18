@@ -2,7 +2,6 @@ package bookings
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"time"
@@ -48,7 +47,7 @@ func NewService(
 func (s *service) CreateBooking(ctx context.Context, token string) (models.Class, error) {
 	pendingBooking, err := s.PendingBookingsRepo.GetByConfirmationToken(ctx, token)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, errs.ErrNotFound) {
 			return models.Class{}, viewErrors.ErrPendingBookingNotFound(
 				fmt.Errorf("pending booking for token: %s not found", token),
 			)
