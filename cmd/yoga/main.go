@@ -161,6 +161,7 @@ func setupRouter(database *gorm.DB, cfg *configuration.Configuration) *gin.Engin
 	createPendingBookingHandler := creatependingbooking.NewHandler(pendingBookingsService, viewErrorHandler)
 	pendingBookingFormHandler := pendingbookingform.NewHandler()
 	cancelBookingFormHandler := cancelbookingform.NewHandler(bookingsService, viewErrorHandler)
+
 	{
 		// home
 		api.GET("/", homeHandler.Handle)
