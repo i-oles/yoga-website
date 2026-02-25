@@ -130,14 +130,17 @@ func setupRouter(database *gorm.DB, cfg *configuration.Configuration) *gin.Engin
 		cfg.BaseNotifierTmplPath,
 	)
 
+	unitOfWork := sqliteRepo.NewUnitOfWork(database)
+
 	classesService := classes.NewService(classesRepo, bookingsRepo, passesRepo, emailNotifier)
 	bookingsService := bookings.NewService(
-		classesRepo, bookingsRepo, pendingBookingsRepo, passesRepo, emailNotifier, cfg.DomainAddr,
+		unitOfWork,
+		bookingsRepo,
+		emailNotifier,
+		cfg.DomainAddr,
 	)
 	pendingBookingsService := pendingbookings.NewService(
-		classesRepo,
-		pendingBookingsRepo,
-		bookingsRepo,
+		unitOfWork,
 		tokenGenerator,
 		emailNotifier,
 		cfg.DomainAddr,

@@ -36,7 +36,7 @@ func (h *handler) Handle(ginCtx *gin.Context) {
 		return
 	}
 
-	parsedUUID, err := uuid.Parse(form.ClassID)
+	classID, err := uuid.Parse(form.ClassID)
 	if err != nil {
 		viewErrs.ErrBadRequest(ginCtx, "pending_booking_form.tmpl", err)
 
@@ -44,7 +44,7 @@ func (h *handler) Handle(ginCtx *gin.Context) {
 	}
 
 	pendingBookingParams := models.PendingBookingParams{
-		ClassID:   parsedUUID,
+		ClassID:   classID,
 		FirstName: form.FirstName,
 		LastName:  form.LastName,
 		Email:     strings.ToLower(form.Email),
@@ -52,16 +52,12 @@ func (h *handler) Handle(ginCtx *gin.Context) {
 
 	ctx := ginCtx.Request.Context()
 
-	classID, err := h.PendingBookingsService.CreatePendingBooking(ctx, pendingBookingParams)
+	err = h.PendingBookingsService.CreatePendingBooking(ctx, pendingBookingParams)
 	if err != nil {
 		h.ViewErrorHandler.Handle(ginCtx, "pending_booking_form.tmpl", err)
 
 		return
 	}
 
-	view := dto.PendingBookingView{
-		ClassID: classID,
-	}
-
-	ginCtx.HTML(http.StatusOK, "pending_booking.tmpl", view)
+	ginCtx.HTML(http.StatusOK, "pending_booking.tmpl", gin.H{"ClassID": classID})
 }

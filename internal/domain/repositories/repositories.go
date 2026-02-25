@@ -9,6 +9,13 @@ import (
 	"github.com/google/uuid"
 )
 
+type Repositories struct {
+	PendingBookings IPendingBookings
+	Bookings        IBookings
+	Classes         IClasses
+	Passes          IPasses
+}
+
 type IClasses interface {
 	Get(ctx context.Context, id uuid.UUID) (models.Class, error)
 	List(ctx context.Context) ([]models.Class, error)

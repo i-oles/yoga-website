@@ -18,71 +18,80 @@ import (
 )
 
 type service struct {
-	ClassesRepo         repositories.IClasses
-	BookingsRepo        repositories.IBookings
-	PendingBookingsRepo repositories.IPendingBookings
-	PassesRepo          repositories.IPasses
-	Notifier            notifier.INotifier
-	DomainAddr          string
+	unitOfWork   repositories.IUnitOfWork
+	bookingsRepo repositories.IBookings
+	notifier     notifier.INotifier
+	domainAddr   string
 }
 
 func NewService(
-	classesRepo repositories.IClasses,
+	unitOfWork repositories.IUnitOfWork,
 	bookingsRepo repositories.IBookings,
-	pendingBookingsRepo repositories.IPendingBookings,
-	passesRepo repositories.IPasses,
 	notifier notifier.INotifier,
 	domainAddr string,
 ) *service {
 	return &service{
-		ClassesRepo:         classesRepo,
-		BookingsRepo:        bookingsRepo,
-		PendingBookingsRepo: pendingBookingsRepo,
-		PassesRepo:          passesRepo,
-		Notifier:            notifier,
-		DomainAddr:          domainAddr,
+		unitOfWork:   unitOfWork,
+		bookingsRepo: bookingsRepo,
+		notifier:     notifier,
+		domainAddr:   domainAddr,
 	}
 }
 
 func (s *service) CreateBooking(ctx context.Context, token string) (models.Class, error) {
-	pendingBooking, err := s.PendingBookingsRepo.GetByConfirmationToken(ctx, token)
-	if err != nil {
-		if errors.Is(err, errs.ErrNotFound) {
-			return models.Class{}, viewErrors.ErrPendingBookingNotFound(
-				fmt.Errorf("pending booking for token: %s not found", token),
-			)
+	var (
+		pendingBooking models.PendingBooking
+		class          models.Class
+		usedBookingIDs []uuid.UUID
+		totalBookings  *int
+		bookingID      uuid.UUID
+	)
+
+	err := s.unitOfWork.WithTransaction(ctx, func(repos repositories.Repositories) error {
+		var err error
+
+		pendingBooking, err = repos.PendingBookings.GetByConfirmationToken(ctx, token)
+		if err != nil {
+			if errors.Is(err, errs.ErrNotFound) {
+				return viewErrors.ErrPendingBookingNotFound(
+					fmt.Errorf("pending booking for token: %s not found", token),
+				)
+			}
+
+			return fmt.Errorf("could not get pending booking: %w", err)
 		}
 
-		return models.Class{}, fmt.Errorf("could not get pending booking: %w", err)
-	}
+		_, err = repos.Bookings.GetByEmailAndClassID(ctx, pendingBooking.ClassID, pendingBooking.Email)
+		if err == nil {
+			return viewErrors.ErrBookingAlreadyExists(pendingBooking.ClassID, pendingBooking.Email, err)
+		}
 
-	_, err = s.BookingsRepo.GetByEmailAndClassID(ctx, pendingBooking.ClassID, pendingBooking.Email)
-	if err == nil {
-		return models.Class{},
-			viewErrors.ErrBookingAlreadyExists(pendingBooking.ClassID, pendingBooking.Email, err)
-	}
+		class, err = repos.Classes.Get(ctx, pendingBooking.ClassID)
+		if err != nil {
+			return fmt.Errorf("could not get class with id: %s, %w", pendingBooking.ClassID, err)
+		}
 
-	class, err := s.ClassesRepo.Get(ctx, pendingBooking.ClassID)
+		err = s.checkClassAvailability(ctx, repos, class)
+		if err != nil {
+			return fmt.Errorf("class unavailable: %w", err)
+		}
+
+		bookingID, err = s.createBooking(ctx, repos, pendingBooking)
+		if err != nil {
+			return fmt.Errorf("could not create booking for pendingBooking %+v: %w", pendingBooking, err)
+		}
+
+		usedBookingIDs, totalBookings, err = s.incrementPassIfValid(
+			ctx, repos, pendingBooking.Email, bookingID,
+		)
+		if err != nil {
+			return fmt.Errorf("could not increment pass for %s: %w", pendingBooking.Email, err)
+		}
+
+		return nil
+	})
 	if err != nil {
-		return models.Class{},
-			fmt.Errorf("could not get class with id: %s, %w", pendingBooking.ClassID, err)
-	}
-
-	err = s.checkClassAvailability(ctx, class)
-	if err != nil {
-		return models.Class{}, fmt.Errorf("class unavailable: %w", err)
-	}
-
-	bookingID, err := s.createBooking(ctx, pendingBooking)
-	if err != nil {
-		return models.Class{},
-			fmt.Errorf("could not create booking for pendingBooking %+v: %w", pendingBooking, err)
-	}
-
-	usedBookingIDs, totalBookings, err := s.incrementPassIfValid(ctx, pendingBooking.Email, bookingID)
-	if err != nil {
-		return models.Class{},
-			fmt.Errorf("could not increment pass for %s: %w", pendingBooking.Email, err)
+		return models.Class{}, fmt.Errorf("create booking transaction failed: %w", err)
 	}
 
 	err = s.sendConfirmationEmails(
@@ -94,6 +103,85 @@ func (s *service) CreateBooking(ctx context.Context, token string) (models.Class
 	}
 
 	return class, nil
+}
+
+func (s *service) checkClassAvailability(
+	ctx context.Context,
+	r repositories.Repositories,
+	class models.Class,
+) error {
+	if class.StartTime.Before(time.Now()) {
+		return viewErrors.ErrClassExpired(class.ID, fmt.Errorf("class %s has expired at %v", class.ID, class.StartTime))
+	}
+
+	bookingCount, err := r.Bookings.CountForClassID(ctx, class.ID)
+	if err != nil {
+		return fmt.Errorf("could not count bookings for class %v: %w ", class.ID, err)
+	}
+
+	if bookingCount == class.MaxCapacity {
+		return viewErrors.ErrSomeoneBookedClassFaster(fmt.Errorf("max capacity of class %d exceeded", class.MaxCapacity))
+	}
+
+	return nil
+}
+
+func (s *service) createBooking(
+	ctx context.Context,
+	r repositories.Repositories,
+	pendingBooking models.PendingBooking,
+) (uuid.UUID, error) {
+	booking := models.Booking{
+		ID:                uuid.New(),
+		ClassID:           pendingBooking.ClassID,
+		FirstName:         pendingBooking.FirstName,
+		LastName:          pendingBooking.LastName,
+		Email:             pendingBooking.Email,
+		CreatedAt:         time.Now().UTC(),
+		ConfirmationToken: pendingBooking.ConfirmationToken,
+	}
+
+	bookingID, err := r.Bookings.Insert(ctx, booking)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("could not insert booking: %w", err)
+	}
+
+	return bookingID, nil
+}
+
+func (s *service) incrementPassIfValid(
+	ctx context.Context,
+	r repositories.Repositories,
+	email string,
+	bookingID uuid.UUID,
+) ([]uuid.UUID, *int, error) {
+	passOpt, err := r.Passes.GetByEmail(ctx, email)
+	if err != nil && passOpt.Exists() {
+		return nil, nil, fmt.Errorf("could not get pass: %w", err)
+	}
+
+	var updatedBookingIDs []uuid.UUID
+
+	var totalBookings *int
+
+	if passOpt.Exists() {
+		pass := passOpt.Get()
+
+		if len(pass.UsedBookingIDs)+1 <= pass.TotalBookings {
+			updatedBookingIDs = pass.UsedBookingIDs
+			updatedBookingIDs = append(updatedBookingIDs, bookingID)
+
+			err = r.Passes.Update(ctx, pass.ID, updatedBookingIDs, pass.TotalBookings)
+			if err != nil {
+				return nil, nil,
+					fmt.Errorf("could not update pass for %s with %v, %d", email, updatedBookingIDs, pass.TotalBookings)
+			}
+		}
+
+		totalBookings = &pass.TotalBookings
+	}
+
+	return updatedBookingIDs, totalBookings, nil
 }
 
 func (s *service) sendConfirmationEmails(
@@ -117,10 +205,10 @@ func (s *service) sendConfirmationEmails(
 	}
 
 	cancellationLink := fmt.Sprintf(
-		"%s/bookings/%s/cancel_form?token=%s", s.DomainAddr, bookingID, token,
+		"%s/bookings/%s/cancel_form?token=%s", s.domainAddr, bookingID, token,
 	)
 
-	err := s.Notifier.NotifyBookingConfirmation(notifierParams, cancellationLink)
+	err := s.notifier.NotifyBookingConfirmation(notifierParams, cancellationLink)
 	if err != nil {
 		return fmt.Errorf("could not notify booking confirmation: %w", err)
 	}
@@ -128,100 +216,43 @@ func (s *service) sendConfirmationEmails(
 	return nil
 }
 
-func (s *service) createBooking(
-	ctx context.Context, pendingBooking models.PendingBooking,
-) (uuid.UUID, error) {
-	booking := models.Booking{
-		ID:                uuid.New(),
-		ClassID:           pendingBooking.ClassID,
-		FirstName:         pendingBooking.FirstName,
-		LastName:          pendingBooking.LastName,
-		Email:             pendingBooking.Email,
-		CreatedAt:         time.Now().UTC(),
-		ConfirmationToken: pendingBooking.ConfirmationToken,
-	}
-
-	bookingID, err := s.BookingsRepo.Insert(ctx, booking)
-	if err != nil {
-		return uuid.Nil, fmt.Errorf("could not insert booking: %w", err)
-	}
-
-	return bookingID, nil
-}
-
-func (s *service) incrementPassIfValid(
-	ctx context.Context,
-	email string,
-	bookingID uuid.UUID,
-) ([]uuid.UUID, *int, error) {
-	passOpt, err := s.PassesRepo.GetByEmail(ctx, email)
-	if err != nil && passOpt.Exists() {
-		return nil, nil, fmt.Errorf("could not get pass: %w", err)
-	}
-
-	var updatedBookingIDs []uuid.UUID
-
-	var totalBookings *int
-
-	if passOpt.Exists() {
-		pass := passOpt.Get()
-
-		if len(pass.UsedBookingIDs)+1 <= pass.TotalBookings {
-			updatedBookingIDs = pass.UsedBookingIDs
-			updatedBookingIDs = append(updatedBookingIDs, bookingID)
-
-			err = s.PassesRepo.Update(ctx, pass.ID, updatedBookingIDs, pass.TotalBookings)
-			if err != nil {
-				return nil, nil,
-					fmt.Errorf("could not update pass for %s with %v, %d", email, updatedBookingIDs, pass.TotalBookings)
-			}
-		}
-
-		totalBookings = &pass.TotalBookings
-	}
-
-	return updatedBookingIDs, totalBookings, nil
-}
-
-func (s *service) checkClassAvailability(ctx context.Context, class models.Class) error {
-	if class.StartTime.Before(time.Now()) {
-		return viewErrors.ErrClassExpired(class.ID, fmt.Errorf("class %s has expired at %v", class.ID, class.StartTime))
-	}
-
-	bookingCount, err := s.BookingsRepo.CountForClassID(ctx, class.ID)
-	if err != nil {
-		return fmt.Errorf("could not count bookings for class %v: %w ", class.ID, err)
-	}
-
-	if bookingCount == class.MaxCapacity {
-		return viewErrors.ErrSomeoneBookedClassFaster(fmt.Errorf("max capacity of class %d exceeded", class.MaxCapacity))
-	}
-
-	return nil
-}
-
 func (s *service) CancelBooking(ctx context.Context, bookingID uuid.UUID, token string) error {
-	booking, err := s.ensureBookingCancellationAllowed(ctx, bookingID, token)
-	if err != nil {
-		return fmt.Errorf("booking cancellation not allowed for bookingID %s: %w", bookingID, err)
-	}
+	var (
+		booking        models.Booking
+		usedBookingIDs []uuid.UUID
+		totalBookings  *int
+	)
 
-	err = s.BookingsRepo.Delete(ctx, bookingID)
-	if err != nil {
-		if errors.Is(err, errs.ErrNoRowsAffected) {
-			return viewErrors.ErrBookingNotFound(
-				booking.ClassID,
-				booking.Email,
-				fmt.Errorf("could not find booking with email %s for class %s", booking.Email, booking.ClassID),
-			)
+	err := s.unitOfWork.WithTransaction(ctx, func(repos repositories.Repositories) error {
+		var err error
+
+		booking, err = s.ensureBookingCancellationAllowed(ctx, repos, bookingID, token)
+		if err != nil {
+			return fmt.Errorf("booking cancellation not allowed for bookingID %s: %w", bookingID, err)
 		}
 
-		return fmt.Errorf("could not delete booking: %w", err)
-	}
+		err = repos.Bookings.Delete(ctx, bookingID)
+		if err != nil {
+			if errors.Is(err, errs.ErrNoRowsAffected) {
+				return viewErrors.ErrBookingNotFound(
+					booking.ClassID,
+					booking.Email,
+					fmt.Errorf("could not find booking with email %s for class %s", booking.Email, booking.ClassID),
+				)
+			}
 
-	usedBookingIDs, totalBookings, err := s.decrementPassIfValid(ctx, booking.Email, bookingID)
+			return fmt.Errorf("could not delete booking: %w", err)
+		}
+
+		usedBookingIDs, totalBookings, err = s.decrementPassIfValid(ctx, repos, booking.Email, bookingID)
+		if err != nil {
+			return fmt.Errorf("could not dectemetnt pass for %s: %w", booking.Email, err)
+		}
+
+		return nil
+	})
 	if err != nil {
-		return fmt.Errorf("could not dectemetnt pass for %s: %w", booking.Email, err)
+		return fmt.Errorf("cancel booking transaction failed: %w", err)
 	}
 
 	notifierParams := models.NotifierParams{
@@ -236,7 +267,7 @@ func (s *service) CancelBooking(ctx context.Context, bookingID uuid.UUID, token 
 		PassTotalBookings:  totalBookings,
 	}
 
-	err = s.Notifier.NotifyBookingCancellation(notifierParams)
+	err = s.notifier.NotifyBookingCancellation(notifierParams)
 	if err != nil {
 		return fmt.Errorf("could not notify booking cancellation with %+v: %w", notifierParams, err)
 	}
@@ -245,9 +276,9 @@ func (s *service) CancelBooking(ctx context.Context, bookingID uuid.UUID, token 
 }
 
 func (s *service) ensureBookingCancellationAllowed(
-	ctx context.Context, bookingID uuid.UUID, token string,
+	ctx context.Context, r repositories.Repositories, bookingID uuid.UUID, token string,
 ) (models.Booking, error) {
-	booking, err := s.BookingsRepo.GetByID(ctx, bookingID)
+	booking, err := r.Bookings.GetByID(ctx, bookingID)
 	if err != nil {
 		return models.Booking{}, fmt.Errorf("could not get booking for id %s: %w", bookingID, err)
 	}
@@ -275,7 +306,7 @@ func (s *service) ensureBookingCancellationAllowed(
 func (s *service) GetBookingForCancellation(
 	ctx context.Context, bookingID uuid.UUID, token string,
 ) (models.Booking, error) {
-	booking, err := s.BookingsRepo.GetByID(ctx, bookingID)
+	booking, err := s.bookingsRepo.GetByID(ctx, bookingID)
 	if err != nil {
 		return models.Booking{}, fmt.Errorf("could not get booking for id %s: %w", bookingID, err)
 	}
@@ -288,27 +319,42 @@ func (s *service) GetBookingForCancellation(
 }
 
 func (s *service) DeleteBooking(ctx context.Context, bookingID uuid.UUID) error {
-	booking, err := s.BookingsRepo.GetByID(ctx, bookingID)
-	if err != nil {
-		return fmt.Errorf("could get booking for id %s: %w", bookingID, err)
-	}
+	var (
+		booking        models.Booking
+		usedBookingIDs []uuid.UUID
+		totalBookings  *int
+	)
 
-	if booking.Class == nil {
-		return errors.New("booking.Class field should not be empty")
-	}
+	err := s.unitOfWork.WithTransaction(ctx, func(repos repositories.Repositories) error {
+		var err error
 
-	err = s.BookingsRepo.Delete(ctx, bookingID)
-	if err != nil {
-		return fmt.Errorf("could not delete booking for id %s: %w", bookingID, err)
-	}
+		booking, err = repos.Bookings.GetByID(ctx, bookingID)
+		if err != nil {
+			return fmt.Errorf("could get booking for id %s: %w", bookingID, err)
+		}
 
-	if booking.Class.StartTime.Before(time.Now()) {
+		if booking.Class == nil {
+			return errors.New("booking.Class field should not be empty")
+		}
+
+		err = repos.Bookings.Delete(ctx, bookingID)
+		if err != nil {
+			return fmt.Errorf("could not delete booking for id %s: %w", bookingID, err)
+		}
+
+		if booking.Class.StartTime.Before(time.Now()) {
+			return nil
+		}
+
+		usedBookingIDs, totalBookings, err = s.decrementPassIfValid(ctx, repos, booking.Email, bookingID)
+		if err != nil {
+			return fmt.Errorf("could not dectemetnt pass for %s: %w", booking.Email, err)
+		}
+
 		return nil
-	}
-
-	usedBookingIDs, totalBookings, err := s.decrementPassIfValid(ctx, booking.Email, bookingID)
+	})
 	if err != nil {
-		return fmt.Errorf("could not dectemetnt pass for %s: %w", booking.Email, err)
+		return fmt.Errorf("delete booking transaction failed: %w", err)
 	}
 
 	notifierParams := models.NotifierParams{
@@ -323,7 +369,7 @@ func (s *service) DeleteBooking(ctx context.Context, bookingID uuid.UUID) error 
 		PassTotalBookings:  totalBookings,
 	}
 
-	err = s.Notifier.NotifyBookingCancellation(notifierParams)
+	err = s.notifier.NotifyBookingCancellation(notifierParams)
 	if err != nil {
 		return fmt.Errorf("could not nofify booking cancellation with %+v: %w", notifierParams, err)
 	}
@@ -333,10 +379,11 @@ func (s *service) DeleteBooking(ctx context.Context, bookingID uuid.UUID) error 
 
 func (s *service) decrementPassIfValid(
 	ctx context.Context,
+	r repositories.Repositories,
 	email string,
 	bookingID uuid.UUID,
 ) ([]uuid.UUID, *int, error) {
-	passOpt, err := s.PassesRepo.GetByEmail(ctx, email)
+	passOpt, err := r.Passes.GetByEmail(ctx, email)
 	if err != nil && passOpt.Exists() {
 		return nil, nil, fmt.Errorf("could not get pass: %w", err)
 	}
@@ -357,7 +404,7 @@ func (s *service) decrementPassIfValid(
 			return nil, nil, fmt.Errorf("could not remove bookingID %v from usedBookingIDs", bookingID)
 		}
 
-		err = s.PassesRepo.Update(ctx, pass.ID, updatedBookingIDs, pass.TotalBookings)
+		err = r.Passes.Update(ctx, pass.ID, updatedBookingIDs, pass.TotalBookings)
 		if err != nil {
 			return nil, nil,
 				fmt.Errorf("could not update pass for %s with %v: %w", pass.Email, updatedBookingIDs, err)

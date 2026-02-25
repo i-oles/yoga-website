@@ -217,12 +217,14 @@ func (s *service) decrementPassIfValid(
 func (s *service) UpdateClass(
 	ctx context.Context, classID uuid.UUID, update models.UpdateClass,
 ) (models.Class, error) {
-	err := validateClassUpdate(update)
-	if err != nil {
-		return models.Class{}, api.ErrValidation(err)
+	if update.StartTime != nil {
+		err := validateClassStartTime(*update.StartTime)
+		if err != nil {
+			return models.Class{}, api.ErrValidation(err)
+		}
 	}
 
-	_, err = s.classesRepo.Get(ctx, classID)
+	_, err := s.classesRepo.Get(ctx, classID)
 	if err != nil {
 		if errors.Is(err, repositoryError.ErrNotFound) {
 			return models.Class{}, api.ErrNotFound(err)
@@ -339,21 +341,9 @@ func setMessageForNotification(
 	return "", errors.New("message for notification should not be empty")
 }
 
-func validateClassUpdate(
-	update models.UpdateClass,
-) error {
-	if update.StartTime != nil {
-		if update.StartTime.Before(time.Now()) {
-			return fmt.Errorf("class start_time: %v expired", update.StartTime)
-		}
-	}
-
-	return nil
-}
-
 func validateClasses(classes []models.Class) error {
 	for _, class := range classes {
-		err := validateClass(class)
+		err := validateClassStartTime(class.StartTime)
 		if err != nil {
 			return fmt.Errorf("class validation failed %w", err)
 		}
@@ -362,9 +352,9 @@ func validateClasses(classes []models.Class) error {
 	return nil
 }
 
-func validateClass(class models.Class) error {
-	if class.StartTime.Before(time.Now()) {
-		return fmt.Errorf("class start_time: %v expired", class.StartTime)
+func validateClassStartTime(startTime time.Time) error {
+	if startTime.Before(time.Now()) {
+		return fmt.Errorf("class startTime: %v expired", startTime)
 	}
 
 	return nil
