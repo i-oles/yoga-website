@@ -156,7 +156,7 @@ func (s *service) incrementPassIfValid(
 	bookingID uuid.UUID,
 ) ([]uuid.UUID, *int, error) {
 	passOpt, err := r.Passes.GetByEmail(ctx, email)
-	if err != nil && passOpt.Exists() {
+	if err != nil {
 		return nil, nil, fmt.Errorf("could not get pass: %w", err)
 	}
 
@@ -384,7 +384,7 @@ func (s *service) decrementPassIfValid(
 	bookingID uuid.UUID,
 ) ([]uuid.UUID, *int, error) {
 	passOpt, err := r.Passes.GetByEmail(ctx, email)
-	if err != nil && passOpt.Exists() {
+	if err != nil {
 		return nil, nil, fmt.Errorf("could not get pass: %w", err)
 	}
 

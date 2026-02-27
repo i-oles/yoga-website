@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type classesRepo struct {
@@ -95,13 +96,20 @@ func (r *classesRepo) Delete(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
-func (r *classesRepo) Update(ctx context.Context, id uuid.UUID, update map[string]any) error {
+func (r *classesRepo) Update(
+	ctx context.Context,
+	classID uuid.UUID,
+	update map[string]any,
+) (models.Class, error) {
+	var sqlClass db.SQLClass
+
 	if err := r.db.WithContext(ctx).
-		Model(&db.SQLClass{}).
-		Where("id = ?", id).
+		Model(sqlClass).
+		Clauses(clause.Returning{}).
+		Where("id = ?", classID).
 		Updates(update).Error; err != nil {
-		return fmt.Errorf("could not update class: %v with data: %v, %w", id, update, err)
+		return models.Class{}, fmt.Errorf("could not update class: %v with data: %v, %w", classID, update, err)
 	}
 
-	return nil
+	return sqlClass.ToDomain(), nil
 }
