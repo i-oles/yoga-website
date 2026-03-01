@@ -319,6 +319,7 @@ func getDataForClassUpdate(update models.UpdateClass) (map[string]any, error) {
 	return updateData, nil
 }
 
+// TODO: move polish from here (keep all this messages somewhere in notifier?)
 func setMessageForNotification(
 	startTime *time.Time,
 	location *string,
