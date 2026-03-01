@@ -39,11 +39,10 @@ func ErrBookingAlreadyExists(classID uuid.UUID, email string, err error) *ViewEr
 	}
 }
 
-func ErrBookingNotFound(classID uuid.UUID, email string, err error) *ViewError {
+func ErrBookingNotFound(err error) *ViewError {
 	return &ViewError{
-		ClassID: &classID,
 		Code:    BookingNotFoundCode,
-		Message: "Brak potwierdzonej rezerwacji na te zajęcia dla: " + email,
+		Message: "Nie znaleziono rezerwacji na te zajęcia. Została już wcześniej odwołana albo usunięta.",
 		Err:     err,
 	}
 }

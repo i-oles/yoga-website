@@ -132,7 +132,7 @@ func setupRouter(database *gorm.DB, cfg *configuration.Configuration) *gin.Engin
 
 	unitOfWork := sqliteRepo.NewUnitOfWork(database)
 
-	classesService := classes.NewService(classesRepo, bookingsRepo, passesRepo, emailNotifier)
+	classesService := classes.NewService(classesRepo, bookingsRepo, unitOfWork, emailNotifier)
 	bookingsService := bookings.NewService(
 		unitOfWork,
 		bookingsRepo,

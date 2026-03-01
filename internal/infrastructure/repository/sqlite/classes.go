@@ -104,11 +104,12 @@ func (r *classesRepo) Update(
 	var sqlClass db.SQLClass
 
 	if err := r.db.WithContext(ctx).
-		Model(sqlClass).
+		Model(&sqlClass).
 		Clauses(clause.Returning{}).
 		Where("id = ?", classID).
 		Updates(update).Error; err != nil {
-		return models.Class{}, fmt.Errorf("could not update class: %v with data: %v, %w", classID, update, err)
+		return models.Class{},
+			fmt.Errorf("could not update class: %v with data: %v, %w", classID, update, err)
 	}
 
 	return sqlClass.ToDomain(), nil

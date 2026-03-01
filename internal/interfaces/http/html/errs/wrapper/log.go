@@ -32,6 +32,7 @@ func (e ErrorHandler) Handle(ctx *gin.Context, tmplName string, err error) {
 		slog.Info("BookingBusinessError",
 			slog.Int("code", viewError.Code),
 			slog.String("message", viewError.Message),
+			slog.String("error", viewError.Err.Error()),
 			slog.Any("classID", viewError.ClassID),
 			slog.Any("params", ctx.Request.URL.Query()),
 			slog.String("endpoint", ctx.FullPath()),
