@@ -9,12 +9,19 @@ import (
 	"github.com/google/uuid"
 )
 
+type Repositories struct {
+	PendingBookings IPendingBookings
+	Bookings        IBookings
+	Classes         IClasses
+	Passes          IPasses
+}
+
 type IClasses interface {
 	Get(ctx context.Context, id uuid.UUID) (models.Class, error)
 	List(ctx context.Context) ([]models.Class, error)
 	Insert(ctx context.Context, classes []models.Class) ([]models.Class, error)
 	Delete(ctx context.Context, id uuid.UUID) error
-	Update(ctx context.Context, id uuid.UUID, update map[string]any) error
+	Update(ctx context.Context, id uuid.UUID, update map[string]any) (models.Class, error)
 }
 
 type IBookings interface {

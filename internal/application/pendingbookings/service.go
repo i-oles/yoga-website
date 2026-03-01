@@ -17,71 +17,77 @@ import (
 )
 
 const (
-	allowedPendingBookingsLimit = 200
-	tokenLength                 = 32
+	allowedTotalPendingBookingsLimit = 200
+	tokenLength                      = 32
 )
 
 type service struct {
-	classesRepo         repositories.IClasses
-	pendingBookingsRepo repositories.IPendingBookings
-	bookingsRepo        repositories.IBookings
-	tokenGenerator      services.ITokenGenerator
-	notifier            notifier.INotifier
-	domainAddr          string
+	unitOfWork     repositories.IUnitOfWork
+	tokenGenerator services.ITokenGenerator
+	notifier       notifier.INotifier
+	domainAddr     string
 }
 
 func NewService(
-	classesRepo repositories.IClasses,
-	pendingBookingsRepo repositories.IPendingBookings,
-	bookingsRepo repositories.IBookings,
+	unitOfWork repositories.IUnitOfWork,
 	tokenGenerator services.ITokenGenerator,
 	notifier notifier.INotifier,
 	domainAddr string,
 ) *service {
 	return &service{
-		classesRepo:         classesRepo,
-		pendingBookingsRepo: pendingBookingsRepo,
-		bookingsRepo:        bookingsRepo,
-		tokenGenerator:      tokenGenerator,
-		notifier:            notifier,
-		domainAddr:          domainAddr,
+		unitOfWork:     unitOfWork,
+		tokenGenerator: tokenGenerator,
+		notifier:       notifier,
+		domainAddr:     domainAddr,
 	}
 }
 
 func (s *service) CreatePendingBooking(
 	ctx context.Context,
 	pendingBookingParams models.PendingBookingParams,
-) (uuid.UUID, error) {
-	err := s.ensurePendingBookingCreationAllowed(
-		ctx, pendingBookingParams.ClassID, pendingBookingParams.Email,
-	)
-	if err != nil {
-		return uuid.Nil, fmt.Errorf("pending booking creation not allowed: %w", err)
-	}
+) error {
+	var confirmationToken string
 
-	err = s.checkClassAvailability(ctx, pendingBookingParams.ClassID)
-	if err != nil {
-		return uuid.Nil, fmt.Errorf("class not available: %w", err)
-	}
+	err := s.unitOfWork.WithTransaction(ctx, func(repos repositories.Repositories) error {
+		err := s.ensurePendingBookingCreationAllowed(
+			ctx,
+			repos,
+			pendingBookingParams.ClassID,
+			pendingBookingParams.Email,
+		)
+		if err != nil {
+			return fmt.Errorf("pending booking creation not allowed: %w", err)
+		}
 
-	confirmationToken, err := s.tokenGenerator.Generate(tokenLength)
-	if err != nil {
-		return uuid.Nil, fmt.Errorf("could not generate confirmation token: %w", err)
-	}
+		err = s.checkClassAvailability(ctx, repos, pendingBookingParams.ClassID)
+		if err != nil {
+			return fmt.Errorf("class not available: %w", err)
+		}
 
-	pendingBooking := models.PendingBooking{
-		ID:                uuid.New(),
-		ClassID:           pendingBookingParams.ClassID,
-		Email:             pendingBookingParams.Email,
-		FirstName:         pendingBookingParams.FirstName,
-		LastName:          pendingBookingParams.LastName,
-		ConfirmationToken: confirmationToken,
-		CreatedAt:         time.Now().UTC(),
-	}
+		confirmationToken, err = s.tokenGenerator.Generate(tokenLength)
+		if err != nil {
+			return fmt.Errorf("could not generate confirmation token: %w", err)
+		}
 
-	err = s.pendingBookingsRepo.Insert(ctx, pendingBooking)
+		pendingBooking := models.PendingBooking{
+			ID:                uuid.New(),
+			ClassID:           pendingBookingParams.ClassID,
+			Email:             pendingBookingParams.Email,
+			FirstName:         pendingBookingParams.FirstName,
+			LastName:          pendingBookingParams.LastName,
+			ConfirmationToken: confirmationToken,
+			CreatedAt:         time.Now().UTC(),
+		}
+
+		err = repos.PendingBookings.Insert(ctx, pendingBooking)
+		if err != nil {
+			return fmt.Errorf("could not insert pending booking: %w", err)
+		}
+
+		return nil
+	})
 	if err != nil {
-		return uuid.Nil, fmt.Errorf("could not insert pending booking: %w", err)
+		return fmt.Errorf("create pending booking transaction failed: %w", err)
 	}
 
 	err = s.notifier.NotifyConfirmationLink(
@@ -90,18 +96,19 @@ func (s *service) CreatePendingBooking(
 		fmt.Sprintf("%s/bookings?token=%s", s.domainAddr, confirmationToken),
 	)
 	if err != nil {
-		return uuid.Nil, fmt.Errorf("could not notify confirmation link: %w", err)
+		return fmt.Errorf("could not notify confirmation link: %w", err)
 	}
 
-	return pendingBookingParams.ClassID, nil
+	return nil
 }
 
 func (s *service) ensurePendingBookingCreationAllowed(
 	ctx context.Context,
+	repos repositories.Repositories,
 	classID uuid.UUID,
 	email string,
 ) error {
-	_, err := s.bookingsRepo.GetByEmailAndClassID(ctx, classID, email)
+	_, err := repos.Bookings.GetByEmailAndClassID(ctx, classID, email)
 	if err == nil {
 		return viewErrors.ErrBookingAlreadyExists(classID, email, err)
 	}
@@ -110,13 +117,13 @@ func (s *service) ensurePendingBookingCreationAllowed(
 		return fmt.Errorf("could not get booking: %w", err)
 	}
 
-	pendingBookings, err := s.pendingBookingsRepo.List(ctx)
+	pendingBookings, err := repos.PendingBookings.List(ctx)
 	if err != nil {
 		return fmt.Errorf("could not list pending bookings: %w", err)
 	}
 
-	if len(pendingBookings) >= allowedPendingBookingsLimit {
-		return fmt.Errorf("limit: %d of pending bookings exceeded", allowedPendingBookingsLimit)
+	if len(pendingBookings) >= allowedTotalPendingBookingsLimit {
+		return fmt.Errorf("limit: %d of pending bookings exceeded", allowedTotalPendingBookingsLimit)
 	}
 
 	var count int
@@ -138,13 +145,17 @@ func (s *service) ensurePendingBookingCreationAllowed(
 	return nil
 }
 
-func (s *service) checkClassAvailability(ctx context.Context, classID uuid.UUID) error {
-	bookingCount, err := s.bookingsRepo.CountForClassID(ctx, classID)
+func (s *service) checkClassAvailability(
+	ctx context.Context,
+	repos repositories.Repositories,
+	classID uuid.UUID,
+) error {
+	bookingCount, err := repos.Bookings.CountForClassID(ctx, classID)
 	if err != nil {
 		return fmt.Errorf("could not count bookings for class %v: %w ", classID, err)
 	}
 
-	class, err := s.classesRepo.Get(ctx, classID)
+	class, err := repos.Classes.Get(ctx, classID)
 	if err != nil {
 		return fmt.Errorf("could not get class: %w", err)
 	}

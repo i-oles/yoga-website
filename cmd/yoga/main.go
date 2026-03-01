@@ -130,14 +130,17 @@ func setupRouter(database *gorm.DB, cfg *configuration.Configuration) *gin.Engin
 		cfg.BaseNotifierTmplPath,
 	)
 
-	classesService := classes.NewService(classesRepo, bookingsRepo, passesRepo, emailNotifier)
+	unitOfWork := sqliteRepo.NewUnitOfWork(database)
+
+	classesService := classes.NewService(classesRepo, bookingsRepo, unitOfWork, emailNotifier)
 	bookingsService := bookings.NewService(
-		classesRepo, bookingsRepo, pendingBookingsRepo, passesRepo, emailNotifier, cfg.DomainAddr,
+		unitOfWork,
+		bookingsRepo,
+		emailNotifier,
+		cfg.DomainAddr,
 	)
 	pendingBookingsService := pendingbookings.NewService(
-		classesRepo,
-		pendingBookingsRepo,
-		bookingsRepo,
+		unitOfWork,
 		tokenGenerator,
 		emailNotifier,
 		cfg.DomainAddr,
@@ -158,6 +161,7 @@ func setupRouter(database *gorm.DB, cfg *configuration.Configuration) *gin.Engin
 	createPendingBookingHandler := creatependingbooking.NewHandler(pendingBookingsService, viewErrorHandler)
 	pendingBookingFormHandler := pendingbookingform.NewHandler()
 	cancelBookingFormHandler := cancelbookingform.NewHandler(bookingsService, viewErrorHandler)
+
 	{
 		// home
 		api.GET("/", homeHandler.Handle)

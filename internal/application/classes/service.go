@@ -20,20 +20,20 @@ import (
 type service struct {
 	classesRepo  repositories.IClasses
 	bookingsRepo repositories.IBookings
-	passesRepo   repositories.IPasses
+	unitOfWork   repositories.IUnitOfWork
 	notifier     notifier.INotifier
 }
 
 func NewService(
 	classesRepo repositories.IClasses,
 	bookingsRepo repositories.IBookings,
-	passesRepo repositories.IPasses,
+	unitOfWork repositories.IUnitOfWork,
 	notifier notifier.INotifier,
 ) *service {
 	return &service{
 		classesRepo:  classesRepo,
 		bookingsRepo: bookingsRepo,
-		passesRepo:   passesRepo,
+		unitOfWork:   unitOfWork,
 		notifier:     notifier,
 	}
 }
@@ -111,66 +111,66 @@ func (s *service) CreateClasses(
 }
 
 func (s *service) DeleteClass(ctx context.Context, classID uuid.UUID, msg *string) error {
-	bookings, err := s.bookingsRepo.ListByClassID(ctx, classID)
-	if err != nil {
-		return fmt.Errorf("could not get classes for classID %v: %w", classID, err)
-	}
+	var notifierParamsList []models.NotifierParams
 
-	if len(bookings) > 0 && msg == nil {
-		return api.ErrValidation(
-			errors.New("reason msg can not be empty, when classes has bookings"),
-		)
-	}
-
-	for _, booking := range bookings {
-		err = s.handleBookingBeforeClassDeletion(ctx, booking, msg)
+	err := s.unitOfWork.WithTransaction(ctx, func(repos repositories.Repositories) error {
+		bookings, err := repos.Bookings.ListByClassID(ctx, classID)
 		if err != nil {
-			return fmt.Errorf("could not handle booking before class deletion: %w", err)
+			return fmt.Errorf("could not get classes for classID %v: %w", classID, err)
 		}
-	}
 
-	err = s.classesRepo.Delete(ctx, classID)
+		if len(bookings) > 0 && msg == nil {
+			return api.ErrValidation(
+				errors.New("reason msg can not be empty, when classes has bookings"),
+			)
+		}
+
+		for _, booking := range bookings {
+			if booking.Class == nil {
+				return errors.New("class field should not be empty")
+			}
+
+			err := repos.Bookings.Delete(ctx, booking.ID)
+			if err != nil {
+				return fmt.Errorf("could not delete booking for id %v: %w", booking.ID, err)
+			}
+
+			usedBookingIDs, totalBookings, err := s.decrementPassIfValid(ctx, repos, booking.Email, booking.ID)
+			if err != nil {
+				return fmt.Errorf("could not dectemetnt pass for %s: %w", booking.Email, err)
+			}
+
+			notifierParams := models.NotifierParams{
+				RecipientFirstName: booking.FirstName,
+				RecipientLastName:  booking.LastName,
+				RecipientEmail:     booking.Email,
+				ClassName:          booking.Class.ClassName,
+				ClassLevel:         booking.Class.ClassLevel,
+				StartTime:          booking.Class.StartTime,
+				Location:           booking.Class.Location,
+				PassUsedBookingIDs: usedBookingIDs,
+				PassTotalBookings:  totalBookings,
+			}
+
+			notifierParamsList = append(notifierParamsList, notifierParams)
+		}
+
+		err = repos.Classes.Delete(ctx, classID)
+		if err != nil {
+			return fmt.Errorf("could not delete class: %w", err)
+		}
+
+		return nil
+	})
 	if err != nil {
-		return fmt.Errorf("could not delete class: %w", err)
+		return fmt.Errorf("delete class transaction failed: %w", err)
 	}
 
-	return nil
-}
-
-func (s *service) handleBookingBeforeClassDeletion(
-	ctx context.Context,
-	booking models.Booking,
-	msgToUser *string,
-) error {
-	if booking.Class == nil {
-		return errors.New("class field should not be empty")
-	}
-
-	err := s.bookingsRepo.Delete(ctx, booking.ID)
-	if err != nil {
-		return fmt.Errorf("could not delete booking for id %v: %w", booking.ID, err)
-	}
-
-	usedBookingIDs, totalBookings, err := s.decrementPassIfValid(ctx, booking.Email, booking.ID)
-	if err != nil {
-		return fmt.Errorf("could not dectemetnt pass for %s: %w", booking.Email, err)
-	}
-
-	notifierParams := models.NotifierParams{
-		RecipientFirstName: booking.FirstName,
-		RecipientLastName:  booking.LastName,
-		RecipientEmail:     booking.Email,
-		ClassName:          booking.Class.ClassName,
-		ClassLevel:         booking.Class.ClassLevel,
-		StartTime:          booking.Class.StartTime,
-		Location:           booking.Class.Location,
-		PassUsedBookingIDs: usedBookingIDs,
-		PassTotalBookings:  totalBookings,
-	}
-
-	err = s.notifier.NotifyClassCancellation(notifierParams, *msgToUser)
-	if err != nil {
-		return fmt.Errorf("could not notify class cancellation with %+v: %w", notifierParams, err)
+	for _, notifierParams := range notifierParamsList {
+		err = s.notifier.NotifyClassCancellation(notifierParams, *msg)
+		if err != nil {
+			return fmt.Errorf("could not notify class cancellation with %+v: %w", notifierParams, err)
+		}
 	}
 
 	return nil
@@ -178,17 +178,19 @@ func (s *service) handleBookingBeforeClassDeletion(
 
 func (s *service) decrementPassIfValid(
 	ctx context.Context,
+	repos repositories.Repositories,
 	email string,
 	bookingID uuid.UUID,
 ) ([]uuid.UUID, *int, error) {
-	passOpt, err := s.passesRepo.GetByEmail(ctx, email)
-	if err != nil && passOpt.Exists() {
+	passOpt, err := repos.Passes.GetByEmail(ctx, email)
+	if err != nil {
 		return nil, nil, fmt.Errorf("could not get pass: %w", err)
 	}
 
-	var updatedBookingIDs []uuid.UUID
-
-	var totalBookings *int
+	var (
+		updatedBookingIDs []uuid.UUID
+		totalBookings     *int
+	)
 
 	if passOpt.Exists() {
 		pass := passOpt.Get()
@@ -202,7 +204,7 @@ func (s *service) decrementPassIfValid(
 			return nil, nil, fmt.Errorf("could not remove bookingID %v from usedBookingIDs", bookingID)
 		}
 
-		err = s.passesRepo.Update(ctx, pass.ID, updatedBookingIDs, pass.TotalBookings)
+		err = repos.Passes.Update(ctx, pass.ID, updatedBookingIDs, pass.TotalBookings)
 		if err != nil {
 			return nil, nil,
 				fmt.Errorf("could not update pass for %s with %v: %w", pass.Email, updatedBookingIDs, err)
@@ -217,12 +219,14 @@ func (s *service) decrementPassIfValid(
 func (s *service) UpdateClass(
 	ctx context.Context, classID uuid.UUID, update models.UpdateClass,
 ) (models.Class, error) {
-	err := validateClassUpdate(update)
-	if err != nil {
-		return models.Class{}, api.ErrValidation(err)
+	if update.StartTime != nil {
+		err := validateClassStartTime(*update.StartTime)
+		if err != nil {
+			return models.Class{}, api.ErrValidation(err)
+		}
 	}
 
-	_, err = s.classesRepo.Get(ctx, classID)
+	_, err := s.classesRepo.Get(ctx, classID)
 	if err != nil {
 		if errors.Is(err, repositoryError.ErrNotFound) {
 			return models.Class{}, api.ErrNotFound(err)
@@ -236,14 +240,9 @@ func (s *service) UpdateClass(
 		return models.Class{}, fmt.Errorf("could not get data for class update: %w", err)
 	}
 
-	err = s.classesRepo.Update(ctx, classID, updateData)
+	updatedClass, err := s.classesRepo.Update(ctx, classID, updateData)
 	if err != nil {
 		return models.Class{}, fmt.Errorf("could not update class: %w", err)
-	}
-
-	updatedClass, err := s.classesRepo.Get(ctx, classID)
-	if err != nil {
-		return models.Class{}, fmt.Errorf("could not get class after update: %w", err)
 	}
 
 	err = s.sendInformationAboutClassUpdateToUsers(ctx, update, updatedClass)
@@ -320,6 +319,7 @@ func getDataForClassUpdate(update models.UpdateClass) (map[string]any, error) {
 	return updateData, nil
 }
 
+// TODO: move polish from here (keep all this messages somewhere in notifier?)
 func setMessageForNotification(
 	startTime *time.Time,
 	location *string,
@@ -339,21 +339,9 @@ func setMessageForNotification(
 	return "", errors.New("message for notification should not be empty")
 }
 
-func validateClassUpdate(
-	update models.UpdateClass,
-) error {
-	if update.StartTime != nil {
-		if update.StartTime.Before(time.Now()) {
-			return fmt.Errorf("class start_time: %v expired", update.StartTime)
-		}
-	}
-
-	return nil
-}
-
 func validateClasses(classes []models.Class) error {
 	for _, class := range classes {
-		err := validateClass(class)
+		err := validateClassStartTime(class.StartTime)
 		if err != nil {
 			return fmt.Errorf("class validation failed %w", err)
 		}
@@ -362,9 +350,9 @@ func validateClasses(classes []models.Class) error {
 	return nil
 }
 
-func validateClass(class models.Class) error {
-	if class.StartTime.Before(time.Now()) {
-		return fmt.Errorf("class start_time: %v expired", class.StartTime)
+func validateClassStartTime(startTime time.Time) error {
+	if startTime.Before(time.Now()) {
+		return fmt.Errorf("class startTime: %v expired", startTime)
 	}
 
 	return nil

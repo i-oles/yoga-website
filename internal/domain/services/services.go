@@ -27,7 +27,7 @@ type IBookingsService interface {
 }
 
 type IPendingBookingsService interface {
-	CreatePendingBooking(ctx context.Context, params models.PendingBookingParams) (uuid.UUID, error)
+	CreatePendingBooking(ctx context.Context, params models.PendingBookingParams) error
 }
 
 type IPassesService interface {
