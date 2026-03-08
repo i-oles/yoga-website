@@ -63,7 +63,19 @@ func (s *service) CreateBooking(ctx context.Context, token string) (models.Class
 
 		_, err = repos.Bookings.GetByEmailAndClassID(ctx, pendingBooking.ClassID, pendingBooking.Email)
 		if err == nil {
-			return viewErrors.ErrBookingAlreadyExists(pendingBooking.ClassID, pendingBooking.Email, err)
+			return viewErrors.ErrBookingAlreadyExists(
+				pendingBooking.ClassID,
+				pendingBooking.Email,
+				fmt.Errorf("booking already exists for email %s and classID %s", pendingBooking.Email, pendingBooking.ClassID),
+			)
+		}
+
+		if !errors.Is(err, errs.ErrNotFound) {
+			return fmt.Errorf("could not get booking for email %s and classID %s: %w",
+				pendingBooking.Email,
+				pendingBooking.ClassID,
+				err,
+			)
 		}
 
 		class, err = repos.Classes.Get(ctx, pendingBooking.ClassID)

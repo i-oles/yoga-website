@@ -58,9 +58,10 @@ func ErrClassExpired(classID uuid.UUID, err error) *ViewError {
 
 func ErrPendingBookingNotFound(err error) *ViewError {
 	return &ViewError{
-		Code:    PendingBookingNotFoundCode,
-		Message: "Link potwierdzający rezerwację wygasł, rozpocznij nową rezerwację.",
-		Err:     err,
+		Code: PendingBookingNotFoundCode,
+		Message: "Link potwierdzający rezerwację wygasł bądź został już wykorzystany, " +
+			"rozpocznij nową rezerwację lub poszukaj potwierdzania w skrzynkce mailowej.",
+		Err: err,
 	}
 }
 
