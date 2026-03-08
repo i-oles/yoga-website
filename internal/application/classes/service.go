@@ -95,14 +95,19 @@ func (s *service) ListClasses(
 }
 
 func (s *service) CreateClasses(
-	ctx context.Context, classes []models.Class,
+	ctx context.Context, newClasses []models.Class,
 ) ([]models.Class, error) {
-	err := validateClasses(classes)
+	existingClasses, err := s.classesRepo.List(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("could not get existing classes: %w", err)
+	}
+
+	err = validateClasses(newClasses, existingClasses)
 	if err != nil {
 		return nil, api.ErrValidation(err)
 	}
 
-	insertedClasses, err := s.classesRepo.Insert(ctx, classes)
+	insertedClasses, err := s.classesRepo.Insert(ctx, newClasses)
 	if err != nil {
 		return nil, fmt.Errorf("could not insert classes: %w", err)
 	}
@@ -219,14 +224,23 @@ func (s *service) decrementPassIfValid(
 func (s *service) UpdateClass(
 	ctx context.Context, classID uuid.UUID, update models.UpdateClass,
 ) (models.Class, error) {
+	existingClasses, err := s.classesRepo.List(ctx)
+	if err != nil {
+		if errors.Is(err, repositoryError.ErrNotFound) {
+			return models.Class{}, api.ErrNotFound(err)
+		}
+
+		return models.Class{}, fmt.Errorf("could not get existing classes: %w", err)
+	}
+
 	if update.StartTime != nil {
-		err := validateClassStartTime(*update.StartTime)
+		err := validateClassStartTime(*update.StartTime, existingClasses)
 		if err != nil {
 			return models.Class{}, api.ErrValidation(err)
 		}
 	}
 
-	_, err := s.classesRepo.Get(ctx, classID)
+	_, err = s.classesRepo.Get(ctx, classID)
 	if err != nil {
 		if errors.Is(err, repositoryError.ErrNotFound) {
 			return models.Class{}, api.ErrNotFound(err)
@@ -339,20 +353,26 @@ func setMessageForNotification(
 	return "", errors.New("message for notification should not be empty")
 }
 
-func validateClasses(classes []models.Class) error {
-	for _, class := range classes {
-		err := validateClassStartTime(class.StartTime)
+func validateClasses(newClasses, existingClasses []models.Class) error {
+	for _, class := range newClasses {
+		err := validateClassStartTime(class.StartTime, existingClasses)
 		if err != nil {
-			return fmt.Errorf("class validation failed %w", err)
+			return fmt.Errorf("startTime validation failed %w", err)
 		}
 	}
 
 	return nil
 }
 
-func validateClassStartTime(startTime time.Time) error {
+func validateClassStartTime(startTime time.Time, existingClasses []models.Class) error {
 	if startTime.Before(time.Now()) {
 		return fmt.Errorf("class startTime: %v expired", startTime)
+	}
+
+	for _, existingClass := range existingClasses {
+		if startTime.Equal(existingClass.StartTime) {
+			return fmt.Errorf("class with startTime %v already exists", startTime)
+		}
 	}
 
 	return nil
