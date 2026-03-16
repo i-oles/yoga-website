@@ -33,14 +33,14 @@ func NewHandler(
 func (h *handler) Handle(ginCtx *gin.Context) {
 	var form dto.PendingBookingForm
 	if err := ginCtx.ShouldBind(&form); err != nil {
-		viewErrs.ErrBadRequest(ginCtx, "pending_booking_form.tmpl", err)
+		viewErrs.HandleError(ginCtx, err, http.StatusBadRequest)
 
 		return
 	}
 
 	classID, err := uuid.Parse(form.ClassID)
 	if err != nil {
-		viewErrs.ErrBadRequest(ginCtx, "pending_booking_form.tmpl", err)
+		viewErrs.HandleError(ginCtx, err, http.StatusBadRequest)
 
 		return
 	}
@@ -56,7 +56,7 @@ func (h *handler) Handle(ginCtx *gin.Context) {
 
 	err = h.PendingBookingsService.CreatePendingBooking(ctx, pendingBookingParams)
 	if err != nil {
-		h.ViewErrorHandler.Handle(ginCtx, "err.tmpl", err)
+		h.ViewErrorHandler.Handle(ginCtx, "pending_booking_form.tmpl", err)
 
 		return
 	}

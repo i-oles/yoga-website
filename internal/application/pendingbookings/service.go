@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	allowedTotalPendingBookingsLimit = 200
+	allowedTotalPendingBookingsLimit = 1
 	tokenLength                      = 32
 )
 

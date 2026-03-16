@@ -44,7 +44,7 @@ func (h *handler) Handle(ginCtx *gin.Context) {
 
 	classesView, err := sharedDTO.ToClassesWithCurrentCapacityDTO(classes)
 	if err != nil {
-		viewErrs.ErrDTOConversion(ginCtx, "err.tmpl", err)
+		viewErrs.HandleError(ginCtx, err, http.StatusInternalServerError)
 
 		return
 	}

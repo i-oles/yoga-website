@@ -130,8 +130,7 @@
 </div>
 </p><script>
     document.addEventListener('htmx:beforeSwap', function(event) {
-        // handle status 409 (Conflict) and 400 (Bad Request)
-        if ([409, 400].includes(event.detail.xhr.status)) {
+        if ([409, 400, 500].includes(event.detail.xhr.status)) {
             event.detail.shouldSwap = true;  // force swap
             event.detail.isError = false;    // treat as proper resp
         }
