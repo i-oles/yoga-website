@@ -1,13 +1,15 @@
 package middleware
 
 import (
+	"strconv"
+	"time"
+
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 func RequestID() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		id := uuid.NewString()
+		id := strconv.FormatInt(time.Now().Unix(), 10)
 
 		ctx.Set("request_id", id)
 		ctx.Writer.Header().Set("X-Request-ID", id)

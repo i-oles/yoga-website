@@ -52,7 +52,7 @@ func (e errorHandler) Handle(ctx *gin.Context, tmplName string, err error) {
 			return
 		default:
 			ctx.HTML(http.StatusInternalServerError, "err.tmpl", gin.H{
-				"Error": "Coś poszło nie tak... Skontaktuj się ze mną. ID błędu: " + ctx.GetString("request_id"),
+				"Error": "error_id: " + ctx.GetString("request_id"),
 			})
 		}
 	}
@@ -69,6 +69,6 @@ func (e errorHandler) handleInternalError(ctx *gin.Context) {
 	}
 
 	ctx.HTML(http.StatusInternalServerError, "err.tmpl", gin.H{
-		"Error": "Coś poszło nie tak... Skontaktuj się ze mną. ID Błędu: " + ctx.GetString("request_id"),
+		"Error": "error_id: " + ctx.GetString("request_id"),
 	})
 }

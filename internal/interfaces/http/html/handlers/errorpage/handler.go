@@ -1,6 +1,7 @@
 package errorpage
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -13,7 +14,8 @@ func NewHandler() *Handler {
 }
 
 func (h *Handler) Handle(c *gin.Context) {
+	err := fmt.Errorf("error_id: %s", c.GetString("request_id"))
 	c.HTML(http.StatusInternalServerError, "err.tmpl", gin.H{
-		"Error": "Coś poszło nie tak... Skontaktuj się ze mną. ID błędu: " + c.GetHeader("request_id"),
+		"Error": err.Error(),
 	})
 }
