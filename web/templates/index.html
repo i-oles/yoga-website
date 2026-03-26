@@ -130,7 +130,7 @@
 </div>
 </p><script>
     document.addEventListener('htmx:beforeSwap', function(event) {
-        if ([409, 400, 500].includes(event.detail.xhr.status)) {
+        if (event.detail.xhr.status >= 400) {
             event.detail.shouldSwap = true;  // force swap
             event.detail.isError = false;    // treat as proper resp
         }
