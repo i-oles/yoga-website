@@ -23,7 +23,7 @@ import (
 	sqliteRepo "main/internal/infrastructure/repository/sqlite"
 	apiErrs "main/internal/interfaces/http/api/errs"
 	apiErrHandler "main/internal/interfaces/http/api/errs/handler"
-	"main/internal/interfaces/http/api/errs/wrapper"
+	"main/internal/interfaces/http/api/errs/logging"
 	"main/internal/interfaces/http/api/handlers/activatepass"
 	"main/internal/interfaces/http/api/handlers/createclasses"
 	"main/internal/interfaces/http/api/handlers/deletebooking"
@@ -39,6 +39,7 @@ import (
 	"main/internal/interfaces/http/html/handlers/cancelbooking"
 	"main/internal/interfaces/http/html/handlers/cancelbookingform"
 	"main/internal/interfaces/http/html/handlers/createbooking"
+	"main/internal/interfaces/http/html/handlers/errorpage"
 	"main/internal/interfaces/http/html/handlers/home"
 	creatependingbooking "main/internal/interfaces/http/html/handlers/pendingbooking"
 	"main/internal/interfaces/http/html/handlers/pendingbookingform"
@@ -113,6 +114,7 @@ func setupRouter(database *gorm.DB, cfg *configuration.Configuration) *gin.Engin
 
 	router.Static("web/static", "./web/static")
 	router.LoadHTMLGlob("web/templates/*")
+	router.Use(middleware.RequestID())
 	api := router.Group("/")
 
 	classesRepo := sqliteRepo.NewClassesRepo(database)
@@ -161,10 +163,14 @@ func setupRouter(database *gorm.DB, cfg *configuration.Configuration) *gin.Engin
 	createPendingBookingHandler := creatependingbooking.NewHandler(pendingBookingsService, viewErrorHandler)
 	pendingBookingFormHandler := pendingbookingform.NewHandler()
 	cancelBookingFormHandler := cancelbookingform.NewHandler(bookingsService, viewErrorHandler)
+	errorPageHandler := errorpage.NewHandler()
 
 	{
 		// home
 		api.GET("/", homeHandler.Handle)
+
+		// error page
+		api.GET("/error", errorPageHandler.Handle)
 
 		// bookings
 		// this endpoint should be POST according to REST, it is GET - confirmation link sent via email
@@ -182,7 +188,7 @@ func setupRouter(database *gorm.DB, cfg *configuration.Configuration) *gin.Engin
 	var apiErrorHandler apiErrs.IErrorHandler
 
 	apiErrorHandler = apiErrHandler.NewErrorHandler()
-	apiErrorHandler = wrapper.NewErrorHandler(apiErrorHandler)
+	apiErrorHandler = logging.NewErrorHandler(apiErrorHandler)
 
 	// API
 	authMiddleware := middleware.Auth(cfg.AuthSecret)

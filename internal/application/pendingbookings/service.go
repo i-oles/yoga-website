@@ -110,7 +110,11 @@ func (s *service) ensurePendingBookingCreationAllowed(
 ) error {
 	_, err := repos.Bookings.GetByEmailAndClassID(ctx, classID, email)
 	if err == nil {
-		return viewErrors.ErrBookingAlreadyExists(classID, email, err)
+		return viewErrors.ErrBookingAlreadyExists(
+			classID,
+			email,
+			fmt.Errorf("booking for class %v and email %s already exists", classID, email),
+		)
 	}
 
 	if !errors.Is(err, errs.ErrNotFound) {

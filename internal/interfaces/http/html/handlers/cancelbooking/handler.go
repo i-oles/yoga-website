@@ -30,7 +30,7 @@ func (h *handler) Handle(ginCtx *gin.Context) {
 	var uri dto.BookingCancelURI
 
 	if err := ginCtx.ShouldBindUri(&uri); err != nil {
-		viewErrs.ErrBadRequest(ginCtx, "err.tmpl", err)
+		viewErrs.HandleError(ginCtx, err, http.StatusBadRequest)
 
 		return
 	}
@@ -38,14 +38,14 @@ func (h *handler) Handle(ginCtx *gin.Context) {
 	var form dto.BookingCancelForm
 
 	if err := ginCtx.ShouldBindQuery(&form); err != nil {
-		viewErrs.ErrBadRequest(ginCtx, "err.tmpl", err)
+		viewErrs.HandleError(ginCtx, err, http.StatusBadRequest)
 
 		return
 	}
 
 	bookingID, err := uuid.Parse(uri.BookingID)
 	if err != nil {
-		viewErrs.ErrBadRequest(ginCtx, "err.tmpl", err)
+		viewErrs.HandleError(ginCtx, err, http.StatusBadRequest)
 
 		return
 	}

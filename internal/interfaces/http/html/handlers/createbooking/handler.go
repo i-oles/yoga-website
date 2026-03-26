@@ -28,7 +28,7 @@ func NewHandler(
 func (h *handler) Handle(ginCtx *gin.Context) {
 	var form dto.BookingCreateForm
 	if err := ginCtx.ShouldBindQuery(&form); err != nil {
-		viewErrs.ErrBadRequest(ginCtx, "err.tmpl", err)
+		viewErrs.HandleError(ginCtx, err, http.StatusBadRequest)
 
 		return
 	}
@@ -44,7 +44,7 @@ func (h *handler) Handle(ginCtx *gin.Context) {
 
 	view, err := dto.ToClassView(class)
 	if err != nil {
-		viewErrs.ErrDTOConversion(ginCtx, "err.tmpl", err)
+		viewErrs.HandleError(ginCtx, err, http.StatusInternalServerError)
 
 		return
 	}

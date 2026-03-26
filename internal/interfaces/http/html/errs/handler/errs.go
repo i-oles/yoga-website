@@ -16,42 +16,59 @@ func NewErrorHandler() errorHandler {
 }
 
 func (e errorHandler) Handle(ctx *gin.Context, tmplName string, err error) {
-	var viewError *domainErrs.ViewError
-	if errors.As(err, &viewError) {
-		switch viewError.Code {
+	var businessError *domainErrs.BusinessError
+	if errors.As(err, &businessError) {
+		switch businessError.Code {
 		case domainErrs.BookingNotFoundCode,
 			domainErrs.ClassExpiredCode,
 			domainErrs.ClassEmptyCode:
 			ctx.HTML(http.StatusNotFound, tmplName, gin.H{
-				"ID":    viewError.ClassID,
-				"Error": viewError.Message,
+				"ID":    businessError.ClassID,
+				"Error": businessError.Message,
 			})
+
+			return
 		case domainErrs.BookingAlreadyExistsCode,
 			domainErrs.TooManyPendingBookingsCode,
 			domainErrs.ClassFullyBookedCode:
 			ctx.HTML(http.StatusConflict, tmplName, gin.H{
-				"ID":    viewError.ClassID,
-				"Error": viewError.Message,
+				"ID":    businessError.ClassID,
+				"Error": businessError.Message,
 			})
+
+			return
 		case domainErrs.PendingBookingNotFoundCode,
 			domainErrs.InvalidCancellationLinkCode:
 			ctx.HTML(http.StatusNotFound, tmplName, gin.H{
-				"Error": viewError.Message,
+				"Error": businessError.Message,
 			})
+
+			return
 		case domainErrs.SomeoneBookedClassFasterCode:
 			ctx.HTML(http.StatusConflict, tmplName, gin.H{
-				"Error": viewError.Message,
+				"Error": businessError.Message,
 			})
+
+			return
 		default:
 			ctx.HTML(http.StatusInternalServerError, "err.tmpl", gin.H{
-				"Error": "Coś poszło nie tak... Skontaktuj się ze mną :)",
+				"Error": "error_id: " + ctx.GetString("request_id"),
 			})
 		}
+	}
+
+	e.handleInternalError(ctx)
+}
+
+func (e errorHandler) handleInternalError(ctx *gin.Context) {
+	if ctx.GetHeader("HX-Request") == "true" {
+		ctx.Header("HX-Redirect", "/error")
+		ctx.Status(http.StatusInternalServerError)
 
 		return
 	}
 
 	ctx.HTML(http.StatusInternalServerError, "err.tmpl", gin.H{
-		"Error": "Coś poszło nie tak... Skontaktuj się ze mną :)",
+		"Error": "error_id: " + ctx.GetString("request_id"),
 	})
 }

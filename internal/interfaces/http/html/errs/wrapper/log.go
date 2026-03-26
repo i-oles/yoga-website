@@ -26,7 +26,7 @@ func NewErrorHandler(
 }
 
 func (e ErrorHandler) Handle(ctx *gin.Context, tmplName string, err error) {
-	var viewError *domainErrs.ViewError
+	var viewError *domainErrs.BusinessError
 
 	if e.logBusinessErrors && errors.As(err, &viewError) {
 		slog.Info("BookingBusinessError",
@@ -36,12 +36,14 @@ func (e ErrorHandler) Handle(ctx *gin.Context, tmplName string, err error) {
 			slog.Any("classID", viewError.ClassID),
 			slog.Any("params", ctx.Request.URL.Query()),
 			slog.String("endpoint", ctx.FullPath()),
+			slog.String("requestID", ctx.GetString("request_id")),
 		)
 	} else {
 		slog.Error("UnknownError",
 			slog.String("error", err.Error()),
 			slog.Any("params", ctx.Request.URL.Query()),
 			slog.String("endpoint", ctx.FullPath()),
+			slog.String("requestID", ctx.GetString("request_id")),
 		)
 	}
 
