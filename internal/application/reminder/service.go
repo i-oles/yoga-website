@@ -45,9 +45,11 @@ func (s *service) RemindClass(ctx context.Context) error {
 	now := time.Now()
 
 	var class models.Class
+
 	for _, c := range classes {
 		if isClassToday(now, c) {
 			class = c
+
 			break
 		}
 	}
@@ -60,6 +62,8 @@ func (s *service) RemindClass(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+
+	// TODO: handler errors
 
 	// TODO: add transaction
 	for _, booking := range bookings {
