@@ -17,7 +17,7 @@ type BaseTmplWithMsg struct {
 	Message      string
 }
 
-type BookingConfirmationTmpl struct {
+type BaseTmplWithCancellationLink struct {
 	BaseTmplData     BaseTmpl
 	CancellationLink string
 }
