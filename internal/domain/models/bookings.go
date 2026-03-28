@@ -14,5 +14,6 @@ type Booking struct {
 	Email             string
 	CreatedAt         time.Time
 	ConfirmationToken string
+	RemindedAt        *time.Time
 	Class             *Class
 }

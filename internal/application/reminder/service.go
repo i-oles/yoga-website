@@ -39,7 +39,7 @@ func NewReminderService(
 func (s *service) RemindClass(ctx context.Context) error {
 	classes, err := s.classesRepo.List(ctx)
 	if err != nil {
-		return err
+		return fmt.Errorf("could not list classes: %w", err)
 	}
 
 	now := time.Now()
@@ -47,7 +47,7 @@ func (s *service) RemindClass(ctx context.Context) error {
 	var class models.Class
 
 	for _, c := range classes {
-		if isClassToday(now, c) {
+		if class.StartTime.Sub(now) < 10*time.Hour {
 			class = c
 
 			break
@@ -60,10 +60,8 @@ func (s *service) RemindClass(ctx context.Context) error {
 
 	bookings, err := s.bookingsRepo.ListByClassID(ctx, class.ID)
 	if err != nil {
-		return err
+		return fmt.Errorf("could not list bookings for %v: %w", class.ID, err)
 	}
-
-	// TODO: handler errors
 
 	// TODO: add transaction
 	for _, booking := range bookings {
@@ -79,7 +77,7 @@ func (s *service) RemindClass(ctx context.Context) error {
 
 		passOpt, err := s.passesRepo.GetByEmail(ctx, booking.Email)
 		if err != nil {
-			return err
+			return fmt.Errorf("could not get pass for %v: %w", booking.Email, err)
 		}
 
 		if passOpt.Exists() {
@@ -92,19 +90,18 @@ func (s *service) RemindClass(ctx context.Context) error {
 			"%s/bookings/%s/cancel_form?token=%s", s.domainAddr, booking.ID, booking.ConfirmationToken,
 		)
 
-		err = s.notifier.NotifyReminder(notifierParams, cancellationLink)
+		err = s.notifier.NotifyClassReminder(notifierParams, cancellationLink)
 		if err != nil {
-			return err
+			return fmt.Errorf("could not remind about class with %v: %w", notifierParams, err)
 		}
 
-		// TODO: save new booking field --> reminded_at (timestamp)
+		update := map[string]any{"reminded_at": time.Now()}
+
+		_, err = s.bookingsRepo.Update(ctx, booking.ID, update)
+		if err != nil {
+			return fmt.Errorf("could not update booking %v with %v: %w", booking.ID, update, err)
+		}
 	}
 
 	return nil
-}
-
-func isClassToday(now time.Time, class models.Class) bool {
-	return class.StartTime.Day() == now.Day() &&
-		class.StartTime.Month() == now.Month() &&
-		class.StartTime.Year() == now.Year()
 }

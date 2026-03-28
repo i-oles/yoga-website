@@ -15,6 +15,7 @@ type SQLBooking struct {
 	FirstName         string    `gorm:"not null"`
 	LastName          string    `gorm:"not null"`
 	ConfirmationToken string    `gorm:"unique;not null"`
+	RemindedAt        *time.Time
 	CreatedAt         time.Time `gorm:"autoCreateTime"`
 	Class             *SQLClass `gorm:"foreignKey:class_id"`
 }
@@ -31,6 +32,7 @@ func (s SQLBooking) ToDomain() models.Booking {
 		LastName:          s.LastName,
 		Email:             s.Email,
 		CreatedAt:         s.CreatedAt,
+		RemindedAt:        s.RemindedAt,
 		ConfirmationToken: s.ConfirmationToken,
 	}
 
@@ -50,6 +52,7 @@ func SQLBookingsFromDomain(domain models.Booking) SQLBooking {
 		LastName:          domain.LastName,
 		Email:             domain.Email,
 		CreatedAt:         domain.CreatedAt,
+		RemindedAt:        domain.RemindedAt,
 		ConfirmationToken: domain.ConfirmationToken,
 	}
 }

@@ -244,7 +244,7 @@ func (n *notifier) NotifyClassCancellation(params models.NotifierParams, msg str
 	return nil
 }
 
-func (n *notifier) NotifyReminder(params models.NotifierParams, cancellationLink string) error {
+func (n *notifier) NotifyClassReminder(params models.NotifierParams, cancellationLink string) error {
 	classStartTimeDetails, err := getClassStartTimeDetails(params.StartTime)
 	if err != nil {
 		return fmt.Errorf("could not get class start time details: %w", err)

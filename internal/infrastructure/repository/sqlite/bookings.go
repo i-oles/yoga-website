@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type bookingsRepo struct {
@@ -172,4 +173,23 @@ func (r *bookingsRepo) Delete(ctx context.Context, id uuid.UUID) error {
 	}
 
 	return nil
+}
+
+func (r *bookingsRepo) Update(
+	ctx context.Context,
+	bookingID uuid.UUID,
+	update map[string]any,
+) (models.Booking, error) {
+	var sqlBooking db.SQLBooking
+
+	if err := r.db.WithContext(ctx).
+		Model(&sqlBooking).
+		Clauses(clause.Returning{}).
+		Where("id = ?", bookingID).
+		Updates(update).Error; err != nil {
+		return models.Booking{},
+			fmt.Errorf("could not update booking: %v with data: %v, %w", bookingID, update, err)
+	}
+
+	return sqlBooking.ToDomain(), nil
 }
