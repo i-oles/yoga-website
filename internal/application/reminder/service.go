@@ -13,6 +13,7 @@ import (
 )
 
 type service struct {
+	unitOfWork   repositories.IUnitOfWork
 	classesRepo  repositories.IClasses
 	bookingsRepo repositories.IBookings
 	passesRepo   repositories.IPasses
@@ -21,6 +22,7 @@ type service struct {
 }
 
 func NewReminderService(
+	unitOfWork repositories.IUnitOfWork,
 	classesRepo repositories.IClasses,
 	bookingsRepo repositories.IBookings,
 	passesRepo repositories.IPasses,
@@ -28,9 +30,9 @@ func NewReminderService(
 	notifier notifier.INotifier,
 ) *service {
 	return &service{
+		unitOfWork:   unitOfWork,
 		classesRepo:  classesRepo,
 		bookingsRepo: bookingsRepo,
-		passesRepo:   passesRepo,
 		notifier:     notifier,
 		domainAddr:   domainAddr,
 	}
@@ -63,43 +65,49 @@ func (s *service) RemindClass(ctx context.Context) error {
 		return fmt.Errorf("could not list bookings for %v: %w", class.ID, err)
 	}
 
-	// TODO: add transaction
 	for _, booking := range bookings {
-		notifierParams := models.NotifierParams{
-			RecipientEmail:     booking.Email,
-			RecipientFirstName: booking.FirstName,
-			RecipientLastName:  booking.LastName,
-			ClassName:          class.ClassName,
-			ClassLevel:         class.ClassLevel,
-			StartTime:          class.StartTime,
-			Location:           class.Location,
-		}
+		err := s.unitOfWork.WithTransaction(ctx, func(repos repositories.Repositories) error {
+			notifierParams := models.NotifierParams{
+				RecipientEmail:     booking.Email,
+				RecipientFirstName: booking.FirstName,
+				RecipientLastName:  booking.LastName,
+				ClassName:          class.ClassName,
+				ClassLevel:         class.ClassLevel,
+				StartTime:          class.StartTime,
+				Location:           class.Location,
+			}
 
-		passOpt, err := s.passesRepo.GetByEmail(ctx, booking.Email)
+			passOpt, err := repos.Passes.GetByEmail(ctx, booking.Email)
+			if err != nil {
+				return fmt.Errorf("could not get pass for %v: %w", booking.Email, err)
+			}
+
+			if passOpt.Exists() {
+				pass := passOpt.Get()
+				notifierParams.PassUsedBookingIDs = pass.UsedBookingIDs
+				notifierParams.PassTotalBookings = &pass.TotalBookings
+			}
+
+			cancellationLink := fmt.Sprintf(
+				"%s/bookings/%s/cancel_form?token=%s", s.domainAddr, booking.ID, booking.ConfirmationToken,
+			)
+
+			err = s.notifier.NotifyClassReminder(notifierParams, cancellationLink)
+			if err != nil {
+				return fmt.Errorf("could not remind about class with %v: %w", notifierParams, err)
+			}
+
+			update := map[string]any{"reminded_at": time.Now()}
+
+			_, err = repos.Bookings.Update(ctx, booking.ID, update)
+			if err != nil {
+				return fmt.Errorf("could not update booking %v with %v: %w", booking.ID, update, err)
+			}
+
+			return nil
+		})
 		if err != nil {
-			return fmt.Errorf("could not get pass for %v: %w", booking.Email, err)
-		}
-
-		if passOpt.Exists() {
-			pass := passOpt.Get()
-			notifierParams.PassUsedBookingIDs = pass.UsedBookingIDs
-			notifierParams.PassTotalBookings = &pass.TotalBookings
-		}
-
-		cancellationLink := fmt.Sprintf(
-			"%s/bookings/%s/cancel_form?token=%s", s.domainAddr, booking.ID, booking.ConfirmationToken,
-		)
-
-		err = s.notifier.NotifyClassReminder(notifierParams, cancellationLink)
-		if err != nil {
-			return fmt.Errorf("could not remind about class with %v: %w", notifierParams, err)
-		}
-
-		update := map[string]any{"reminded_at": time.Now()}
-
-		_, err = s.bookingsRepo.Update(ctx, booking.ID, update)
-		if err != nil {
-			return fmt.Errorf("could not update booking %v with %v: %w", booking.ID, update, err)
+			return fmt.Errorf("remind class transaction failed: %w", err)
 		}
 	}
 
