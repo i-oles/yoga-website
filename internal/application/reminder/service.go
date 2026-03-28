@@ -66,7 +66,18 @@ func (s *service) RemindClass(ctx context.Context) error {
 	}
 
 	for _, booking := range bookings {
+		if booking.RemindedAt != nil {
+			continue
+		}
+
 		err := s.unitOfWork.WithTransaction(ctx, func(repos repositories.Repositories) error {
+			update := map[string]any{"reminded_at": time.Now()}
+
+			_, err = repos.Bookings.Update(ctx, booking.ID, update)
+			if err != nil {
+				return fmt.Errorf("could not update booking %v with %v: %w", booking.ID, update, err)
+			}
+
 			notifierParams := models.NotifierParams{
 				RecipientEmail:     booking.Email,
 				RecipientFirstName: booking.FirstName,
@@ -95,13 +106,6 @@ func (s *service) RemindClass(ctx context.Context) error {
 			err = s.notifier.NotifyClassReminder(notifierParams, cancellationLink)
 			if err != nil {
 				return fmt.Errorf("could not remind about class with %v: %w", notifierParams, err)
-			}
-
-			update := map[string]any{"reminded_at": time.Now()}
-
-			_, err = repos.Bookings.Update(ctx, booking.ID, update)
-			if err != nil {
-				return fmt.Errorf("could not update booking %v with %v: %w", booking.ID, update, err)
 			}
 
 			return nil
