@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"log/slog"
 	"net/http"
 	"os"
@@ -16,6 +15,9 @@ import (
 	"main/internal/application/classes"
 	"main/internal/application/passes"
 	"main/internal/application/pendingbookings"
+	"main/internal/application/reminder"
+	"main/internal/domain/repositories"
+	"main/internal/domain/services"
 	"main/internal/infrastructure/configuration"
 	"main/internal/infrastructure/generator/token"
 	dbModels "main/internal/infrastructure/models/db"
@@ -53,6 +55,19 @@ import (
 	"gorm.io/gorm/logger"
 )
 
+type Components struct {
+	unitOfWork             repositories.IUnitOfWork
+	classesService         services.IClassesService
+	bookingsService        services.IBookingsService
+	pendingBookingsService services.IPendingBookingsService
+	passesService          services.IPassesService
+	bookingsRepo           repositories.IBookings
+	classesRepo            repositories.IClasses
+	pendingBookingsRepo    repositories.IPendingBookings
+	reminder               reminder.IReminderService
+	database               *gorm.DB
+}
+
 func main() {
 	cfg, err := loadConfig()
 	if err != nil {
@@ -60,28 +75,24 @@ func main() {
 		os.Exit(1)
 	}
 
-	database, err := gorm.Open(sqlite.Open(cfg.DBPath), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Silent),
-	})
+	components, err := buildComponents(cfg)
 	if err != nil {
-		panic(err)
+		slog.Error("failed to build components", slog.String("err", err.Error()))
+		os.Exit(1)
 	}
 
-	slog.Info("Successfully connected to database")
-
-	err = database.AutoMigrate(
-		&dbModels.SQLClass{},
-		&dbModels.SQLPendingBooking{},
-		&dbModels.SQLBooking{},
-		&dbModels.SQLPass{},
+	router := setupRouter(
+		components.bookingsService,
+		components.classesService,
+		components.pendingBookingsService,
+		components.passesService,
+		components.bookingsRepo,
+		components.pendingBookingsRepo,
+		cfg,
 	)
-	if err != nil {
-		log.Fatal(err)
-	}
 
-	cleanUpPendingBookingsDBAsync(database)
-
-	router := setupRouter(database, cfg)
+	cleanUpPendingBookingsDBAsync(components.database)
+	remindBookingsAsync(components.reminder)
 
 	srv := &http.Server{
 		Addr:              cfg.ListenAddress,
@@ -109,13 +120,25 @@ func loadConfig() (*configuration.Configuration, error) {
 	return cfg, nil
 }
 
-func setupRouter(database *gorm.DB, cfg *configuration.Configuration) *gin.Engine {
-	router := gin.Default()
+func buildComponents(cfg *configuration.Configuration) (Components, error) {
+	database, err := gorm.Open(sqlite.Open(cfg.DBPath), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent),
+	})
+	if err != nil {
+		return Components{}, fmt.Errorf("failed to connect to database: %w", err)
+	}
 
-	router.Static("web/static", "./web/static")
-	router.LoadHTMLGlob("web/templates/*")
-	router.Use(middleware.RequestID())
-	api := router.Group("/")
+	slog.Info("Successfully connected to database")
+
+	err = database.AutoMigrate(
+		&dbModels.SQLClass{},
+		&dbModels.SQLPendingBooking{},
+		&dbModels.SQLBooking{},
+		&dbModels.SQLPass{},
+	)
+	if err != nil {
+		return Components{}, fmt.Errorf("failed to migrate database: %w", err)
+	}
 
 	classesRepo := sqliteRepo.NewClassesRepo(database)
 	bookingsRepo := sqliteRepo.NewBookingsRepo(database)
@@ -141,13 +164,52 @@ func setupRouter(database *gorm.DB, cfg *configuration.Configuration) *gin.Engin
 		emailNotifier,
 		cfg.DomainAddr,
 	)
+
 	pendingBookingsService := pendingbookings.NewService(
 		unitOfWork,
 		tokenGenerator,
 		emailNotifier,
 		cfg.DomainAddr,
 	)
+
 	passesService := passes.NewService(passesRepo, bookingsRepo, emailNotifier)
+
+	reminder := reminder.New(
+		unitOfWork,
+		classesRepo,
+		bookingsRepo,
+		emailNotifier,
+		cfg.DomainAddr,
+	)
+
+	return Components{
+		unitOfWork:             unitOfWork,
+		classesService:         classesService,
+		bookingsService:        bookingsService,
+		pendingBookingsService: pendingBookingsService,
+		passesService:          passesService,
+		bookingsRepo:           bookingsRepo,
+		pendingBookingsRepo:    pendingBookingsRepo,
+		reminder:               reminder,
+		database:               database,
+	}, nil
+}
+
+func setupRouter(
+	bookingsService services.IBookingsService,
+	classesService services.IClassesService,
+	pendingBookingsService services.IPendingBookingsService,
+	passesService services.IPassesService,
+	bookingsRepo repositories.IBookings,
+	pendingBookingsRepo repositories.IPendingBookings,
+	cfg *configuration.Configuration,
+) *gin.Engine {
+	router := gin.Default()
+
+	router.Static("web/static", "./web/static")
+	router.LoadHTMLGlob("web/templates/*")
+	router.Use(middleware.RequestID())
+	api := router.Group("/")
 
 	var viewErrorHandler viewErrs.IErrorHandler
 
@@ -223,7 +285,7 @@ func runServer(srv *http.Server, cfg *configuration.Configuration) {
 		slog.Info("Starting server...", slog.String("address", cfg.ListenAddress))
 
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			slog.Error("server error: %s\n", slog.String("err", err.Error()))
+			slog.Error("server error", slog.String("err", err.Error()))
 			os.Exit(1)
 		}
 	}()
@@ -271,5 +333,27 @@ func cleanUpPendingBookingsDBAsync(database *gorm.DB) {
 		}
 
 		slog.Info("Cleaned up pending bookings", slog.Int64("rows_deleted", result.RowsAffected))
+	}()
+}
+
+func remindBookingsAsync(reminder reminder.IReminderService) {
+	go func() {
+		//nolint
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+
+		slog.Info("Reminder: searching bookings...")
+
+		err := reminder.RemindBookings(ctx)
+		if err != nil {
+			if errors.Is(err, context.DeadlineExceeded) {
+				slog.Warn("remind classes timeout exceeded")
+			} else {
+				slog.Error("failed to remind classes async",
+					slog.String("err", err.Error()))
+			}
+
+			return
+		}
 	}()
 }

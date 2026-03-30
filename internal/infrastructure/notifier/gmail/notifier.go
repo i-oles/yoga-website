@@ -27,6 +27,7 @@ type notifier struct {
 	classUpdateTmplPath                string
 	bookingCancellationTmplPath        string
 	passActivationTmplPath             string
+	classReminderTmplPath              string
 	signature                          string
 }
 
@@ -55,6 +56,7 @@ func NewNotifier(
 		classUpdateTmplPath:                baseTmplPath + "class_update.tmpl",
 		bookingCancellationTmplPath:        baseTmplPath + "booking_cancellation.tmpl",
 		passActivationTmplPath:             baseTmplPath + "pass_activation.tmpl",
+		classReminderTmplPath:              baseTmplPath + "class_reminder.tmpl",
 	}
 }
 
@@ -121,7 +123,7 @@ func (n *notifier) NotifyBookingConfirmation(
 
 	baseTmplData := n.getBaseTmplData(params, classStartTimeDetails)
 
-	tmplData := notifierModels.BookingConfirmationTmpl{
+	tmplData := notifierModels.BaseTmplWithCancellationLink{
 		BaseTmplData:     baseTmplData,
 		CancellationLink: cancellationLink,
 	}
@@ -229,6 +231,38 @@ func (n *notifier) NotifyClassCancellation(params models.NotifierParams, msg str
 	}
 
 	subject := "Yoga - Zajęcia Odwołane!"
+
+	msgToRecipient, err := n.buildMsgToRecipient(params.RecipientEmail, subject, tmpl, tmplData)
+	if err != nil {
+		return fmt.Errorf("could not build msg to recipient %s: %w", params.RecipientEmail, err)
+	}
+
+	if err = n.dialer.DialAndSend(msgToRecipient); err != nil {
+		return fmt.Errorf("failed to send email: %w", err)
+	}
+
+	return nil
+}
+
+func (n *notifier) NotifyClassReminder(params models.NotifierParams, cancellationLink string) error {
+	classStartTimeDetails, err := getClassStartTimeDetails(params.StartTime)
+	if err != nil {
+		return fmt.Errorf("could not get class start time details: %w", err)
+	}
+
+	baseTmplData := n.getBaseTmplData(params, classStartTimeDetails)
+
+	tmplData := notifierModels.BaseTmplWithCancellationLink{
+		BaseTmplData:     baseTmplData,
+		CancellationLink: cancellationLink,
+	}
+
+	tmpl, err := template.ParseFiles(n.classReminderTmplPath)
+	if err != nil {
+		return fmt.Errorf("could not parse template: %w", err)
+	}
+
+	subject := "Yoga - przypomnienie o zajęciach!"
 
 	msgToRecipient, err := n.buildMsgToRecipient(params.RecipientEmail, subject, tmpl, tmplData)
 	if err != nil {
