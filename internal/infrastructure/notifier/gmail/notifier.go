@@ -56,7 +56,7 @@ func NewNotifier(
 		classUpdateTmplPath:                baseTmplPath + "class_update.tmpl",
 		bookingCancellationTmplPath:        baseTmplPath + "booking_cancellation.tmpl",
 		passActivationTmplPath:             baseTmplPath + "pass_activation.tmpl",
-		classReminderTmplPath:              baseTmplPath + "reminding.tmpl",
+		classReminderTmplPath:              baseTmplPath + "class_reminder.tmpl",
 	}
 }
 

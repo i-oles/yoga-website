@@ -3,31 +3,32 @@ package reminder
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"main/internal/domain/models"
 	"main/internal/domain/notifier"
 	"main/internal/domain/repositories"
-
-	"github.com/google/uuid"
 )
+
+type IReminderService interface {
+	RemindBookings(ctx context.Context) error
+}
 
 type service struct {
 	unitOfWork   repositories.IUnitOfWork
 	classesRepo  repositories.IClasses
 	bookingsRepo repositories.IBookings
-	passesRepo   repositories.IPasses
 	notifier     notifier.INotifier
 	domainAddr   string
 }
 
-func NewReminderService(
+func New(
 	unitOfWork repositories.IUnitOfWork,
 	classesRepo repositories.IClasses,
 	bookingsRepo repositories.IBookings,
-	passesRepo repositories.IPasses,
-	domainAddr string,
 	notifier notifier.INotifier,
+	domainAddr string,
 ) *service {
 	return &service{
 		unitOfWork:   unitOfWork,
@@ -38,7 +39,7 @@ func NewReminderService(
 	}
 }
 
-func (s *service) RemindClass(ctx context.Context) error {
+func (s *service) RemindBookings(ctx context.Context) error {
 	classes, err := s.classesRepo.List(ctx)
 	if err != nil {
 		return fmt.Errorf("could not list classes: %w", err)
@@ -46,19 +47,20 @@ func (s *service) RemindClass(ctx context.Context) error {
 
 	now := time.Now()
 
-	var class models.Class
+	var todayClasses []models.Class
 
 	for _, c := range classes {
-		if class.StartTime.Sub(now) < 10*time.Hour {
-			class = c
-
-			break
+		if isTimeToRemind(c.StartTime, now) {
+			todayClasses = append(todayClasses, c)
 		}
 	}
 
-	if class.ID == uuid.Nil {
+	if len(todayClasses) == 0 {
 		return nil
 	}
+
+	// it is possible that will be more than one class the same day
+	class := todayClasses[len(todayClasses)-1]
 
 	bookings, err := s.bookingsRepo.ListByClassID(ctx, class.ID)
 	if err != nil {
@@ -108,6 +110,8 @@ func (s *service) RemindClass(ctx context.Context) error {
 				return fmt.Errorf("could not remind about class with %v: %w", notifierParams, err)
 			}
 
+			slog.Info("class reminder", "email", booking.Email, "reminded_at", update["reminded_at"])
+
 			return nil
 		})
 		if err != nil {
@@ -116,4 +120,9 @@ func (s *service) RemindClass(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func isTimeToRemind(classStartTime, now time.Time) bool {
+	return classStartTime.Sub(now) < 10*time.Hour &&
+		classStartTime.Day() == now.Day()
 }
