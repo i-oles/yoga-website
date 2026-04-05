@@ -344,6 +344,8 @@ func remindBookingsAsync(reminder reminder.IReminderService) {
 
 		slog.Info("Reminder: searching bookings...")
 
+		fmt.Println("Reminder: searching bookings...")
+
 		err := reminder.RemindBookings(ctx)
 		if err != nil {
 			if errors.Is(err, context.DeadlineExceeded) {
