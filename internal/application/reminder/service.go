@@ -123,6 +123,7 @@ func (s *service) RemindBookings(ctx context.Context) error {
 }
 
 func isTimeToRemind(classStartTime, now time.Time) bool {
-	return classStartTime.Sub(now) < 10*time.Hour &&
-		classStartTime.Day() == now.Day()
+	diff := classStartTime.Sub(now)
+
+	return diff > 0 && diff < 24*time.Hour
 }
