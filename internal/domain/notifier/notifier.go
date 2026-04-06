@@ -11,5 +11,5 @@ type INotifier interface {
 	NotifyBookingCancellation(params models.NotifierParams) error
 	NotifyClassUpdate(params models.NotifierParams, msg string) error
 	NotifyClassCancellation(params models.NotifierParams, msg string) error
-	NotifyClassReminder(params models.NotifierParams, cancellationLink string) error
+	NotifyBookingReminder(params models.NotifierParams, cancellationLink string) error
 }

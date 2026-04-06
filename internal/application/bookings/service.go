@@ -140,7 +140,7 @@ func (s *service) checkClassAvailability(
 
 func (s *service) createBooking(
 	ctx context.Context,
-	r repositories.Repositories,
+	repos repositories.Repositories,
 	pendingBooking models.PendingBooking,
 ) (uuid.UUID, error) {
 	booking := models.Booking{
@@ -153,7 +153,7 @@ func (s *service) createBooking(
 		ConfirmationToken: pendingBooking.ConfirmationToken,
 	}
 
-	bookingID, err := r.Bookings.Insert(ctx, booking)
+	bookingID, err := repos.Bookings.Insert(ctx, booking)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("could not insert booking: %w", err)
 	}
