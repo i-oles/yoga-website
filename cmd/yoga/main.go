@@ -332,17 +332,17 @@ func cleanUpPendingBookingsDBAsync(database *gorm.DB) {
 			return
 		}
 
-		slog.Info("Cleaned up pending bookings", slog.Int64("rows_deleted", result.RowsAffected))
+		slog.Info("PendingBookingCleaner: cleaned up pending bookings", slog.Int64("deleted", result.RowsAffected))
 	}()
 }
 
 func remindBookingsAsync(reminder reminder.IReminderService) {
+	time.Sleep(2 * time.Second)
+
 	go func() {
 		//nolint
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
-
-		slog.Info("Reminder: searching bookings...")
 
 		err := reminder.RemindBookings(ctx)
 		if err != nil {
