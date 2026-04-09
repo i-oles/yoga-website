@@ -133,7 +133,7 @@ func (n *notifier) NotifyBookingConfirmation(
 		return fmt.Errorf("could not parse template: %w", err)
 	}
 
-	subject := "Yoga - Rezerwacja potwierdzona!"
+	subject := fmt.Sprintf("Yoga (%s) - rezerwacja potwierdzona!", classStartTimeDetails.startDate)
 
 	msgToRecipient, err := n.buildMsgToRecipient(params.RecipientEmail, subject, tmpl, tmplData)
 	if err != nil {
@@ -162,7 +162,7 @@ func (n *notifier) NotifyBookingCancellation(params models.NotifierParams) error
 		return fmt.Errorf("could not parse template: %w", err)
 	}
 
-	subject := "Yoga - Rezerwacja odwołana!"
+	subject := fmt.Sprintf("Yoga (%s) - rezerwacja odwołana!", classStartTimeDetails.startDate)
 
 	msgToRecipient, err := n.buildMsgToRecipient(params.RecipientEmail, subject, tmpl, tmplData)
 	if err != nil {
@@ -198,7 +198,10 @@ func (n *notifier) NotifyClassUpdate(
 		return fmt.Errorf("could not parse template: %w", err)
 	}
 
-	subject := "Yoga - Musiałem wprowadzić zmiany w zajęciach, na które się wybierasz!"
+	subject := fmt.Sprintf(
+		"Yoga (%s) Musiałem wprowadzić zmiany w zajęciach!",
+		classStartTimeDetails.startDate,
+	)
 
 	msgToRecipient, err := n.buildMsgToRecipient(params.RecipientEmail, subject, tmpl, tmplData)
 	if err != nil {
@@ -230,7 +233,7 @@ func (n *notifier) NotifyClassCancellation(params models.NotifierParams, msg str
 		return fmt.Errorf("could not parse template: %w", err)
 	}
 
-	subject := "Yoga - Zajęcia Odwołane!"
+	subject := fmt.Sprintf("Yoga (%s) - zajęcia odwołane!", classStartTimeDetails.startDate)
 
 	msgToRecipient, err := n.buildMsgToRecipient(params.RecipientEmail, subject, tmpl, tmplData)
 	if err != nil {
@@ -262,7 +265,7 @@ func (n *notifier) NotifyBookingReminder(params models.NotifierParams, cancellat
 		return fmt.Errorf("could not parse template: %w", err)
 	}
 
-	subject := "Yoga - przypomnienie o zajęciach!"
+	subject := fmt.Sprintf("Yoga (%s) - przypomnienie o zajęciach!", classStartTimeDetails.startDate)
 
 	msgToRecipient, err := n.buildMsgToRecipient(params.RecipientEmail, subject, tmpl, tmplData)
 	if err != nil {
