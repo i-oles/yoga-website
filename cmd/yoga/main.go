@@ -62,7 +62,6 @@ type Components struct {
 	pendingBookingsService services.IPendingBookingsService
 	passesService          services.IPassesService
 	bookingsRepo           repositories.IBookings
-	classesRepo            repositories.IClasses
 	pendingBookingsRepo    repositories.IPendingBookings
 	reminder               reminder.IReminderService
 	database               *gorm.DB
@@ -91,8 +90,24 @@ func main() {
 		cfg,
 	)
 
-	cleanUpPendingBookingsDBAsync(components.database)
-	remindBookingsAsync(components.reminder)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	go func(ctxTimeout time.Duration) {
+		cleanupCtx, cancel := context.WithTimeout(ctx, ctxTimeout)
+		defer cancel()
+
+		cleanUpPendingBookings(cleanupCtx, components.database)
+	}(cfg.ContextTimeout.Duration)
+
+	go func(ctxTimeout time.Duration) {
+		time.Sleep(2 * time.Second)
+
+		reminderCtx, cancel := context.WithTimeout(ctx, ctxTimeout)
+		defer cancel()
+
+		remindBookings(reminderCtx, components.reminder)
+	}(cfg.ContextTimeout.Duration)
 
 	srv := &http.Server{
 		Addr:              cfg.ListenAddress,
@@ -307,53 +322,37 @@ func runServer(srv *http.Server, cfg *configuration.Configuration) {
 	slog.Info("Server stopped")
 }
 
-func cleanUpPendingBookingsDBAsync(database *gorm.DB) {
-	go func() {
-		//nolint
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-		defer cancel()
+func cleanUpPendingBookings(ctx context.Context, database *gorm.DB) {
+	oneHourAgo := time.Now().UTC().Add(-1 * time.Hour)
 
-		oneHourAgo := time.Now().UTC().Add(-1 * time.Hour)
+	var pendingBooking dbModels.SQLPendingBooking
 
-		var pendingBooking dbModels.SQLPendingBooking
+	result := database.WithContext(ctx).
+		Where("created_at < ?", oneHourAgo).
+		Delete(&pendingBooking)
 
-		result := database.WithContext(ctx).
-			Where("created_at < ?", oneHourAgo).
-			Delete(&pendingBooking)
-
-		if result.Error != nil {
-			if errors.Is(result.Error, context.DeadlineExceeded) {
-				slog.Warn("cleanup timeout exceeded")
-			} else {
-				slog.Error("failed to cleanup pending bookings async",
-					slog.String("err", result.Error.Error()))
-			}
-
-			return
+	if result.Error != nil {
+		if errors.Is(result.Error, context.DeadlineExceeded) {
+			slog.Warn("cleanup timeout exceeded")
+		} else {
+			slog.Error("failed to cleanup pending bookings async",
+				slog.String("err", result.Error.Error()))
 		}
 
-		slog.Info("PendingBookingCleaner: cleaned up pending bookings", slog.Int64("deleted", result.RowsAffected))
-	}()
+		return
+	}
+
+	slog.Info("PendingBookingCleaner: cleaned up pending bookings", slog.Int64("deleted", result.RowsAffected))
 }
 
-func remindBookingsAsync(reminder reminder.IReminderService) {
-	time.Sleep(2 * time.Second)
-
-	go func() {
-		//nolint
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-		defer cancel()
-
-		err := reminder.RemindBookings(ctx)
-		if err != nil {
-			if errors.Is(err, context.DeadlineExceeded) {
-				slog.Warn("remind classes timeout exceeded")
-			} else {
-				slog.Error("failed to remind classes async",
-					slog.String("err", err.Error()))
-			}
-
-			return
+func remindBookings(ctx context.Context, reminder reminder.IReminderService) {
+	err := reminder.RemindBookings(ctx)
+	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			slog.Warn("remind classes timeout exceeded")
+		} else {
+			slog.Error("failed to remind classes async",
+				slog.String("err", err.Error()))
 		}
-	}()
+	}
 }
