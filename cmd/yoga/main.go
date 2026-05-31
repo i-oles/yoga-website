@@ -171,7 +171,6 @@ func buildComponents(cfg *configuration.Configuration) (Components, error) {
 	)
 
 	unitOfWork := sqliteRepo.NewUnitOfWork(database)
-
 	passManager := services.PassManager{}
 
 	classesService := classes.NewService(
