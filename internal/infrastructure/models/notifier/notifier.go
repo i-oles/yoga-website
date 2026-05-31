@@ -1,5 +1,7 @@
 package notifier
 
+import "main/internal/domain/models"
+
 type BaseTmpl struct {
 	RecipientFirstName string
 	ClassName          string
@@ -8,7 +10,7 @@ type BaseTmpl struct {
 	Hour               string
 	Date               string
 	Location           string
-	PassState          []bool
+	PassItems          []models.PassItem
 	Signature          string
 }
 
@@ -29,6 +31,6 @@ type BookingConfirmationRequestTmpl struct {
 }
 
 type PassActivationTmpl struct {
-	PassState []bool
+	PassItems []models.PassItem
 	Signature string
 }

@@ -27,8 +27,8 @@ type IClasses interface {
 type IBookings interface {
 	GetByID(ctx context.Context, id uuid.UUID) (models.Booking, error)
 	GetByEmailAndClassID(ctx context.Context, classID uuid.UUID, email string) (models.Booking, error)
-	GetIDsByEmail(ctx context.Context, email string, limit int) ([]uuid.UUID, error)
 	List(ctx context.Context) ([]models.Booking, error)
+	ListByEmail(ctx context.Context, email string, limit int) ([]models.Booking, error)
 	ListByClassID(ctx context.Context, classID uuid.UUID) ([]models.Booking, error)
 	CountForClassID(ctx context.Context, classID uuid.UUID) (int, error)
 	Insert(ctx context.Context, confirmedBooking models.Booking) (uuid.UUID, error)
@@ -45,7 +45,7 @@ type IPendingBookings interface {
 
 type IPasses interface {
 	GetByEmail(ctx context.Context, email string) (optional.Optional[models.Pass], error)
-	Update(ctx context.Context, id int, usedBookingIDs []uuid.UUID, totalBookings int) error
+	Update(ctx context.Context, id int, usedBookingIDs []uuid.UUID, totalBookings int) (models.Pass, error)
 	Insert(
 		ctx context.Context, email string, usedBookingIDs []uuid.UUID, totalBookings int,
 	) (models.Pass, error)

@@ -15,13 +15,26 @@ type Pass struct {
 	CreatedAt      time.Time
 }
 
+type PassItem struct {
+	Status         PassStatus
+	ClassStartTime *time.Time
+}
+
+type PassStatus int
+
+const (
+	BlankPassStatus PassStatus = iota
+	UsedPassStatus
+	FuturePassStatus
+)
+
 type PassUpdate struct {
 	UsedBookingIDs []uuid.UUID
 	TotalBookings  *int
 }
 
 type PassActivationParams struct {
-	Email         string
-	UsedBookings  int
-	TotalBookings int
+	Email              string
+	UsedBookingsCount  int
+	TotalBookingsCount int
 }

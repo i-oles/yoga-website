@@ -11,9 +11,9 @@ import (
 )
 
 type ActivatePassRequest struct {
-	Email         string `binding:"required,min=3,max=40" json:"email"`
-	UsedBookings  int    `binding:"min=0" json:"used_bookings"`
-	TotalBookings int    `binding:"min=1" json:"total_bookings"`
+	Email              string `binding:"required,min=3,max=40" json:"email"`
+	UsedBookingsCount  int    `binding:"min=0" json:"used_bookings_count"`
+	TotalBookingsCount int    `binding:"min=1" json:"total_bookings_count"`
 }
 
 type PassDTO struct {

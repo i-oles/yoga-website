@@ -12,11 +12,10 @@ import (
 	"main/pkg/converter"
 	"main/pkg/translator"
 
-	"github.com/google/uuid"
 	"gopkg.in/gomail.v2"
 )
 
-const PassValue = "KARNET"
+const PassLabel = "KARNET"
 
 type notifier struct {
 	dialer                             *gomail.Dialer
@@ -60,12 +59,10 @@ func NewNotifier(
 	}
 }
 
-func (n *notifier) NotifyPassActivation(pass models.Pass) error {
-	passState := getPassState(pass.UsedBookingIDs, pass.TotalBookings)
-
+func (n *notifier) NotifyPassActivation(email string, passItems []models.PassItem) error {
 	tmplData := notifierModels.PassActivationTmpl{
 		Signature: n.signature,
-		PassState: passState,
+		PassItems: passItems,
 	}
 
 	tmpl, err := template.ParseFiles(n.passActivationTmplPath)
@@ -75,9 +72,9 @@ func (n *notifier) NotifyPassActivation(pass models.Pass) error {
 
 	subject := "Yoga - Twój karnet jest aktywny!"
 
-	msgToRecipient, err := n.buildMsgToRecipient(pass.Email, subject, tmpl, tmplData)
+	msgToRecipient, err := n.buildMsgToRecipient(email, subject, tmpl, tmplData)
 	if err != nil {
-		return fmt.Errorf("could not build msg to recipient %s: %w", pass.Email, err)
+		return fmt.Errorf("could not build msg to recipient %s: %w", email, err)
 	}
 
 	if err = n.dialer.DialAndSend(msgToRecipient); err != nil {
@@ -247,7 +244,9 @@ func (n *notifier) NotifyClassCancellation(params models.NotifierParams, msg str
 	return nil
 }
 
-func (n *notifier) NotifyBookingReminder(params models.NotifierParams, cancellationLink string) error {
+func (n *notifier) NotifyBookingReminder(
+	params models.NotifierParams, cancellationLink string,
+) error {
 	classStartTimeDetails, err := getClassStartTimeDetails(params.StartTime)
 	if err != nil {
 		return fmt.Errorf("could not get class start time details: %w", err)
@@ -312,9 +311,17 @@ func (n *notifier) buildMsgToOwner(
 		status,
 	)
 
-	if baseTmplData.PassState != nil {
+	if baseTmplData.PassItems != nil {
+		usedPassItemsCount := 0
+
+		for _, item := range baseTmplData.PassItems {
+			if item.Status == models.FuturePassStatus || item.Status == models.UsedPassStatus {
+				usedPassItemsCount++
+			}
+		}
+
 		subject += fmt.Sprintf(
-			" %s: %d/%d", PassValue, len(params.PassUsedBookingIDs), *params.PassTotalBookings,
+			"%s: %d/%d", PassLabel, usedPassItemsCount, len(baseTmplData.PassItems),
 		)
 	}
 
@@ -331,16 +338,6 @@ func (n *notifier) buildMsgToOwner(
 	msgToOwner.SetBody("text/html", msg)
 
 	return msgToOwner
-}
-
-func getPassState(usedBookingIDs []uuid.UUID, totalBookings int) []bool {
-	result := make([]bool, totalBookings)
-
-	for i := range usedBookingIDs {
-		result[i] = true
-	}
-
-	return result
 }
 
 type timeDetails struct {
@@ -373,7 +370,7 @@ func getClassStartTimeDetails(t time.Time) (timeDetails, error) {
 func (n *notifier) getBaseTmplData(
 	params models.NotifierParams, classStartTimeDetails timeDetails,
 ) notifierModels.BaseTmpl {
-	tmplData := notifierModels.BaseTmpl{
+	return notifierModels.BaseTmpl{
 		RecipientFirstName: params.RecipientFirstName,
 		ClassName:          params.ClassName,
 		ClassLevel:         params.ClassLevel,
@@ -382,11 +379,6 @@ func (n *notifier) getBaseTmplData(
 		Date:               classStartTimeDetails.startDate,
 		Location:           params.Location,
 		Signature:          n.signature,
+		PassItems:          params.PassItems,
 	}
-
-	if params.PassUsedBookingIDs != nil && params.PassTotalBookings != nil {
-		tmplData.PassState = getPassState(params.PassUsedBookingIDs, *params.PassTotalBookings)
-	}
-
-	return tmplData
 }
