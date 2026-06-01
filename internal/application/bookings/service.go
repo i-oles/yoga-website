@@ -105,7 +105,12 @@ func (s *service) CreateBooking(ctx context.Context, token string) (models.Class
 				return fmt.Errorf("could not increment pass for %s: %w", pendingBooking.Email, err)
 			}
 
-			passItems, err = s.buildPassItems(ctx, repos, actualPass)
+			updatedPass, err := repos.Passes.Update(ctx, actualPass.ID, actualPass.UsedBookingIDs, actualPass.TotalBookings)
+			if err != nil {
+				return fmt.Errorf("could not update pass for %s: %w", actualPass.Email, err)
+			}
+
+			passItems, err = s.buildPassItems(ctx, repos, updatedPass)
 			if err != nil {
 				return fmt.Errorf("could not build pass items for email %s: %w", pendingBooking.Email, err)
 			}
@@ -133,11 +138,6 @@ func (s *service) buildPassItems(
 	repos repositories.Repositories,
 	pass models.Pass,
 ) ([]models.PassItem, error) {
-	updatedPass, err := repos.Passes.Update(ctx, pass.ID, pass.UsedBookingIDs, pass.TotalBookings)
-	if err != nil {
-		return nil, fmt.Errorf("could not update pass for %s: %w", pass.Email, err)
-	}
-
 	usedBookings := make([]models.Booking, 0, len(updatedPass.UsedBookingIDs))
 
 	for _, bookingID := range updatedPass.UsedBookingIDs {
@@ -266,9 +266,14 @@ func (s *service) CancelBooking(ctx context.Context, bookingID uuid.UUID, token 
 		}
 
 		if passOpt.Exists() {
-			updatedPass, err := s.passManager.TryDecrementPass(ctx, passOpt.Get(), bookingID)
+			actualPass, err := s.passManager.TryDecrementPass(ctx, passOpt.Get(), bookingID)
 			if err != nil {
 				return fmt.Errorf("could not dectemetnt pass for %s: %w", booking.Email, err)
+			}
+
+			updatedPass, err := repos.Passes.Update(ctx, actualPass.ID, actualPass.UsedBookingIDs, actualPass.TotalBookings)
+			if err != nil {
+				return fmt.Errorf("could not update pass for %s: %w", actualPass.Email, err)
 			}
 
 			passItems, err = s.buildPassItems(ctx, repos, updatedPass)
@@ -395,7 +400,12 @@ func (s *service) DeleteBooking(ctx context.Context, bookingID uuid.UUID) error 
 				return fmt.Errorf("could not decrement pass for %s: %w", booking.Email, err)
 			}
 
-			passItems, err = s.buildPassItems(ctx, repos, actualPass)
+			updatedPass, err := repos.Passes.Update(ctx, actualPass.ID, actualPass.UsedBookingIDs, actualPass.TotalBookings)
+			if err != nil {
+				return fmt.Errorf("could not update pass for %s: %w", actualPass.Email, err)
+			}
+
+			passItems, err = s.buildPassItems(ctx, repos, updatedPass)
 			if err != nil {
 				return fmt.Errorf("could not build pass items for email %s: %w", booking.Email, err)
 			}

@@ -106,13 +106,13 @@ func (s *service) ActivatePass(
 func (s *service) getUsedBookingsForPass(
 	ctx context.Context,
 	email string,
-	passUsedBookings int,
+	usedBookingsCount int,
 ) ([]models.Booking, error) {
-	if passUsedBookings == 0 {
+	if usedBookingsCount == 0 {
 		return nil, nil
 	}
 
-	usedBookings, err := s.bookingsRepo.ListByEmail(ctx, email, passUsedBookings)
+	usedBookings, err := s.bookingsRepo.ListByEmail(ctx, email, usedBookingsCount)
 	if err != nil {
 		return nil, fmt.Errorf("could not list usedBookings for email %s: %w", email, err)
 	}

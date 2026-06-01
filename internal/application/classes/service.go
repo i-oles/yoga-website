@@ -150,9 +150,14 @@ func (s *service) DeleteClass(ctx context.Context, classID uuid.UUID, msg *strin
 			var passItems []models.PassItem
 
 			if passOpt.Exists() {
-				updatedPass, err := s.passManager.TryDecrementPass(ctx, passOpt.Get(), booking.ID)
+				actualPass, err := s.passManager.TryDecrementPass(ctx, passOpt.Get(), booking.ID)
 				if err != nil {
 					return fmt.Errorf("could not dectemetnt pass for %s: %w", booking.Email, err)
+				}
+
+				updatedPass, err := repos.Passes.Update(ctx, actualPass.ID, actualPass.UsedBookingIDs, actualPass.TotalBookings)
+				if err != nil {
+					return fmt.Errorf("could not update pass for %s: %w", actualPass.Email, err)
 				}
 
 				passItems, err = s.buildPassItems(ctx, repos, updatedPass)
@@ -201,11 +206,6 @@ func (s *service) buildPassItems(
 	repos repositories.Repositories,
 	pass models.Pass,
 ) ([]models.PassItem, error) {
-	updatedPass, err := repos.Passes.Update(ctx, pass.ID, pass.UsedBookingIDs, pass.TotalBookings)
-	if err != nil {
-		return nil, fmt.Errorf("could not update pass for %s: %w", pass.Email, err)
-	}
-
 	usedBookings := make([]models.Booking, 0, len(updatedPass.UsedBookingIDs))
 
 	for _, bookingID := range updatedPass.UsedBookingIDs {
