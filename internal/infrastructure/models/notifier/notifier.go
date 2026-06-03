@@ -2,6 +2,11 @@ package notifier
 
 import "main/internal/domain/models"
 
+type PassItemView struct {
+	Status         models.PassStatus
+	ClassStartDate string
+}
+
 type BaseTmpl struct {
 	RecipientFirstName string
 	ClassName          string
@@ -10,7 +15,7 @@ type BaseTmpl struct {
 	Hour               string
 	Date               string
 	Location           string
-	PassItems          []models.PassItem
+	PassItemsView      []PassItemView
 	Signature          string
 }
 
@@ -31,6 +36,6 @@ type BookingConfirmationRequestTmpl struct {
 }
 
 type PassActivationTmpl struct {
-	PassItems []models.PassItem
-	Signature string
+	PassItemsView []PassItemView
+	Signature     string
 }

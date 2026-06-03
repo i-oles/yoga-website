@@ -61,8 +61,8 @@ func NewNotifier(
 
 func (n *notifier) NotifyPassActivation(email string, passItems []models.PassItem) error {
 	tmplData := notifierModels.PassActivationTmpl{
-		Signature: n.signature,
-		PassItems: passItems,
+		Signature:     n.signature,
+		PassItemsView: n.getPassItemsView(passItems),
 	}
 
 	tmpl, err := template.ParseFiles(n.passActivationTmplPath)
@@ -311,17 +311,17 @@ func (n *notifier) buildMsgToOwner(
 		status,
 	)
 
-	if baseTmplData.PassItems != nil {
+	if baseTmplData.PassItemsView != nil {
 		usedPassItemsCount := 0
 
-		for _, item := range baseTmplData.PassItems {
+		for _, item := range baseTmplData.PassItemsView {
 			if item.Status == models.FuturePassStatus || item.Status == models.UsedPassStatus {
 				usedPassItemsCount++
 			}
 		}
 
 		subject += fmt.Sprintf(
-			"%s: %d/%d", PassLabel, usedPassItemsCount, len(baseTmplData.PassItems),
+			"%s: %d/%d", PassLabel, usedPassItemsCount, len(baseTmplData.PassItemsView),
 		)
 	}
 
@@ -379,6 +379,24 @@ func (n *notifier) getBaseTmplData(
 		Date:               classStartTimeDetails.startDate,
 		Location:           params.Location,
 		Signature:          n.signature,
-		PassItems:          params.PassItems,
+		PassItemsView:      n.getPassItemsView(params.PassItems),
 	}
+}
+
+func (n *notifier) getPassItemsView(passItems []models.PassItem) []notifierModels.PassItemView {
+	passItemsView := make([]notifierModels.PassItemView, 0, len(passItems))
+
+	for _, item := range passItems {
+		viewItem := notifierModels.PassItemView{
+			Status: item.Status,
+		}
+
+		if item.ClassStartTime != nil {
+			viewItem.ClassStartDate = item.ClassStartTime.Format("02.01")
+		}
+
+		passItemsView = append(passItemsView, viewItem)
+	}
+
+	return passItemsView
 }

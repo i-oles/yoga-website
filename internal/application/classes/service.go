@@ -206,9 +206,9 @@ func (s *service) buildPassItems(
 	repos repositories.Repositories,
 	pass models.Pass,
 ) ([]models.PassItem, error) {
-	usedBookings := make([]models.Booking, 0, len(updatedPass.UsedBookingIDs))
+	usedBookings := make([]models.Booking, 0, len(pass.UsedBookingIDs))
 
-	for _, bookingID := range updatedPass.UsedBookingIDs {
+	for _, bookingID := range pass.UsedBookingIDs {
 		booking, err := repos.Bookings.GetByID(ctx, bookingID)
 		if err != nil {
 			if errors.Is(err, repositoryError.ErrNotFound) {
@@ -221,7 +221,7 @@ func (s *service) buildPassItems(
 		usedBookings = append(usedBookings, booking)
 	}
 
-	passItems, err := s.passManager.BuildPassItems(ctx, usedBookings, updatedPass.TotalBookings)
+	passItems, err := s.passManager.BuildPassItems(ctx, usedBookings, pass.TotalBookings)
 	if err != nil {
 		return nil, fmt.Errorf("could not build pass items for %s: %w", pass.Email, err)
 	}

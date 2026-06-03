@@ -17,21 +17,38 @@
                             karnet
                         </div>
                         <div class="pass-visual" style="padding-top: 15px; padding-bottom: 15px;">
-                        {{ range .PassState }}
-                            {{ if . }}
-                            <!-- USED ✓ -->
-                            <div class="pass-circle used"
-                                style="width: 16px; height: 16px; border: 2px solid grey; border-radius: 50%; background-color: grey; display: inline-block; margin: 0 6px; vertical-align: middle; text-align: center; line-height: 16px;">
-                                <span style="color: black; font-size: 9px; font-weight: bold;">✓</span>
-                            </div>
-                            {{ else }}
-                            <!-- NOT USED -->
-                            <div class="pass-circle used"
-                                style="width: 16px; height: 16px; border: 2px solid grey; border-radius: 50%; display: inline-block; margin: 0 6px; vertical-align: middle; text-align: center; line-height: 16px;">
-                                <span style="color: black; font-size: 9px; font-weight: bold;"></span>
+                            {{ range .PassItemsView }}
+                            
+                            <div style="display: inline-block; text-align: center; margin: 0 6px; vertical-align: top;">
+                                {{ if eq .Status 1 }}
+                                <!-- USED -->
+                                <div
+                                    style="width: 16px; height: 16px; border: 2px solid grey; border-radius: 50%; background-color: grey; display: inline-block; line-height: 16px;">
+                                    <span style="color: black; font-size: 9px; font-weight: bold;">✓</span>
+                                </div>
+
+                                {{ else if eq .Status 2 }}
+                                <!-- FUTURE -->
+                                <div
+                                    style="width: 16px; height: 16px; border: 2px solid #bdbdbd; border-radius: 50%; background-color: #d9d9d9; display: inline-block; line-height: 16px;">
+                                    <span style="color: #6b6b6b; font-size: 9px; font-weight: bold;">✓</span>
+                                </div>
+
+                                   {{ else }}
+                                <!-- BLANK -->
+                                <div
+                                    style="width: 16px; height: 16px; border: 2px solid grey; border-radius: 50%; display: inline-block; line-height: 16px;">
+                                </div>
+                                {{ end }}
+
+                                {{ if and (ne .Status 0) .ClassStartDate }}
+                                <div
+                                    style="margin-top: 8px; font-size: 10px; color: #777; line-height: 1.2;">
+                                    {{ .ClassStartDate }}
+                                </div>
+                                {{ end }}
                             </div>
                             {{ end }}
-                        {{ end }}
                         </div>
                     </div>
                 </div>
