@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 	"time"
 
 	sharedErrors "main/internal/domain/errs"
@@ -29,9 +30,9 @@ func (p *PassManager) BuildPassItems(
 		}
 
 		if classStartTime.Before(time.Now()) {
-			passItem.Status = models.FuturePassStatus
+			passItem.Status = models.PastPassStatus
 		} else {
-			passItem.Status = models.UsedPassStatus
+			passItem.Status = models.FuturePassStatus
 		}
 
 		passItems = append(passItems, passItem)
@@ -44,6 +45,24 @@ func (p *PassManager) BuildPassItems(
 			})
 		}
 	}
+
+	sort.Slice(passItems, func(i, j int) bool {
+		a := passItems[i]
+		b := passItems[j]
+
+		if a.Status == models.BlankPassStatus && b.Status != models.BlankPassStatus {
+			return false
+		}
+		if a.Status != models.BlankPassStatus && b.Status == models.BlankPassStatus {
+			return true
+		}
+
+		if a.ClassStartTime != nil && b.ClassStartTime != nil {
+			return a.ClassStartTime.Before(*b.ClassStartTime)
+		}
+
+		return false
+	})
 
 	return passItems, nil
 }

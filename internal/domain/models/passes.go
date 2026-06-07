@@ -24,7 +24,7 @@ type PassStatus int
 
 const (
 	BlankPassStatus PassStatus = iota
-	UsedPassStatus
+	PastPassStatus
 	FuturePassStatus
 )
 

@@ -1,0 +1,42 @@
+{{ define "pass" }}
+<div class="pass-visual" style="padding-top: 10px; padding-bottom: 5px;">
+<table style="width:100%; border-collapse:collapse;">
+    {{ range .PassItemsView }}
+    <tr>
+        <td style="width:24px; padding:6px 0; vertical-align:middle;">
+            {{ if eq .Status 1 }}
+            <!-- USED -->
+            <div
+                style="width:16px; height:16px; border:2px solid grey; border-radius:50%; background-color:grey; text-align:center; line-height:16px;">
+                <span style="color:black; font-size:9px; font-weight:bold;">✓</span>
+            </div>
+
+            {{ else if eq .Status 2 }}
+            <!-- FUTURE -->
+            <div
+                style="width:16px; height:16px; border:2px solid #d9d9d9; border-radius:50%; background-color:#d9d9d9; text-align:center; line-height:16px;">
+                <span style="color:#6b6b6b; font-size:9px; font-weight:bold;">?</span>
+            </div>
+
+            {{ else }}
+            <!-- BLANK -->
+            <div
+                style="width:16px; height:16px; border:2px solid grey; border-radius:50%;">
+            </div>
+            {{ end }}
+        </td>
+        <td style="padding:6px 0 6px 10px; text-align:left;">
+
+            {{ if and (ne .Status 0) .ClassStartDate }}
+            <span
+                style="font-size:11px; color:#999999;">
+                {{ .ClassStartDate }}
+            </span>
+            {{ end }}
+
+        </td>
+    </tr>
+    {{ end }}
+    </table>
+</div>
+{{ end }}

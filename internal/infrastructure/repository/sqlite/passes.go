@@ -47,14 +47,17 @@ func (r *passesRepo) Update(
 ) (models.Pass, error) {
 	var sqlPass db.SQLPass
 
+	update := db.SQLPass{
+		UsedBookingIDs: usedBookingIDs,
+		TotalBookings:  totalBookings,
+	}
+
 	if err := r.db.WithContext(ctx).
 		Model(&sqlPass).
 		Clauses(clause.Returning{}).
 		Where("id = ?", id).
-		Updates(map[string]any{
-			"used_booking_ids": usedBookingIDs,
-			"total_bookings":   totalBookings,
-		}).Error; err != nil {
+		Updates(update).
+		Error; err != nil {
 		return models.Pass{},
 			fmt.Errorf("could not update pass: %v, %w", id, err)
 	}

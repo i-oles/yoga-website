@@ -49,7 +49,7 @@
                             </div>
                         </form>
                     </div>
-                   {{ if .BaseTmplData.PassItemsView }}
+                   {{ if .PassItemsView }}
                     <div class="pass-container"
                         style="background-color: rgba(255, 255, 255, 0.95); border: 1px solid rgba(224, 224, 224, 0.8); padding-top: 20px; padding-bottom: 30px; padding-left: 30px; padding-right: 30px; border-radius: 4px; box-shadow: 4px 7px 8px rgba(0, 0, 0, 0.07); margin-bottom: 30px; width: 100%; text-align: center;">
 
@@ -57,42 +57,7 @@
                             style="font-weight: 600; font-size: 14px; color: grey; opacity: 0.4; text-align: left; margin-bottom: 15px; padding-bottom: 5px; padding-top: 1px; border-bottom: 1px solid rgba(224, 224, 224, 0.5);">
                             karnet
                         </div>
-
-                        <div class="pass-visual" style="padding-top: 15px; padding-bottom: 15px;">
-                            {{ range .BaseTmplData.PassItemsView }}
-
-                            <div style="display: inline-block; text-align: center; margin: 0 6px; vertical-align: top;">
-
-                                {{ if eq .Status 1 }}
-                                <!-- USED -->
-                                <div
-                                    style="width: 16px; height: 16px; border: 2px solid grey; border-radius: 50%; background-color: grey; display: inline-block; line-height: 16px;">
-                                    <span style="color: black; font-size: 9px; font-weight: bold;">✓</span>
-                                </div>
-
-                                {{ else if eq .Status 2 }}
-                                <!-- FUTURE -->
-                                <div
-                                    style="width: 16px; height: 16px; border: 2px solid #bdbdbd; border-radius: 50%; background-color: #d9d9d9; display: inline-block; line-height: 16px;">
-                                    <span style="color: #6b6b6b; font-size: 9px; font-weight: bold;">✓</span>
-                                </div>
-
-                                   {{ else }}
-                                <!-- BLANK -->
-                                <div
-                                    style="width: 16px; height: 16px; border: 2px solid grey; border-radius: 50%; display: inline-block; line-height: 16px;">
-                                </div>
-                                {{ end }}
-
-                                {{ if and (ne .Status 0) .ClassStartDate }}
-                                <div
-                                    style="margin-top: 8px; font-size: 10px; color: #777; line-height: 1.2;">
-                                    {{ .ClassStartDate }}
-                                </div>
-                                {{ end }}
-                            </div>
-                            {{ end }}
-                        </div>
+                        {{ template "pass" . }}
                     </div>
                     <p style="margin: 10px 0 15px 0; font-size: 14px;">Zaktualizowałem Twój karnet &#128519;</p>
                 {{ end }}
