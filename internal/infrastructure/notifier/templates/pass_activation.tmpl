@@ -16,23 +16,7 @@
                             style="font-weight: 600; font-size: 14px;  color: grey; opacity: 0.4; text-align: left; margin-bottom: 15px; padding-bottom: 5px; padding-top: 1px; border-bottom: 1px solid rgba(224, 224, 224, 0.5);">
                             karnet
                         </div>
-                        <div class="pass-visual" style="padding-top: 15px; padding-bottom: 15px;">
-                        {{ range .PassState }}
-                            {{ if . }}
-                            <!-- USED ✓ -->
-                            <div class="pass-circle used"
-                                style="width: 16px; height: 16px; border: 2px solid grey; border-radius: 50%; background-color: grey; display: inline-block; margin: 0 6px; vertical-align: middle; text-align: center; line-height: 16px;">
-                                <span style="color: black; font-size: 9px; font-weight: bold;">✓</span>
-                            </div>
-                            {{ else }}
-                            <!-- NOT USED -->
-                            <div class="pass-circle used"
-                                style="width: 16px; height: 16px; border: 2px solid grey; border-radius: 50%; display: inline-block; margin: 0 6px; vertical-align: middle; text-align: center; line-height: 16px;">
-                                <span style="color: black; font-size: 9px; font-weight: bold;"></span>
-                            </div>
-                            {{ end }}
-                        {{ end }}
-                        </div>
+                        {{ template "pass" . }}
                     </div>
                 </div>
                 <div style="margin-bottom: 20px; padding-top: 20px;">

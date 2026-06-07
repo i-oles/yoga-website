@@ -6,13 +6,12 @@ import (
 	"fmt"
 	"time"
 
-	"main/internal/domain/errs"
 	"main/internal/domain/errs/api"
 	"main/internal/domain/models"
 	"main/internal/domain/notifier"
 	"main/internal/domain/repositories"
+	"main/internal/domain/services"
 	repositoryError "main/internal/infrastructure/errs"
-	"main/pkg/tools"
 
 	"github.com/google/uuid"
 )
@@ -21,6 +20,7 @@ type service struct {
 	classesRepo  repositories.IClasses
 	bookingsRepo repositories.IBookings
 	unitOfWork   repositories.IUnitOfWork
+	passManager  services.IPassManager
 	notifier     notifier.INotifier
 }
 
@@ -28,12 +28,14 @@ func NewService(
 	classesRepo repositories.IClasses,
 	bookingsRepo repositories.IBookings,
 	unitOfWork repositories.IUnitOfWork,
+	passManager services.IPassManager,
 	notifier notifier.INotifier,
 ) *service {
 	return &service{
 		classesRepo:  classesRepo,
 		bookingsRepo: bookingsRepo,
 		unitOfWork:   unitOfWork,
+		passManager:  passManager,
 		notifier:     notifier,
 	}
 }
@@ -140,9 +142,28 @@ func (s *service) DeleteClass(ctx context.Context, classID uuid.UUID, msg *strin
 				return fmt.Errorf("could not delete booking for id %v: %w", booking.ID, err)
 			}
 
-			usedBookingIDs, totalBookings, err := s.decrementPassIfValid(ctx, repos, booking.Email, booking.ID)
+			passOpt, err := repos.Passes.GetByEmail(ctx, booking.Email)
 			if err != nil {
-				return fmt.Errorf("could not dectemetnt pass for %s: %w", booking.Email, err)
+				return fmt.Errorf("could not get pass: %w", err)
+			}
+
+			var passItems []models.PassItem
+
+			if passOpt.Exists() {
+				actualPass, err := s.passManager.TryDecrementPass(ctx, passOpt.Get(), booking.ID)
+				if err != nil {
+					return fmt.Errorf("could not dectemetnt pass for %s: %w", booking.Email, err)
+				}
+
+				updatedPass, err := repos.Passes.Update(ctx, actualPass.ID, actualPass.UsedBookingIDs, actualPass.TotalBookings)
+				if err != nil {
+					return fmt.Errorf("could not update pass for %s: %w", actualPass.Email, err)
+				}
+
+				passItems, err = s.buildPassItems(ctx, repos, updatedPass)
+				if err != nil {
+					return fmt.Errorf("could not build pass items for %s: %w", booking.Email, err)
+				}
 			}
 
 			notifierParams := models.NotifierParams{
@@ -153,8 +174,7 @@ func (s *service) DeleteClass(ctx context.Context, classID uuid.UUID, msg *strin
 				ClassLevel:         booking.Class.ClassLevel,
 				StartTime:          booking.Class.StartTime,
 				Location:           booking.Class.Location,
-				PassUsedBookingIDs: usedBookingIDs,
-				PassTotalBookings:  totalBookings,
+				PassItems:          passItems,
 			}
 
 			notifierParamsList = append(notifierParamsList, notifierParams)
@@ -181,44 +201,32 @@ func (s *service) DeleteClass(ctx context.Context, classID uuid.UUID, msg *strin
 	return nil
 }
 
-func (s *service) decrementPassIfValid(
+func (s *service) buildPassItems(
 	ctx context.Context,
 	repos repositories.Repositories,
-	email string,
-	bookingID uuid.UUID,
-) ([]uuid.UUID, *int, error) {
-	passOpt, err := repos.Passes.GetByEmail(ctx, email)
+	pass models.Pass,
+) ([]models.PassItem, error) {
+	usedBookings := make([]models.Booking, 0, len(pass.UsedBookingIDs))
+
+	for _, bookingID := range pass.UsedBookingIDs {
+		booking, err := repos.Bookings.GetByID(ctx, bookingID)
+		if err != nil {
+			if errors.Is(err, repositoryError.ErrNotFound) {
+				return nil, fmt.Errorf("booking with id %s not found: %w", bookingID, err)
+			}
+
+			return nil, fmt.Errorf("could not get booking for id %s: %w", bookingID, err)
+		}
+
+		usedBookings = append(usedBookings, booking)
+	}
+
+	passItems, err := s.passManager.BuildPassItems(ctx, usedBookings, pass.TotalBookings)
 	if err != nil {
-		return nil, nil, fmt.Errorf("could not get pass: %w", err)
+		return nil, fmt.Errorf("could not build pass items for %s: %w", pass.Email, err)
 	}
 
-	var (
-		updatedBookingIDs []uuid.UUID
-		totalBookings     *int
-	)
-
-	if passOpt.Exists() {
-		pass := passOpt.Get()
-
-		updatedBookingIDs, err = tools.RemoveFromSlice(pass.UsedBookingIDs, bookingID)
-		if errors.Is(err, errs.ErrBookingIDNotFoundInPass) {
-			return nil, nil, nil
-		}
-
-		if err != nil {
-			return nil, nil, fmt.Errorf("could not remove bookingID %v from usedBookingIDs", bookingID)
-		}
-
-		err = repos.Passes.Update(ctx, pass.ID, updatedBookingIDs, pass.TotalBookings)
-		if err != nil {
-			return nil, nil,
-				fmt.Errorf("could not update pass for %s with %v: %w", pass.Email, updatedBookingIDs, err)
-		}
-
-		totalBookings = &pass.TotalBookings
-	}
-
-	return updatedBookingIDs, totalBookings, nil
+	return passItems, nil
 }
 
 func (s *service) UpdateClass(

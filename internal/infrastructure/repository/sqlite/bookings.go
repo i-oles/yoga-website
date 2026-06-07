@@ -27,9 +27,9 @@ func NewBookingsRepo(db *gorm.DB) *bookingsRepo {
 func (r *bookingsRepo) GetByID(
 	ctx context.Context, bookingID uuid.UUID,
 ) (models.Booking, error) {
-	var sqlBooking db.SQLBooking
+	var SQLBooking db.SQLBooking
 
-	result := r.db.WithContext(ctx).Where("id = ?", bookingID).Preload("Class").First(&sqlBooking)
+	result := r.db.WithContext(ctx).Where("id = ?", bookingID).Preload("Class").First(&SQLBooking)
 
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
@@ -40,7 +40,7 @@ func (r *bookingsRepo) GetByID(
 			fmt.Errorf("could not get booking for id %s: %w", bookingID, result.Error)
 	}
 
-	return sqlBooking.ToDomain(), nil
+	return SQLBooking.ToDomain(), nil
 }
 
 func (r *bookingsRepo) GetByEmailAndClassID(
@@ -48,11 +48,11 @@ func (r *bookingsRepo) GetByEmailAndClassID(
 	classID uuid.UUID,
 	email string,
 ) (models.Booking, error) {
-	var sqlBooking db.SQLBooking
+	var SQLBooking db.SQLBooking
 
 	result := r.db.WithContext(ctx).
 		Where("class_id = ? AND email = ?", classID, email).
-		First(&sqlBooking)
+		First(&SQLBooking)
 
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
@@ -63,30 +63,31 @@ func (r *bookingsRepo) GetByEmailAndClassID(
 			fmt.Errorf("could not get booking by email %s, classID %s: %w", email, classID, result.Error)
 	}
 
-	return sqlBooking.ToDomain(), nil
+	return SQLBooking.ToDomain(), nil
 }
 
-func (r *bookingsRepo) GetIDsByEmail(
-	ctx context.Context, email string, limit int) ([]uuid.UUID, error,
+func (r *bookingsRepo) ListByEmail(
+	ctx context.Context, email string, limit int) ([]models.Booking, error,
 ) {
-	var sqlBookings []db.SQLBooking
+	var SQLBookings []db.SQLBooking
 
 	if limit <= 0 {
 		return nil, fmt.Errorf("limit must be positive: %d", limit)
 	}
 
 	if err := r.db.WithContext(ctx).
-		Select("id", "created_at").
 		Where("email = ?", email).
 		Order("created_at DESC").
 		Limit(limit).
-		Find(&sqlBookings).Error; err != nil {
+		Preload("Class").
+		Find(&SQLBookings).Error; err != nil {
 		return nil, fmt.Errorf("could not get booking IDs for email %s: %w", email, err)
 	}
 
-	result := make([]uuid.UUID, len(sqlBookings))
-	for i, booking := range sqlBookings {
-		result[i] = booking.ID
+	result := make([]models.Booking, len(SQLBookings))
+
+	for i, SQLBooking := range SQLBookings {
+		result[i] = SQLBooking.ToDomain()
 	}
 
 	return result, nil
@@ -149,9 +150,9 @@ func (r *bookingsRepo) Insert(
 	ctx context.Context,
 	booking models.Booking,
 ) (uuid.UUID, error) {
-	sqlBooking := db.SQLBookingsFromDomain(booking)
+	SQLBooking := db.SQLBookingsFromDomain(booking)
 
-	if err := r.db.WithContext(ctx).Create(&sqlBooking).Error; err != nil {
+	if err := r.db.WithContext(ctx).Create(&SQLBooking).Error; err != nil {
 		return uuid.Nil, fmt.Errorf("could not insert booking: %w", err)
 	}
 
@@ -159,11 +160,11 @@ func (r *bookingsRepo) Insert(
 }
 
 func (r *bookingsRepo) Delete(ctx context.Context, id uuid.UUID) error {
-	var sqlBooking db.SQLBooking
+	var SQLBooking db.SQLBooking
 
 	result := r.db.WithContext(ctx).
 		Where("id = ?", id).
-		Delete(&sqlBooking)
+		Delete(&SQLBooking)
 	if result.Error != nil {
 		return fmt.Errorf("could not delete booking: %w", result.Error)
 	}
@@ -180,10 +181,10 @@ func (r *bookingsRepo) Update(
 	bookingID uuid.UUID,
 	update map[string]any,
 ) (models.Booking, error) {
-	var sqlBooking db.SQLBooking
+	var SQLBooking db.SQLBooking
 
 	if err := r.db.WithContext(ctx).
-		Model(&sqlBooking).
+		Model(&SQLBooking).
 		Clauses(clause.Returning{}).
 		Where("id = ?", bookingID).
 		Updates(update).Error; err != nil {
@@ -191,5 +192,5 @@ func (r *bookingsRepo) Update(
 			fmt.Errorf("could not update booking: %v with data: %v, %w", bookingID, update, err)
 	}
 
-	return sqlBooking.ToDomain(), nil
+	return SQLBooking.ToDomain(), nil
 }

@@ -8,6 +8,7 @@ import (
 	"main/internal/domain/models"
 	"main/internal/domain/notifier"
 	"main/internal/domain/repositories"
+	"main/internal/domain/services"
 
 	"github.com/google/uuid"
 )
@@ -16,26 +17,33 @@ type service struct {
 	passesRepo   repositories.IPasses
 	bookingsRepo repositories.IBookings
 	notifier     notifier.INotifier
+	passManager  services.IPassManager
 }
 
 func NewService(
 	passesRepo repositories.IPasses,
 	bookingsRepo repositories.IBookings,
 	notifier notifier.INotifier,
+	passManager services.IPassManager,
 ) *service {
 	return &service{
 		passesRepo:   passesRepo,
 		bookingsRepo: bookingsRepo,
 		notifier:     notifier,
+		passManager:  passManager,
 	}
 }
 
 func (s *service) ActivatePass(
 	ctx context.Context, params models.PassActivationParams,
 ) (models.Pass, error) {
-	if params.UsedBookings > params.TotalBookings {
+	if params.UsedBookingsCount > params.TotalBookingsCount {
 		return models.Pass{},
-			api.ErrValidation(fmt.Errorf("usedBookings: %d is grater than totalBookings: %d", params.UsedBookings, params.TotalBookings))
+			api.ErrValidation(
+				fmt.Errorf("usedBookings: %d is grater than totalBookings: %d",
+					params.UsedBookingsCount,
+					params.TotalBookingsCount),
+			)
 	}
 
 	passOpt, err := s.passesRepo.GetByEmail(ctx, params.Email)
@@ -44,10 +52,21 @@ func (s *service) ActivatePass(
 	}
 
 	// when user booked one or more classes in future - system needs to add this bookings to Pass
-	usedBookingIDs, err := s.getUsedBookingIDsForPass(ctx, params.Email, params.UsedBookings)
+	usedBookings, err := s.getUsedBookingsForPass(ctx, params.Email, params.UsedBookingsCount)
 	if err != nil {
 		return models.Pass{},
 			fmt.Errorf("could not get usedBookingIDs for email %s: %w", params.Email, err)
+	}
+
+	usedBookingIDs := make([]uuid.UUID, 0, len(usedBookings))
+	for _, booking := range usedBookings {
+		usedBookingIDs = append(usedBookingIDs, booking.ID)
+	}
+
+	passItems, err := s.passManager.BuildPassItems(ctx, usedBookings, params.TotalBookingsCount)
+	if err != nil {
+		return models.Pass{},
+			fmt.Errorf("could not build passItems %s: %w", params.Email, err)
 	}
 
 	if !passOpt.Exists() {
@@ -55,13 +74,13 @@ func (s *service) ActivatePass(
 			ctx,
 			params.Email,
 			usedBookingIDs,
-			params.TotalBookings,
+			params.TotalBookingsCount,
 		)
 		if err != nil {
 			return models.Pass{}, fmt.Errorf("could not insert pass for %s: %w", params.Email, err)
 		}
 
-		err = s.notifier.NotifyPassActivation(pass)
+		err = s.notifier.NotifyPassActivation(params.Email, passItems)
 		if err != nil {
 			return models.Pass{}, fmt.Errorf("could not send pass %v: %w", pass, err)
 		}
@@ -71,41 +90,32 @@ func (s *service) ActivatePass(
 
 	pass := passOpt.Get()
 
-	err = s.passesRepo.Update(ctx, pass.ID, usedBookingIDs, params.TotalBookings)
+	updatedPass, err := s.passesRepo.Update(ctx, pass.ID, usedBookingIDs, params.TotalBookingsCount)
 	if err != nil {
 		return models.Pass{}, fmt.Errorf("could not update pass with %+v: %w", usedBookingIDs, err)
 	}
 
-	newPass := models.Pass{
-		ID:             pass.ID,
-		Email:          pass.Email,
-		UsedBookingIDs: usedBookingIDs,
-		TotalBookings:  params.TotalBookings,
-		CreatedAt:      pass.CreatedAt,
-		UpdatedAt:      pass.UpdatedAt,
-	}
-
-	err = s.notifier.NotifyPassActivation(newPass)
+	err = s.notifier.NotifyPassActivation(params.Email, passItems)
 	if err != nil {
 		return models.Pass{}, fmt.Errorf("could notify pass activation with %v: %w", pass, err)
 	}
 
-	return newPass, nil
+	return updatedPass, nil
 }
 
-func (s *service) getUsedBookingIDsForPass(
+func (s *service) getUsedBookingsForPass(
 	ctx context.Context,
 	email string,
-	passUsedBookings int,
-) ([]uuid.UUID, error) {
-	if passUsedBookings == 0 {
-		return []uuid.UUID{}, nil
+	usedBookingsCount int,
+) ([]models.Booking, error) {
+	if usedBookingsCount == 0 {
+		return nil, nil
 	}
 
-	usedBookingIDs, err := s.bookingsRepo.GetIDsByEmail(ctx, email, passUsedBookings)
+	usedBookings, err := s.bookingsRepo.ListByEmail(ctx, email, usedBookingsCount)
 	if err != nil {
-		return nil, fmt.Errorf("could not get usedBookingIDs for email %s: %w", email, err)
+		return nil, fmt.Errorf("could not list usedBookings for email %s: %w", email, err)
 	}
 
-	return usedBookingIDs, nil
+	return usedBookings, nil
 }

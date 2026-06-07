@@ -1,6 +1,8 @@
 package notifier
 
-type BaseTmpl struct {
+import "main/internal/domain/models"
+
+type BaseTmplData struct {
 	RecipientFirstName string
 	ClassName          string
 	ClassLevel         string
@@ -8,27 +10,49 @@ type BaseTmpl struct {
 	Hour               string
 	Date               string
 	Location           string
-	PassState          []bool
 	Signature          string
 }
 
-type BaseTmplWithMsg struct {
-	BaseTmplData BaseTmpl
+type ClassUpdateTmplData struct {
+	BaseTmplData BaseTmplData
 	Message      string
 }
 
-type BaseTmplWithCancellationLink struct {
-	BaseTmplData     BaseTmpl
-	CancellationLink string
+type ClassCancellationTmplData struct {
+	BaseTmplData  BaseTmplData
+	Message       string
+	PassItemsView []PassItemView
 }
 
-type BookingConfirmationRequestTmpl struct {
+type BookingConfirmationTmplData struct {
+	BaseTmplData     BaseTmplData
+	CancellationLink string
+	PassItemsView    []PassItemView
+}
+
+type BookingCancellationTmplData struct {
+	BaseTmplData  BaseTmplData
+	PassItemsView []PassItemView
+}
+
+type BookingReminderTmplData struct {
+	BaseTmplData     BaseTmplData
+	CancellationLink string
+	PassItemsView    []PassItemView
+}
+
+type BookingConfirmationRequestTmplData struct {
 	RecipientFirstName string
 	ConfirmationLink   string
 	Signature          string
 }
 
-type PassActivationTmpl struct {
-	PassState []bool
-	Signature string
+type PassActivationTmplData struct {
+	PassItemsView []PassItemView
+	Signature     string
+}
+
+type PassItemView struct {
+	Status         models.PassStatus
+	ClassStartDate string
 }

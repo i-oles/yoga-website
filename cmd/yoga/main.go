@@ -171,11 +171,19 @@ func buildComponents(cfg *configuration.Configuration) (Components, error) {
 	)
 
 	unitOfWork := sqliteRepo.NewUnitOfWork(database)
+	passManager := services.PassManager{}
 
-	classesService := classes.NewService(classesRepo, bookingsRepo, unitOfWork, emailNotifier)
+	classesService := classes.NewService(
+		classesRepo,
+		bookingsRepo,
+		unitOfWork,
+		&passManager,
+		emailNotifier,
+	)
 	bookingsService := bookings.NewService(
 		unitOfWork,
 		bookingsRepo,
+		&passManager,
 		emailNotifier,
 		cfg.DomainAddr,
 	)
@@ -187,13 +195,14 @@ func buildComponents(cfg *configuration.Configuration) (Components, error) {
 		cfg.DomainAddr,
 	)
 
-	passesService := passes.NewService(passesRepo, bookingsRepo, emailNotifier)
+	passesService := passes.NewService(passesRepo, bookingsRepo, emailNotifier, &passManager)
 
 	reminder := reminder.New(
 		unitOfWork,
 		classesRepo,
 		bookingsRepo,
 		emailNotifier,
+		&passManager,
 		cfg.DomainAddr,
 	)
 

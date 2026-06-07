@@ -2,6 +2,7 @@ package reminder
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"time"
@@ -9,6 +10,8 @@ import (
 	"main/internal/domain/models"
 	"main/internal/domain/notifier"
 	"main/internal/domain/repositories"
+	"main/internal/domain/services"
+	"main/internal/infrastructure/errs"
 )
 
 type IReminderService interface {
@@ -20,6 +23,7 @@ type service struct {
 	classesRepo  repositories.IClasses
 	bookingsRepo repositories.IBookings
 	notifier     notifier.INotifier
+	passManager  services.IPassManager
 	domainAddr   string
 }
 
@@ -28,6 +32,7 @@ func New(
 	classesRepo repositories.IClasses,
 	bookingsRepo repositories.IBookings,
 	notifier notifier.INotifier,
+	passManager services.IPassManager,
 	domainAddr string,
 ) *service {
 	return &service{
@@ -35,6 +40,7 @@ func New(
 		classesRepo:  classesRepo,
 		bookingsRepo: bookingsRepo,
 		notifier:     notifier,
+		passManager:  passManager,
 		domainAddr:   domainAddr,
 	}
 }
@@ -137,8 +143,28 @@ func (s *service) remindBooking(ctx context.Context, booking models.Booking, cla
 
 		if passOpt.Exists() {
 			pass := passOpt.Get()
-			notifierParams.PassUsedBookingIDs = pass.UsedBookingIDs
-			notifierParams.PassTotalBookings = &pass.TotalBookings
+
+			usedBookings := make([]models.Booking, 0, len(pass.UsedBookingIDs))
+
+			for _, bookingID := range pass.UsedBookingIDs {
+				booking, err := repos.Bookings.GetByID(ctx, bookingID)
+				if err != nil {
+					if errors.Is(err, errs.ErrNotFound) {
+						return fmt.Errorf("booking with id %s not found: %w", bookingID, err)
+					}
+
+					return fmt.Errorf("could not get booking for id %s: %w", bookingID, err)
+				}
+
+				usedBookings = append(usedBookings, booking)
+			}
+
+			passItems, err := s.passManager.BuildPassItems(ctx, usedBookings, pass.TotalBookings)
+			if err != nil {
+				return fmt.Errorf("could not build pass items for pass %v: %w", pass.ID, err)
+			}
+
+			notifierParams.PassItems = passItems
 		}
 
 		cancellationLink := fmt.Sprintf(

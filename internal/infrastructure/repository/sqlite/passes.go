@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type passesRepo struct {
@@ -43,24 +44,25 @@ func (r *passesRepo) GetByEmail(
 
 func (r *passesRepo) Update(
 	ctx context.Context, id int, usedBookingIDs []uuid.UUID, totalBookings int,
-) error {
-	var pass db.SQLPass
+) (models.Pass, error) {
+	var sqlPass db.SQLPass
 
-	if err := r.db.WithContext(ctx).First(&pass, id).Error; err != nil {
-		return err
+	update := db.SQLPass{
+		UsedBookingIDs: usedBookingIDs,
+		TotalBookings:  totalBookings,
 	}
 
-	if usedBookingIDs != nil {
-		pass.UsedBookingIDs = usedBookingIDs
+	if err := r.db.WithContext(ctx).
+		Model(&sqlPass).
+		Clauses(clause.Returning{}).
+		Where("id = ?", id).
+		Updates(update).
+		Error; err != nil {
+		return models.Pass{},
+			fmt.Errorf("could not update pass: %v, %w", id, err)
 	}
 
-	pass.TotalBookings = totalBookings
-
-	if err := r.db.WithContext(ctx).Save(&pass).Error; err != nil {
-		return err
-	}
-
-	return nil
+	return sqlPass.ToDomain(), nil
 }
 
 func (r *passesRepo) Insert(

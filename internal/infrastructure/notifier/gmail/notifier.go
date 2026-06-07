@@ -12,11 +12,10 @@ import (
 	"main/pkg/converter"
 	"main/pkg/translator"
 
-	"github.com/google/uuid"
 	"gopkg.in/gomail.v2"
 )
 
-const PassValue = "KARNET"
+const PassLabel = "KARNET"
 
 type notifier struct {
 	dialer                             *gomail.Dialer
@@ -28,6 +27,7 @@ type notifier struct {
 	bookingCancellationTmplPath        string
 	passActivationTmplPath             string
 	classReminderTmplPath              string
+	passTmplPath                       string
 	signature                          string
 }
 
@@ -57,27 +57,26 @@ func NewNotifier(
 		bookingCancellationTmplPath:        baseTmplPath + "booking_cancellation.tmpl",
 		passActivationTmplPath:             baseTmplPath + "pass_activation.tmpl",
 		classReminderTmplPath:              baseTmplPath + "class_reminder.tmpl",
+		passTmplPath:                       baseTmplPath + "pass.tmpl",
 	}
 }
 
-func (n *notifier) NotifyPassActivation(pass models.Pass) error {
-	passState := getPassState(pass.UsedBookingIDs, pass.TotalBookings)
-
-	tmplData := notifierModels.PassActivationTmpl{
-		Signature: n.signature,
-		PassState: passState,
+func (n *notifier) NotifyPassActivation(email string, passItems []models.PassItem) error {
+	tmplData := notifierModels.PassActivationTmplData{
+		Signature:     n.signature,
+		PassItemsView: n.getPassItemsView(passItems),
 	}
 
-	tmpl, err := template.ParseFiles(n.passActivationTmplPath)
+	tmpl, err := template.ParseFiles(n.passActivationTmplPath, n.passTmplPath)
 	if err != nil {
 		return fmt.Errorf("could not parse template: %w", err)
 	}
 
 	subject := "Yoga - Twój karnet jest aktywny!"
 
-	msgToRecipient, err := n.buildMsgToRecipient(pass.Email, subject, tmpl, tmplData)
+	msgToRecipient, err := n.buildMsgToRecipient(email, subject, tmpl, tmplData)
 	if err != nil {
-		return fmt.Errorf("could not build msg to recipient %s: %w", pass.Email, err)
+		return fmt.Errorf("could not build msg to recipient %s: %w", email, err)
 	}
 
 	if err = n.dialer.DialAndSend(msgToRecipient); err != nil {
@@ -88,7 +87,7 @@ func (n *notifier) NotifyPassActivation(pass models.Pass) error {
 }
 
 func (n *notifier) NotifyConfirmationLink(email, firstName, confirmationLink string) error {
-	tmplData := notifierModels.BookingConfirmationRequestTmpl{
+	tmplData := notifierModels.BookingConfirmationRequestTmplData{
 		RecipientFirstName: firstName,
 		ConfirmationLink:   confirmationLink,
 		Signature:          n.signature,
@@ -123,12 +122,13 @@ func (n *notifier) NotifyBookingConfirmation(
 
 	baseTmplData := n.getBaseTmplData(params, classStartTimeDetails)
 
-	tmplData := notifierModels.BaseTmplWithCancellationLink{
+	tmplData := notifierModels.BookingConfirmationTmplData{
 		BaseTmplData:     baseTmplData,
 		CancellationLink: cancellationLink,
+		PassItemsView:    n.getPassItemsView(params.PassItems),
 	}
 
-	tmpl, err := template.ParseFiles(n.bookingConfirmationTmplPath)
+	tmpl, err := template.ParseFiles(n.bookingConfirmationTmplPath, n.passTmplPath)
 	if err != nil {
 		return fmt.Errorf("could not parse template: %w", err)
 	}
@@ -140,7 +140,13 @@ func (n *notifier) NotifyBookingConfirmation(
 		return fmt.Errorf("could not build msg to recipient %s: %w", params.RecipientEmail, err)
 	}
 
-	msgToOwner := n.buildMsgToOwner(models.StatusBooked, params, baseTmplData)
+	msgToOwner := n.buildMsgToOwner(
+		models.StatusBooked,
+		params.RecipientFirstName,
+		params.RecipientLastName,
+		n.getPassItemsView(params.PassItems),
+		classStartTimeDetails,
+	)
 
 	if err = n.dialer.DialAndSend(msgToRecipient, msgToOwner); err != nil {
 		return fmt.Errorf("failed to send emails: %w", err)
@@ -155,9 +161,12 @@ func (n *notifier) NotifyBookingCancellation(params models.NotifierParams) error
 		return fmt.Errorf("could not get class start time details: %w", err)
 	}
 
-	tmplData := n.getBaseTmplData(params, classStartTimeDetails)
+	tmplData := notifierModels.BookingCancellationTmplData{
+		BaseTmplData:  n.getBaseTmplData(params, classStartTimeDetails),
+		PassItemsView: n.getPassItemsView(params.PassItems),
+	}
 
-	tmpl, err := template.ParseFiles(n.bookingCancellationTmplPath)
+	tmpl, err := template.ParseFiles(n.bookingCancellationTmplPath, n.passTmplPath)
 	if err != nil {
 		return fmt.Errorf("could not parse template: %w", err)
 	}
@@ -169,7 +178,13 @@ func (n *notifier) NotifyBookingCancellation(params models.NotifierParams) error
 		return fmt.Errorf("could not build msg to recipient %s: %w", params.RecipientEmail, err)
 	}
 
-	msgToOwner := n.buildMsgToOwner(models.StatusCancelled, params, tmplData)
+	msgToOwner := n.buildMsgToOwner(
+		models.StatusCancelled,
+		params.RecipientFirstName,
+		params.RecipientLastName,
+		n.getPassItemsView(params.PassItems),
+		classStartTimeDetails,
+	)
 
 	if err = n.dialer.DialAndSend(msgToRecipient, msgToOwner); err != nil {
 		return fmt.Errorf("failed to send email: %w", err)
@@ -186,14 +201,12 @@ func (n *notifier) NotifyClassUpdate(
 		return fmt.Errorf("could not get class start time details: %w", err)
 	}
 
-	baseTmplData := n.getBaseTmplData(params, classStartTimeDetails)
-
-	tmplData := notifierModels.BaseTmplWithMsg{
-		BaseTmplData: baseTmplData,
+	tmplData := notifierModels.ClassUpdateTmplData{
+		BaseTmplData: n.getBaseTmplData(params, classStartTimeDetails),
 		Message:      msg,
 	}
 
-	tmpl, err := template.ParseFiles(n.classUpdateTmplPath)
+	tmpl, err := template.ParseFiles(n.classUpdateTmplPath, n.passTmplPath)
 	if err != nil {
 		return fmt.Errorf("could not parse template: %w", err)
 	}
@@ -221,14 +234,13 @@ func (n *notifier) NotifyClassCancellation(params models.NotifierParams, msg str
 		return fmt.Errorf("could not get date details: %w", err)
 	}
 
-	basetmpldata := n.getBaseTmplData(params, classStartTimeDetails)
-
-	tmplData := notifierModels.BaseTmplWithMsg{
-		BaseTmplData: basetmpldata,
-		Message:      msg,
+	tmplData := notifierModels.ClassCancellationTmplData{
+		BaseTmplData:  n.getBaseTmplData(params, classStartTimeDetails),
+		Message:       msg,
+		PassItemsView: n.getPassItemsView(params.PassItems),
 	}
 
-	tmpl, err := template.ParseFiles(n.classCancellationTmplPath)
+	tmpl, err := template.ParseFiles(n.classCancellationTmplPath, n.passTmplPath)
 	if err != nil {
 		return fmt.Errorf("could not parse template: %w", err)
 	}
@@ -247,20 +259,21 @@ func (n *notifier) NotifyClassCancellation(params models.NotifierParams, msg str
 	return nil
 }
 
-func (n *notifier) NotifyBookingReminder(params models.NotifierParams, cancellationLink string) error {
+func (n *notifier) NotifyBookingReminder(
+	params models.NotifierParams, cancellationLink string,
+) error {
 	classStartTimeDetails, err := getClassStartTimeDetails(params.StartTime)
 	if err != nil {
 		return fmt.Errorf("could not get class start time details: %w", err)
 	}
 
-	baseTmplData := n.getBaseTmplData(params, classStartTimeDetails)
-
-	tmplData := notifierModels.BaseTmplWithCancellationLink{
-		BaseTmplData:     baseTmplData,
+	tmplData := notifierModels.BookingReminderTmplData{
+		BaseTmplData:     n.getBaseTmplData(params, classStartTimeDetails),
 		CancellationLink: cancellationLink,
+		PassItemsView:    n.getPassItemsView(params.PassItems),
 	}
 
-	tmpl, err := template.ParseFiles(n.classReminderTmplPath)
+	tmpl, err := template.ParseFiles(n.classReminderTmplPath, n.passTmplPath)
 	if err != nil {
 		return fmt.Errorf("could not parse template: %w", err)
 	}
@@ -303,25 +316,34 @@ func (n *notifier) buildMsgToRecipient(
 
 func (n *notifier) buildMsgToOwner(
 	status models.OperationStatus,
-	params models.NotifierParams,
-	baseTmplData notifierModels.BaseTmpl,
+	recipientFirstName, recipientLastName string,
+	passItemsView []notifierModels.PassItemView,
+	classTimeDetails timeDetails,
 ) *gomail.Message {
 	subject := fmt.Sprintf("%s %s %s",
-		params.RecipientFirstName,
-		params.RecipientLastName,
+		recipientFirstName,
+		recipientLastName,
 		status,
 	)
 
-	if baseTmplData.PassState != nil {
+	if passItemsView != nil {
+		usedPassItemsCount := 0
+
+		for _, item := range passItemsView {
+			if item.Status == models.FuturePassStatus || item.Status == models.PastPassStatus {
+				usedPassItemsCount++
+			}
+		}
+
 		subject += fmt.Sprintf(
-			" %s: %d/%d", PassValue, len(params.PassUsedBookingIDs), *params.PassTotalBookings,
+			"%s: %d/%d", PassLabel, usedPassItemsCount, len(passItemsView),
 		)
 	}
 
 	msg := fmt.Sprintf("%s (%s) - %s",
-		baseTmplData.WeekDay,
-		baseTmplData.Date,
-		baseTmplData.Hour,
+		classTimeDetails.weekDayInPolish,
+		classTimeDetails.startDate,
+		classTimeDetails.startHour,
 	)
 
 	msgToOwner := gomail.NewMessage()
@@ -331,16 +353,6 @@ func (n *notifier) buildMsgToOwner(
 	msgToOwner.SetBody("text/html", msg)
 
 	return msgToOwner
-}
-
-func getPassState(usedBookingIDs []uuid.UUID, totalBookings int) []bool {
-	result := make([]bool, totalBookings)
-
-	for i := range usedBookingIDs {
-		result[i] = true
-	}
-
-	return result
 }
 
 type timeDetails struct {
@@ -372,8 +384,8 @@ func getClassStartTimeDetails(t time.Time) (timeDetails, error) {
 
 func (n *notifier) getBaseTmplData(
 	params models.NotifierParams, classStartTimeDetails timeDetails,
-) notifierModels.BaseTmpl {
-	tmplData := notifierModels.BaseTmpl{
+) notifierModels.BaseTmplData {
+	return notifierModels.BaseTmplData{
 		RecipientFirstName: params.RecipientFirstName,
 		ClassName:          params.ClassName,
 		ClassLevel:         params.ClassLevel,
@@ -383,10 +395,22 @@ func (n *notifier) getBaseTmplData(
 		Location:           params.Location,
 		Signature:          n.signature,
 	}
+}
 
-	if params.PassUsedBookingIDs != nil && params.PassTotalBookings != nil {
-		tmplData.PassState = getPassState(params.PassUsedBookingIDs, *params.PassTotalBookings)
+func (n *notifier) getPassItemsView(passItems []models.PassItem) []notifierModels.PassItemView {
+	passItemsView := make([]notifierModels.PassItemView, 0, len(passItems))
+
+	for _, item := range passItems {
+		viewItem := notifierModels.PassItemView{
+			Status: item.Status,
+		}
+
+		if item.ClassStartTime != nil {
+			viewItem.ClassStartDate = item.ClassStartTime.Format("02.01")
+		}
+
+		passItemsView = append(passItemsView, viewItem)
 	}
 
-	return tmplData
+	return passItemsView
 }
