@@ -1,42 +1,44 @@
 {{ define "pass" }}
-<div class="pass-visual" style="padding-top: 10px; padding-bottom: 5px;">
-<table style="width:100%; border-collapse:collapse;">
-    {{ range .PassItemsView }}
-    <tr>
-        <td style="width:24px; padding:6px 0; vertical-align:middle;">
-            {{ if eq .Status 1 }}
-            <!-- USED -->
-            <div
-                style="width:16px; height:16px; border:2px solid grey; border-radius:50%; background-color:grey; text-align:center; line-height:16px;">
-                <span style="color:black; font-size:9px; font-weight:bold;">✓</span>
-            </div>
+<div class="pass-visual"
+    style="padding-top:15px; padding-bottom:15px; text-align:center;">
 
-            {{ else if eq .Status 2 }}
-            <!-- FUTURE -->
-            <div
-                style="width:16px; height:16px; border:2px solid #d9d9d9; border-radius:50%; background-color:#d9d9d9; text-align:center; line-height:16px;">
-                <span style="color:#6b6b6b; font-size:9px; font-weight:bold;">?</span>
-            </div>
+    <table style="margin:0 auto; border-collapse:collapse;">
+        <tr>
 
-            {{ else }}
-            <!-- BLANK -->
-            <div
-                style="width:16px; height:16px; border:2px solid grey; border-radius:50%;">
-            </div>
+            {{ range .PassItemsView }}
+            <td
+                style="width:30px; text-align:center; padding:0 5px; vertical-align:top;">
+
+                {{ if eq .Status 1 }}
+                <!-- USED -->
+                <div
+                    style="width:16px; height:16px; margin:0 auto; border:2px solid #7cb342; border-radius:50%; background-color:#7cb342; line-height:16px; text-align:center;">
+                    <span style="color:white; font-size:9px; font-weight:bold;">✓</span>
+                </div>
+
+                {{ else }}
+                <!-- FUTURE + BLANK (same visual: empty circle) -->
+                <div
+                    style="width:16px; height:16px; margin:0 auto; border:2px solid #9e9e9e; border-radius:50%;">
+                </div>
+                {{ end }}
+
+                <div
+                    style="margin-top:6px; min-height:12px; font-size:9px; color:#d0d0d0; line-height:1.1; white-space:nowrap;">
+
+                    {{ if and (ne .Status 0) .ClassStartDate }}
+                        {{ .ClassStartDate }}
+                    {{ else }}
+                        &nbsp;
+                    {{ end }}
+
+                </div>
+
+            </td>
             {{ end }}
-        </td>
-        <td style="padding:6px 0 6px 10px; text-align:left;">
 
-            {{ if and (ne .Status 0) .ClassStartDate }}
-            <span
-                style="font-size:11px; color:#999999;">
-                {{ .ClassStartDate }}
-            </span>
-            {{ end }}
-
-        </td>
-    </tr>
-    {{ end }}
+        </tr>
     </table>
+
 </div>
 {{ end }}
