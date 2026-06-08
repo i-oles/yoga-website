@@ -19,6 +19,7 @@ import (
 const (
 	allowedTotalPendingBookingsLimit = 200
 	tokenLength                      = 32
+	deadlineBeforeClassStart         = 3 * time.Hour
 )
 
 type service struct {
@@ -170,6 +171,10 @@ func (s *service) checkClassAvailability(
 
 	if class.StartTime.Before(time.Now()) {
 		return viewErrors.ErrClassExpired(classID, fmt.Errorf("class %s has expired at %v", classID, class.StartTime))
+	}
+
+	if bookingCount == 0 && time.Until(class.StartTime) < deadlineBeforeClassStart {
+		return viewErrors.ErrTooLateToBook(classID, fmt.Errorf("class %s is empty and it is to late to book", class.ID))
 	}
 
 	return nil
