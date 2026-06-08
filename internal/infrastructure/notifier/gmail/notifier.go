@@ -86,7 +86,9 @@ func (n *notifier) NotifyPassActivation(email string, passItems []models.PassIte
 	return nil
 }
 
-func (n *notifier) NotifyConfirmationLink(email, firstName, confirmationLink string) error {
+func (n *notifier) NotifyConfirmationLink(
+	email, firstName, confirmationLink string, classStartTime time.Time,
+) error {
 	tmplData := notifierModels.BookingConfirmationRequestTmplData{
 		RecipientFirstName: firstName,
 		ConfirmationLink:   confirmationLink,
@@ -98,7 +100,12 @@ func (n *notifier) NotifyConfirmationLink(email, firstName, confirmationLink str
 		return fmt.Errorf("could not parse template: %w", err)
 	}
 
-	subject := "Yoga - Potwierdź swoją rezerwację!"
+	classStartTimeDetails, err := getClassStartTimeDetails(classStartTime)
+	if err != nil {
+		return fmt.Errorf("could not get class start time details: %w", err)
+	}
+
+	subject := fmt.Sprintf("Yoga (%s) - Potwierdź swoją rezerwację!", classStartTimeDetails.startDate)
 
 	msgToRecipient, err := n.buildMsgToRecipient(email, subject, tmpl, tmplData)
 	if err != nil {
