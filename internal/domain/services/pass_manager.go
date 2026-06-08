@@ -84,7 +84,7 @@ func (p *PassManager) TryIncrementPass(
 		}, nil
 	}
 
-	return pass, nil
+	return models.Pass{}, nil
 }
 
 func (p *PassManager) TryDecrementPass(
