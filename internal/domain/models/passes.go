@@ -7,12 +7,11 @@ import (
 )
 
 type Pass struct {
-	ID             int
-	Email          string
-	UsedBookingIDs []uuid.UUID
-	TotalBookings  int
-	UpdatedAt      time.Time
-	CreatedAt      time.Time
+	ID            int
+	Email         string
+	TotalBookings int
+	UpdatedAt     time.Time
+	CreatedAt     time.Time
 }
 
 type PassItem struct {
@@ -34,7 +33,7 @@ type PassUpdate struct {
 }
 
 type PassActivationParams struct {
-	Email              string
-	UsedBookingsCount  int
-	TotalBookingsCount int
+	Email                string
+	BookingsCountForPass int
+	TotalBookingsCount   int
 }

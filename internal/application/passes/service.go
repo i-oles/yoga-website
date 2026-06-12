@@ -9,8 +9,6 @@ import (
 	"main/internal/domain/notifier"
 	"main/internal/domain/repositories"
 	"main/internal/domain/services"
-
-	"github.com/google/uuid"
 )
 
 type service struct {
@@ -37,85 +35,67 @@ func NewService(
 func (s *service) ActivatePass(
 	ctx context.Context, params models.PassActivationParams,
 ) (models.Pass, error) {
-	if params.UsedBookingsCount > params.TotalBookingsCount {
+	// TODO: verify czy poprzedni karnet jest zapelniony - jesli nie to blad dla usera.
+
+	if params.BookingsCountForPass > params.TotalBookingsCount {
 		return models.Pass{},
 			api.ErrValidation(
 				fmt.Errorf("usedBookings: %d is grater than totalBookings: %d",
-					params.UsedBookingsCount,
+					params.BookingsCountForPass,
 					params.TotalBookingsCount),
 			)
 	}
 
-	passOpt, err := s.passesRepo.GetByEmail(ctx, params.Email)
+	pass, err := s.passesRepo.Insert(
+		ctx,
+		params.Email,
+		params.TotalBookingsCount,
+	)
 	if err != nil {
-		return models.Pass{}, fmt.Errorf("could not get pass by email %s: %w", params.Email, err)
+		return models.Pass{}, fmt.Errorf("could not insert pass for %s: %w", params.Email, err)
 	}
 
 	// when user booked one or more classes in future - system needs to add this bookings to Pass
-	usedBookings, err := s.getUsedBookingsForPass(ctx, params.Email, params.UsedBookingsCount)
+	// TODO: zmien nazwe usesBookings w tym miejscu bo chodzi tu o przyszle albo niewbite w karnet bookingi
+	// TODO: rozwiaz problem posiadania dwoch karnetow na raz - jak pobieramy karnet to jest on po created at a moze powinien byc pobierany pierwszy kotry ma najmniej wolnych slotow?
+	bookingsForPass, err := s.getBookingsForPass(ctx, params.Email, params.BookingsCountForPass)
 	if err != nil {
 		return models.Pass{},
 			fmt.Errorf("could not get usedBookingIDs for email %s: %w", params.Email, err)
 	}
 
-	usedBookingIDs := make([]uuid.UUID, 0, len(usedBookings))
-	for _, booking := range usedBookings {
-		usedBookingIDs = append(usedBookingIDs, booking.ID)
-	}
-
-	passItems, err := s.passManager.BuildPassItems(ctx, usedBookings, params.TotalBookingsCount)
-	if err != nil {
-		return models.Pass{},
-			fmt.Errorf("could not build passItems %s: %w", params.Email, err)
-	}
-
-	if !passOpt.Exists() {
-		pass, err := s.passesRepo.Insert(
-			ctx,
-			params.Email,
-			usedBookingIDs,
-			params.TotalBookingsCount,
-		)
+	for _, booking := range bookingsForPass {
+		_, err = s.bookingsRepo.Update(ctx, booking.ID, map[string]any{
+			"pass_id": pass.ID,
+		})
 		if err != nil {
-			return models.Pass{}, fmt.Errorf("could not insert pass for %s: %w", params.Email, err)
+			return models.Pass{}, fmt.Errorf("could not update booking %s with pass_id %d: %w", booking.ID, pass.ID, err)
 		}
-
-		err = s.notifier.NotifyPassActivation(params.Email, passItems)
-		if err != nil {
-			return models.Pass{}, fmt.Errorf("could not send pass %v: %w", pass, err)
-		}
-
-		return pass, nil
 	}
 
-	pass := passOpt.Get()
-
-	updatedPass, err := s.passesRepo.Update(ctx, pass.ID, usedBookingIDs, params.TotalBookingsCount)
-	if err != nil {
-		return models.Pass{}, fmt.Errorf("could not update pass with %+v: %w", usedBookingIDs, err)
-	}
+	passItems := s.passManager.BuildPassItems(bookingsForPass, params.TotalBookingsCount)
 
 	err = s.notifier.NotifyPassActivation(params.Email, passItems)
 	if err != nil {
 		return models.Pass{}, fmt.Errorf("could notify pass activation with %v: %w", pass, err)
 	}
 
-	return updatedPass, nil
+	return pass, nil
 }
 
-func (s *service) getUsedBookingsForPass(
+func (s *service) getBookingsForPass(
 	ctx context.Context,
 	email string,
-	usedBookingsCount int,
+	bookingsCountForPass int,
 ) ([]models.Booking, error) {
-	if usedBookingsCount == 0 {
+	if bookingsCountForPass == 0 {
 		return nil, nil
 	}
 
-	usedBookings, err := s.bookingsRepo.ListByEmail(ctx, email, usedBookingsCount)
+	bookings, err := s.bookingsRepo.ListByEmail(ctx, email, bookingsCountForPass)
 	if err != nil {
 		return nil, fmt.Errorf("could not list usedBookings for email %s: %w", email, err)
 	}
 
-	return usedBookings, nil
+	return bookings, nil
 }

@@ -9,7 +9,6 @@ import (
 	"main/internal/infrastructure/models/db"
 	"main/pkg/optional"
 
-	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -29,7 +28,10 @@ func (r *passesRepo) GetByEmail(
 ) (optional.Optional[models.Pass], error) {
 	var sqlPass db.SQLPass
 
-	result := r.db.WithContext(ctx).Where("email = ?", email).First(&sqlPass)
+	result := r.db.WithContext(ctx).
+		Where("email = ?", email).
+		Order("created_at DESC").
+		First(&sqlPass)
 
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
@@ -43,23 +45,22 @@ func (r *passesRepo) GetByEmail(
 }
 
 func (r *passesRepo) Update(
-	ctx context.Context, id int, usedBookingIDs []uuid.UUID, totalBookings int,
+	ctx context.Context, pass models.Pass,
 ) (models.Pass, error) {
 	var sqlPass db.SQLPass
 
 	update := db.SQLPass{
-		UsedBookingIDs: usedBookingIDs,
-		TotalBookings:  totalBookings,
+		TotalBookings: pass.TotalBookings,
 	}
 
 	if err := r.db.WithContext(ctx).
 		Model(&sqlPass).
 		Clauses(clause.Returning{}).
-		Where("id = ?", id).
+		Where("id = ?", pass.ID).
 		Updates(update).
 		Error; err != nil {
 		return models.Pass{},
-			fmt.Errorf("could not update pass: %v, %w", id, err)
+			fmt.Errorf("could not update pass: %v, %w", pass.ID, err)
 	}
 
 	return sqlPass.ToDomain(), nil
@@ -68,13 +69,11 @@ func (r *passesRepo) Update(
 func (r *passesRepo) Insert(
 	ctx context.Context,
 	email string,
-	usedBookingIDs []uuid.UUID,
 	totalBookings int,
 ) (models.Pass, error) {
 	pass := db.SQLPass{
-		Email:          email,
-		UsedBookingIDs: usedBookingIDs,
-		TotalBookings:  totalBookings,
+		Email:         email,
+		TotalBookings: totalBookings,
 	}
 
 	if err := r.db.WithContext(ctx).Create(&pass).Error; err != nil {

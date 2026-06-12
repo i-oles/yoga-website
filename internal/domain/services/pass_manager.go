@@ -1,26 +1,18 @@
 package services
 
 import (
-	"context"
-	"errors"
-	"fmt"
 	"sort"
 	"time"
 
-	sharedErrors "main/internal/domain/errs"
 	"main/internal/domain/models"
-	"main/pkg/tools"
-
-	"github.com/google/uuid"
 )
 
 type PassManager struct{}
 
 func (p *PassManager) BuildPassItems(
-	ctx context.Context,
 	bookings []models.Booking,
 	totalBookings int,
-) ([]models.PassItem, error) {
+) []models.PassItem {
 	passItems := make([]models.PassItem, 0, totalBookings)
 
 	for _, booking := range bookings {
@@ -53,6 +45,7 @@ func (p *PassManager) BuildPassItems(
 		if a.Status == models.BlankPassStatus && b.Status != models.BlankPassStatus {
 			return false
 		}
+
 		if a.Status != models.BlankPassStatus && b.Status == models.BlankPassStatus {
 			return true
 		}
@@ -64,48 +57,5 @@ func (p *PassManager) BuildPassItems(
 		return false
 	})
 
-	return passItems, nil
-}
-
-func (p *PassManager) TryIncrementPass(
-	ctx context.Context,
-	pass models.Pass,
-	bookingID uuid.UUID,
-) (models.Pass, error) {
-	if len(pass.UsedBookingIDs)+1 <= pass.TotalBookings {
-		updatedBookingIDs := pass.UsedBookingIDs
-		updatedBookingIDs = append(updatedBookingIDs, bookingID)
-
-		return models.Pass{
-			ID:             pass.ID,
-			Email:          pass.Email,
-			UsedBookingIDs: updatedBookingIDs,
-			TotalBookings:  pass.TotalBookings,
-		}, nil
-	}
-
-	return models.Pass{}, nil
-}
-
-func (p *PassManager) TryDecrementPass(
-	ctx context.Context,
-	pass models.Pass,
-	bookingID uuid.UUID,
-) (models.Pass, error) {
-	updatedBookingIDs, err := tools.RemoveFromSlice(pass.UsedBookingIDs, bookingID)
-	if errors.Is(err, sharedErrors.ErrBookingIDNotFoundInPass) {
-		return models.Pass{}, nil
-	}
-
-	if err != nil {
-		return models.Pass{},
-			fmt.Errorf("could not remove bookingID %v from usedBookingIDs", bookingID)
-	}
-
-	return models.Pass{
-		ID:             pass.ID,
-		Email:          pass.Email,
-		UsedBookingIDs: updatedBookingIDs,
-		TotalBookings:  pass.TotalBookings,
-	}, nil
+	return passItems
 }

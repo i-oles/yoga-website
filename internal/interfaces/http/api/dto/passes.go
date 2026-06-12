@@ -6,8 +6,6 @@ import (
 
 	"main/internal/domain/models"
 	"main/pkg/converter"
-
-	"github.com/google/uuid"
 )
 
 type ActivatePassRequest struct {
@@ -17,12 +15,11 @@ type ActivatePassRequest struct {
 }
 
 type PassDTO struct {
-	ID             int         `json:"id"`
-	Email          string      `json:"email"`
-	UsedBookingIDs []uuid.UUID `json:"used_booking_ids"`
-	TotalBookings  int         `json:"total_bookings"`
-	UpdatedAt      time.Time   `json:"updated_at"`
-	CreatedAt      time.Time   `json:"created_at"`
+	ID            int       `json:"id"`
+	Email         string    `json:"email"`
+	TotalBookings int       `json:"total_bookings"`
+	UpdatedAt     time.Time `json:"updated_at"`
+	CreatedAt     time.Time `json:"created_at"`
 }
 
 func ToPassDTO(pass models.Pass) (PassDTO, error) {
@@ -37,11 +34,10 @@ func ToPassDTO(pass models.Pass) (PassDTO, error) {
 	}
 
 	return PassDTO{
-		ID:             pass.ID,
-		Email:          pass.Email,
-		UsedBookingIDs: pass.UsedBookingIDs,
-		TotalBookings:  pass.TotalBookings,
-		UpdatedAt:      updatedAtWarsawTime,
-		CreatedAt:      cratedAtWarsawTime,
+		ID:            pass.ID,
+		Email:         pass.Email,
+		TotalBookings: pass.TotalBookings,
+		UpdatedAt:     updatedAtWarsawTime,
+		CreatedAt:     cratedAtWarsawTime,
 	}, nil
 }

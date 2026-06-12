@@ -29,7 +29,7 @@ func (r *bookingsRepo) GetByID(
 ) (models.Booking, error) {
 	var SQLBooking db.SQLBooking
 
-	result := r.db.WithContext(ctx).Where("id = ?", bookingID).Preload("Class").First(&SQLBooking)
+	result := r.db.WithContext(ctx).Where("id = ?", bookingID).Preload("Class").Preload("Pass").First(&SQLBooking)
 
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
@@ -131,10 +131,34 @@ func (r *bookingsRepo) ListByClassID(
 	var SQLBookings []db.SQLBooking
 
 	if err := r.db.WithContext(ctx).
-		Preload("Class").
 		Where("class_id = ?", classID).
+		Preload("Class").
+		Preload("Pass").
 		Find(&SQLBookings).Error; err != nil {
 		return nil, fmt.Errorf("could not get bookings for classID %s: %w", classID, err)
+	}
+
+	result := make([]models.Booking, len(SQLBookings))
+
+	for i, SQLBooking := range SQLBookings {
+		result[i] = SQLBooking.ToDomain()
+	}
+
+	return result, nil
+}
+
+func (r *bookingsRepo) ListByPassID(
+	ctx context.Context,
+	passID int,
+) ([]models.Booking, error) {
+	var SQLBookings []db.SQLBooking
+
+	if err := r.db.WithContext(ctx).
+		Preload("Class").Preload("Pass").
+		Where("pass_id = ?", passID).
+		Order("created_at ASC").
+		Find(&SQLBookings).Error; err != nil {
+		return nil, fmt.Errorf("could not list bookings: %w", err)
 	}
 
 	result := make([]models.Booking, len(SQLBookings))
@@ -150,7 +174,7 @@ func (r *bookingsRepo) Insert(
 	ctx context.Context,
 	booking models.Booking,
 ) (uuid.UUID, error) {
-	SQLBooking := db.SQLBookingsFromDomain(booking)
+	SQLBooking := db.SQLBookingFromDomain(booking)
 
 	if err := r.db.WithContext(ctx).Create(&SQLBooking).Error; err != nil {
 		return uuid.Nil, fmt.Errorf("could not insert booking: %w", err)

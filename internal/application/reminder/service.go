@@ -2,7 +2,6 @@ package reminder
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"time"
@@ -11,7 +10,8 @@ import (
 	"main/internal/domain/notifier"
 	"main/internal/domain/repositories"
 	"main/internal/domain/services"
-	"main/internal/infrastructure/errs"
+
+	"github.com/google/uuid"
 )
 
 type IReminderService interface {
@@ -65,7 +65,7 @@ func (s *service) RemindBookings(ctx context.Context) error {
 
 	for _, class := range futureClasses {
 		if isTimeToRemind(class.StartTime, now) {
-			err := s.sendReminders(ctx, class)
+			err := s.sendReminders(ctx, class.ID, class.StartTime)
 			if err != nil {
 				return fmt.Errorf("could not send reminders for class %v: %w", class.ID, err)
 			}
@@ -89,26 +89,26 @@ func isTimeToRemind(classStartTime, now time.Time) bool {
 	return diff > 0 && diff < 24*time.Hour
 }
 
-func (s *service) sendReminders(ctx context.Context, class models.Class) error {
-	bookings, err := s.bookingsRepo.ListByClassID(ctx, class.ID)
+func (s *service) sendReminders(ctx context.Context, classID uuid.UUID, classStartTime time.Time) error {
+	bookings, err := s.bookingsRepo.ListByClassID(ctx, classID)
 	if err != nil {
-		return fmt.Errorf("could not list bookings for %v: %w", class.ID, err)
+		return fmt.Errorf("could not list bookings for %v: %w", classID, err)
 	}
 
 	if len(bookings) == 0 {
-		slog.Info("Reminder: no bookings for class", "class_id", class.ID)
+		slog.Info("Reminder: no bookings for class", "class_id", classID)
 
 		return nil
 	}
 
-	slog.Info(fmt.Sprintf("Reminder: found bookings: %d", len(bookings)), "class_id", class.ID)
+	slog.Info(fmt.Sprintf("Reminder: found bookings: %d", len(bookings)), "class_id", classID)
 
 	for _, booking := range bookings {
-		if !shouldRemindBooking(booking, class.StartTime) {
+		if !shouldRemindBooking(booking, classStartTime) {
 			continue
 		}
 
-		err := s.remindBooking(ctx, booking, class)
+		err := s.remindBooking(ctx, booking)
 		if err != nil {
 			return fmt.Errorf("could not remind about booking %v: %w", booking.ID, err)
 		}
@@ -117,7 +117,7 @@ func (s *service) sendReminders(ctx context.Context, class models.Class) error {
 	return nil
 }
 
-func (s *service) remindBooking(ctx context.Context, booking models.Booking, class models.Class) error {
+func (s *service) remindBooking(ctx context.Context, booking models.Booking) error {
 	err := s.unitOfWork.WithTransaction(ctx, func(repos repositories.Repositories) error {
 		update := map[string]any{"reminded_at": time.Now()}
 
@@ -130,39 +130,21 @@ func (s *service) remindBooking(ctx context.Context, booking models.Booking, cla
 			RecipientEmail:     booking.Email,
 			RecipientFirstName: booking.FirstName,
 			RecipientLastName:  booking.LastName,
-			ClassName:          class.ClassName,
-			ClassLevel:         class.ClassLevel,
-			StartTime:          class.StartTime,
-			Location:           class.Location,
+			ClassName:          booking.Class.ClassName,
+			ClassLevel:         booking.Class.ClassLevel,
+			StartTime:          booking.Class.StartTime,
+			Location:           booking.Class.Location,
 		}
 
-		passOpt, err := repos.Passes.GetByEmail(ctx, booking.Email)
-		if err != nil {
-			return fmt.Errorf("could not get pass for %v: %w", booking.Email, err)
-		}
+		if booking.Pass.Exists() {
+			pass := booking.Pass.Get()
 
-		if passOpt.Exists() {
-			pass := passOpt.Get()
-
-			usedBookings := make([]models.Booking, 0, len(pass.UsedBookingIDs))
-
-			for _, bookingID := range pass.UsedBookingIDs {
-				booking, err := repos.Bookings.GetByID(ctx, bookingID)
-				if err != nil {
-					if errors.Is(err, errs.ErrNotFound) {
-						return fmt.Errorf("booking with id %s not found: %w", bookingID, err)
-					}
-
-					return fmt.Errorf("could not get booking for id %s: %w", bookingID, err)
-				}
-
-				usedBookings = append(usedBookings, booking)
-			}
-
-			passItems, err := s.passManager.BuildPassItems(ctx, usedBookings, pass.TotalBookings)
+			usedBookings, err := repos.Bookings.ListByPassID(ctx, pass.ID)
 			if err != nil {
-				return fmt.Errorf("could not build pass items for pass %v: %w", pass.ID, err)
+				return fmt.Errorf("could not list bookings for pass %v: %w", pass.ID, err)
 			}
+
+			passItems := s.passManager.BuildPassItems(usedBookings, pass.TotalBookings)
 
 			notifierParams.PassItems = passItems
 		}

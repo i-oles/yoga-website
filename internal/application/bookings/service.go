@@ -12,6 +12,7 @@ import (
 	"main/internal/domain/repositories"
 	"main/internal/domain/services"
 	"main/internal/infrastructure/errs"
+	"main/pkg/optional"
 
 	"github.com/google/uuid"
 )
@@ -89,31 +90,44 @@ func (s *service) CreateBooking(ctx context.Context, token string) (models.Class
 			return fmt.Errorf("class unavailable: %w", err)
 		}
 
-		bookingID, err = s.createBooking(ctx, repos, pendingBooking)
-		if err != nil {
-			return fmt.Errorf("could not create booking for pendingBooking %+v: %w", pendingBooking, err)
-		}
-
 		passOpt, err := repos.Passes.GetByEmail(ctx, pendingBooking.Email)
 		if err != nil {
 			return fmt.Errorf("could not get pass: %w", err)
 		}
 
+		booking := models.Booking{
+			ID:                uuid.New(),
+			ClassID:           pendingBooking.ClassID,
+			FirstName:         pendingBooking.FirstName,
+			LastName:          pendingBooking.LastName,
+			Email:             pendingBooking.Email,
+			CreatedAt:         time.Now().UTC(),
+			ConfirmationToken: pendingBooking.ConfirmationToken,
+		}
+
 		if passOpt.Exists() {
-			actualPass, err := s.passManager.TryIncrementPass(ctx, passOpt.Get(), bookingID)
+			pass := passOpt.Get()
+			booking.PassID = optional.Of(pass.ID)
+			booking.Pass = optional.Of(pass)
+
+			bookingID, err = repos.Bookings.Insert(ctx, booking)
 			if err != nil {
-				return fmt.Errorf("could not increment pass for %s: %w", pendingBooking.Email, err)
+				return fmt.Errorf("could not insert booking: %w", err)
 			}
 
-			updatedPass, err := repos.Passes.Update(ctx, actualPass.ID, actualPass.UsedBookingIDs, actualPass.TotalBookings)
+			usedBookings, err := repos.Bookings.ListByPassID(ctx, pass.ID)
 			if err != nil {
-				return fmt.Errorf("could not update pass for %s: %w", actualPass.Email, err)
+				return fmt.Errorf("could not list bookings by pass id %d: %w", passOpt.Get().ID, err)
 			}
 
-			passItems, err = s.buildPassItems(ctx, repos, updatedPass)
-			if err != nil {
-				return fmt.Errorf("could not build pass items for email %s: %w", pendingBooking.Email, err)
-			}
+			passItems = s.passManager.BuildPassItems(usedBookings, pass.TotalBookings)
+
+			return nil
+		}
+
+		bookingID, err = repos.Bookings.Insert(ctx, booking)
+		if err != nil {
+			return fmt.Errorf("could not insert booking: %w", err)
 		}
 
 		return nil
@@ -131,34 +145,6 @@ func (s *service) CreateBooking(ctx context.Context, token string) (models.Class
 	}
 
 	return class, nil
-}
-
-func (s *service) buildPassItems(
-	ctx context.Context,
-	repos repositories.Repositories,
-	pass models.Pass,
-) ([]models.PassItem, error) {
-	usedBookings := make([]models.Booking, 0, len(pass.UsedBookingIDs))
-
-	for _, bookingID := range pass.UsedBookingIDs {
-		booking, err := repos.Bookings.GetByID(ctx, bookingID)
-		if err != nil {
-			if errors.Is(err, errs.ErrNotFound) {
-				return nil, fmt.Errorf("booking with id %s not found: %w", bookingID, err)
-			}
-
-			return nil, fmt.Errorf("could not get booking for id %s: %w", bookingID, err)
-		}
-
-		usedBookings = append(usedBookings, booking)
-	}
-
-	passItems, err := s.passManager.BuildPassItems(ctx, usedBookings, pass.TotalBookings)
-	if err != nil {
-		return nil, fmt.Errorf("could not build pass items for %s: %w", pass.Email, err)
-	}
-
-	return passItems, nil
 }
 
 func (s *service) checkClassAvailability(
@@ -180,29 +166,6 @@ func (s *service) checkClassAvailability(
 	}
 
 	return nil
-}
-
-func (s *service) createBooking(
-	ctx context.Context,
-	repos repositories.Repositories,
-	pendingBooking models.PendingBooking,
-) (uuid.UUID, error) {
-	booking := models.Booking{
-		ID:                uuid.New(),
-		ClassID:           pendingBooking.ClassID,
-		FirstName:         pendingBooking.FirstName,
-		LastName:          pendingBooking.LastName,
-		Email:             pendingBooking.Email,
-		CreatedAt:         time.Now().UTC(),
-		ConfirmationToken: pendingBooking.ConfirmationToken,
-	}
-
-	bookingID, err := repos.Bookings.Insert(ctx, booking)
-	if err != nil {
-		return uuid.Nil, fmt.Errorf("could not insert booking: %w", err)
-	}
-
-	return bookingID, nil
 }
 
 func (s *service) sendConfirmation(
@@ -260,26 +223,15 @@ func (s *service) CancelBooking(ctx context.Context, bookingID uuid.UUID, token 
 			return fmt.Errorf("could not delete booking: %w", err)
 		}
 
-		passOpt, err := repos.Passes.GetByEmail(ctx, booking.Email)
-		if err != nil {
-			return fmt.Errorf("could not get pass for %s: %w", booking.Email, err)
-		}
+		if booking.Pass.Exists() {
+			pass := booking.Pass.Get()
 
-		if passOpt.Exists() {
-			actualPass, err := s.passManager.TryDecrementPass(ctx, passOpt.Get(), bookingID)
+			usedBookings, err := repos.Bookings.ListByPassID(ctx, pass.ID)
 			if err != nil {
-				return fmt.Errorf("could not dectemetnt pass for %s: %w", booking.Email, err)
+				return fmt.Errorf("could not list bookings by pass id %d: %w", pass.ID, err)
 			}
 
-			updatedPass, err := repos.Passes.Update(ctx, actualPass.ID, actualPass.UsedBookingIDs, actualPass.TotalBookings)
-			if err != nil {
-				return fmt.Errorf("could not update pass for %s: %w", actualPass.Email, err)
-			}
-
-			passItems, err = s.buildPassItems(ctx, repos, updatedPass)
-			if err != nil {
-				return fmt.Errorf("could not build pass state for email %s: %w", booking.Email, err)
-			}
+			passItems = s.passManager.BuildPassItems(usedBookings, pass.TotalBookings)
 		}
 
 		return nil
@@ -327,10 +279,6 @@ func (s *service) ensureBookingCancellationAllowed(
 		)
 	}
 
-	if booking.Class == nil {
-		return models.Booking{}, errors.New("booking.Class field should not be empty")
-	}
-
 	if booking.Class.StartTime.Before(time.Now()) {
 		return models.Booking{}, viewErrors.ErrClassExpired(
 			booking.Class.ID,
@@ -376,39 +324,19 @@ func (s *service) DeleteBooking(ctx context.Context, bookingID uuid.UUID) error 
 			return fmt.Errorf("could get booking for id %s: %w", bookingID, err)
 		}
 
-		if booking.Class == nil {
-			return errors.New("booking.Class field should not be empty")
-		}
-
 		err = repos.Bookings.Delete(ctx, bookingID)
 		if err != nil {
 			return fmt.Errorf("could not delete booking for id %s: %w", bookingID, err)
 		}
 
-		if booking.Class.StartTime.Before(time.Now()) {
-			return nil
-		}
-
-		passOpt, err := repos.Passes.GetByEmail(ctx, booking.Email)
-		if err != nil {
-			return fmt.Errorf("could not get pass for %s: %w", booking.Email, err)
-		}
-
-		if passOpt.Exists() {
-			actualPass, err := s.passManager.TryDecrementPass(ctx, passOpt.Get(), bookingID)
+		if booking.Pass.Exists() {
+			pass := booking.Pass.Get()
+			usedBookings, err := repos.Bookings.ListByPassID(ctx, pass.ID)
 			if err != nil {
-				return fmt.Errorf("could not decrement pass for %s: %w", booking.Email, err)
+				return fmt.Errorf("could not list bookings by pass id %d: %w", pass.ID, err)
 			}
 
-			updatedPass, err := repos.Passes.Update(ctx, actualPass.ID, actualPass.UsedBookingIDs, actualPass.TotalBookings)
-			if err != nil {
-				return fmt.Errorf("could not update pass for %s: %w", actualPass.Email, err)
-			}
-
-			passItems, err = s.buildPassItems(ctx, repos, updatedPass)
-			if err != nil {
-				return fmt.Errorf("could not build pass items for email %s: %w", booking.Email, err)
-			}
+			passItems = s.passManager.BuildPassItems(usedBookings, pass.TotalBookings)
 		}
 
 		return nil

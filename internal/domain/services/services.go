@@ -35,11 +35,7 @@ type IPassesService interface {
 }
 
 type IPassManager interface {
-	BuildPassItems(
-		ctx context.Context, bookings []models.Booking, totalBookings int,
-	) ([]models.PassItem, error)
-	TryIncrementPass(ctx context.Context, pass models.Pass, bookingID uuid.UUID) (models.Pass, error)
-	TryDecrementPass(ctx context.Context, pass models.Pass, bookingID uuid.UUID) (models.Pass, error)
+	BuildPassItems(bookings []models.Booking, totalBookings int) []models.PassItem
 }
 
 type ITokenGenerator interface {
