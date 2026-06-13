@@ -124,6 +124,21 @@ func (r *bookingsRepo) CountForClassID(ctx context.Context, classID uuid.UUID) (
 	return int(count), nil
 }
 
+func (r *bookingsRepo) CountForPassID(ctx context.Context, passID int) (int, error) {
+	var count int64
+
+	var SQLBooking db.SQLBooking
+
+	if err := r.db.WithContext(ctx).
+		Model(&SQLBooking).
+		Where("pass_id = ?", passID).
+		Count(&count).Error; err != nil {
+		return 0, fmt.Errorf("could count bookings for passID %s: %w", passID, err)
+	}
+
+	return int(count), nil
+}
+
 func (r *bookingsRepo) ListByClassID(
 	ctx context.Context,
 	classID uuid.UUID,

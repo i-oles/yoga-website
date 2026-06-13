@@ -144,9 +144,9 @@ func (s *service) remindBooking(ctx context.Context, booking models.Booking) err
 				return fmt.Errorf("could not list bookings for pass %v: %w", pass.ID, err)
 			}
 
-			passItems := s.passManager.BuildPassItems(usedBookings, pass.TotalBookings)
+			passSlots := s.passManager.BuildPassSlots(usedBookings, pass.TotalSlots)
 
-			notifierParams.PassItems = passItems
+			notifierParams.PassSlots = passSlots
 		}
 
 		cancellationLink := fmt.Sprintf(

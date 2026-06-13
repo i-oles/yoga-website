@@ -12,7 +12,7 @@ type NotifierParams struct {
 	ClassLevel         string
 	StartTime          time.Time
 	Location           string
-	PassItems          []PassItem
+	PassSlots          []PassSlot
 }
 
 type OperationStatus string

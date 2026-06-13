@@ -35,7 +35,7 @@ type IPassesService interface {
 }
 
 type IPassManager interface {
-	BuildPassItems(bookings []models.Booking, totalBookings int) []models.PassItem
+	BuildPassSlots(bookings []models.Booking, totalSlots int) []models.PassSlot
 }
 
 type ITokenGenerator interface {

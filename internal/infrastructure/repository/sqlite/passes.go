@@ -50,7 +50,7 @@ func (r *passesRepo) Update(
 	var sqlPass db.SQLPass
 
 	update := db.SQLPass{
-		TotalBookings: pass.TotalBookings,
+		TotalSlots: pass.TotalSlots,
 	}
 
 	if err := r.db.WithContext(ctx).
@@ -69,11 +69,11 @@ func (r *passesRepo) Update(
 func (r *passesRepo) Insert(
 	ctx context.Context,
 	email string,
-	totalBookings int,
+	totalSlots int,
 ) (models.Pass, error) {
 	pass := db.SQLPass{
-		Email:         email,
-		TotalBookings: totalBookings,
+		Email:      email,
+		TotalSlots: totalSlots,
 	}
 
 	if err := r.db.WithContext(ctx).Create(&pass).Error; err != nil {

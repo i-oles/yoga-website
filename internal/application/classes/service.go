@@ -156,7 +156,7 @@ func (s *service) DeleteClass(ctx context.Context, classID uuid.UUID, msg *strin
 					return fmt.Errorf("could not get bookings for pass id %d: %w", pass.ID, err)
 				}
 
-				notifierParams.PassItems = s.passManager.BuildPassItems(usedBookings, pass.TotalBookings)
+				notifierParams.PassSlots = s.passManager.BuildPassSlots(usedBookings, pass.TotalSlots)
 			}
 
 			notifierParamsList = append(notifierParamsList, notifierParams)

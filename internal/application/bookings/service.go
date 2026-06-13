@@ -46,7 +46,7 @@ func (s *service) CreateBooking(ctx context.Context, token string) (models.Class
 		pendingBooking models.PendingBooking
 		class          models.Class
 		bookingID      uuid.UUID
-		passItems      []models.PassItem
+		passSlots      []models.PassSlot
 	)
 
 	err := s.unitOfWork.WithTransaction(ctx, func(repos repositories.Repositories) error {
@@ -120,7 +120,7 @@ func (s *service) CreateBooking(ctx context.Context, token string) (models.Class
 				return fmt.Errorf("could not list bookings by pass id %d: %w", passOpt.Get().ID, err)
 			}
 
-			passItems = s.passManager.BuildPassItems(usedBookings, pass.TotalBookings)
+			passSlots = s.passManager.BuildPassSlots(usedBookings, pass.TotalSlots)
 
 			return nil
 		}
@@ -137,7 +137,7 @@ func (s *service) CreateBooking(ctx context.Context, token string) (models.Class
 	}
 
 	err = s.sendConfirmation(
-		pendingBooking, class, passItems, token, bookingID,
+		pendingBooking, class, passSlots, token, bookingID,
 	)
 	if err != nil {
 		return models.Class{},
@@ -171,7 +171,7 @@ func (s *service) checkClassAvailability(
 func (s *service) sendConfirmation(
 	pendingBooking models.PendingBooking,
 	class models.Class,
-	passItems []models.PassItem,
+	passSlots []models.PassSlot,
 	token string,
 	bookingID uuid.UUID,
 ) error {
@@ -183,7 +183,7 @@ func (s *service) sendConfirmation(
 		ClassLevel:         class.ClassLevel,
 		StartTime:          class.StartTime,
 		Location:           class.Location,
-		PassItems:          passItems,
+		PassSlots:          passSlots,
 	}
 
 	cancellationLink := fmt.Sprintf(
@@ -201,7 +201,7 @@ func (s *service) sendConfirmation(
 func (s *service) CancelBooking(ctx context.Context, bookingID uuid.UUID, token string) error {
 	var (
 		booking   models.Booking
-		passItems []models.PassItem
+		passSlots []models.PassSlot
 	)
 
 	err := s.unitOfWork.WithTransaction(ctx, func(repos repositories.Repositories) error {
@@ -231,7 +231,7 @@ func (s *service) CancelBooking(ctx context.Context, bookingID uuid.UUID, token 
 				return fmt.Errorf("could not list bookings by pass id %d: %w", pass.ID, err)
 			}
 
-			passItems = s.passManager.BuildPassItems(usedBookings, pass.TotalBookings)
+			passSlots = s.passManager.BuildPassSlots(usedBookings, pass.TotalSlots)
 		}
 
 		return nil
@@ -248,7 +248,7 @@ func (s *service) CancelBooking(ctx context.Context, bookingID uuid.UUID, token 
 		ClassLevel:         booking.Class.ClassLevel,
 		StartTime:          booking.Class.StartTime,
 		Location:           booking.Class.Location,
-		PassItems:          passItems,
+		PassSlots:          passSlots,
 	}
 
 	err = s.notifier.NotifyBookingCancellation(notifierParams)
@@ -313,7 +313,7 @@ func (s *service) GetBookingForCancellation(
 func (s *service) DeleteBooking(ctx context.Context, bookingID uuid.UUID) error {
 	var (
 		booking   models.Booking
-		passItems []models.PassItem
+		passSlots []models.PassSlot
 	)
 
 	err := s.unitOfWork.WithTransaction(ctx, func(repos repositories.Repositories) error {
@@ -336,7 +336,7 @@ func (s *service) DeleteBooking(ctx context.Context, bookingID uuid.UUID) error 
 				return fmt.Errorf("could not list bookings by pass id %d: %w", pass.ID, err)
 			}
 
-			passItems = s.passManager.BuildPassItems(usedBookings, pass.TotalBookings)
+			passSlots = s.passManager.BuildPassSlots(usedBookings, pass.TotalSlots)
 		}
 
 		return nil
@@ -353,7 +353,7 @@ func (s *service) DeleteBooking(ctx context.Context, bookingID uuid.UUID) error 
 		ClassLevel:         booking.Class.ClassLevel,
 		StartTime:          booking.Class.StartTime,
 		Location:           booking.Class.Location,
-		PassItems:          passItems,
+		PassSlots:          passSlots,
 	}
 
 	err = s.notifier.NotifyBookingCancellation(notifierParams)

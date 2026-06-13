@@ -9,38 +9,38 @@ import (
 
 type PassManager struct{}
 
-func (p *PassManager) BuildPassItems(
+func (p *PassManager) BuildPassSlots(
 	bookings []models.Booking,
-	totalBookings int,
-) []models.PassItem {
-	passItems := make([]models.PassItem, 0, totalBookings)
+	totalSlots int,
+) []models.PassSlot {
+	passSlots := make([]models.PassSlot, 0, totalSlots)
 
 	for _, booking := range bookings {
 		classStartTime := booking.Class.StartTime
-		passItem := models.PassItem{
+		passSlot := models.PassSlot{
 			ClassStartTime: &classStartTime,
 		}
 
 		if classStartTime.Before(time.Now()) {
-			passItem.Status = models.PastPassStatus
+			passSlot.Status = models.PastPassStatus
 		} else {
-			passItem.Status = models.FuturePassStatus
+			passSlot.Status = models.FuturePassStatus
 		}
 
-		passItems = append(passItems, passItem)
+		passSlots = append(passSlots, passSlot)
 	}
 
-	if len(passItems) < totalBookings {
-		for i := len(passItems); i < totalBookings; i++ {
-			passItems = append(passItems, models.PassItem{
+	if len(passSlots) < totalSlots {
+		for i := len(passSlots); i < totalSlots; i++ {
+			passSlots = append(passSlots, models.PassSlot{
 				Status: models.BlankPassStatus,
 			})
 		}
 	}
 
-	sort.Slice(passItems, func(i, j int) bool {
-		a := passItems[i]
-		b := passItems[j]
+	sort.Slice(passSlots, func(i, j int) bool {
+		a := passSlots[i]
+		b := passSlots[j]
 
 		if a.Status == models.BlankPassStatus && b.Status != models.BlankPassStatus {
 			return false
@@ -57,5 +57,5 @@ func (p *PassManager) BuildPassItems(
 		return false
 	})
 
-	return passItems
+	return passSlots
 }

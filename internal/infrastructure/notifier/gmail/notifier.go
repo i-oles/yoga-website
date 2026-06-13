@@ -61,10 +61,10 @@ func NewNotifier(
 	}
 }
 
-func (n *notifier) NotifyPassActivation(email string, passItems []models.PassItem) error {
+func (n *notifier) NotifyPassActivation(email string, passSlots []models.PassSlot) error {
 	tmplData := notifierModels.PassActivationTmplData{
 		Signature:     n.signature,
-		PassItemsView: n.getPassItemsView(passItems),
+		PassSlotsView: n.getPassSlotsView(passSlots),
 	}
 
 	tmpl, err := template.ParseFiles(n.passActivationTmplPath, n.passTmplPath)
@@ -132,7 +132,7 @@ func (n *notifier) NotifyBookingConfirmation(
 	tmplData := notifierModels.BookingConfirmationTmplData{
 		BaseTmplData:     baseTmplData,
 		CancellationLink: cancellationLink,
-		PassItemsView:    n.getPassItemsView(params.PassItems),
+		PassSlotsView:    n.getPassSlotsView(params.PassSlots),
 	}
 
 	tmpl, err := template.ParseFiles(n.bookingConfirmationTmplPath, n.passTmplPath)
@@ -151,7 +151,7 @@ func (n *notifier) NotifyBookingConfirmation(
 		models.StatusBooked,
 		params.RecipientFirstName,
 		params.RecipientLastName,
-		n.getPassItemsView(params.PassItems),
+		n.getPassSlotsView(params.PassSlots),
 		classStartTimeDetails,
 	)
 
@@ -170,7 +170,7 @@ func (n *notifier) NotifyBookingCancellation(params models.NotifierParams) error
 
 	tmplData := notifierModels.BookingCancellationTmplData{
 		BaseTmplData:  n.getBaseTmplData(params, classStartTimeDetails),
-		PassItemsView: n.getPassItemsView(params.PassItems),
+		PassSlotsView: n.getPassSlotsView(params.PassSlots),
 	}
 
 	tmpl, err := template.ParseFiles(n.bookingCancellationTmplPath, n.passTmplPath)
@@ -189,7 +189,7 @@ func (n *notifier) NotifyBookingCancellation(params models.NotifierParams) error
 		models.StatusCancelled,
 		params.RecipientFirstName,
 		params.RecipientLastName,
-		n.getPassItemsView(params.PassItems),
+		n.getPassSlotsView(params.PassSlots),
 		classStartTimeDetails,
 	)
 
@@ -244,7 +244,7 @@ func (n *notifier) NotifyClassCancellation(params models.NotifierParams, msg str
 	tmplData := notifierModels.ClassCancellationTmplData{
 		BaseTmplData:  n.getBaseTmplData(params, classStartTimeDetails),
 		Message:       msg,
-		PassItemsView: n.getPassItemsView(params.PassItems),
+		PassSlotsView: n.getPassSlotsView(params.PassSlots),
 	}
 
 	tmpl, err := template.ParseFiles(n.classCancellationTmplPath, n.passTmplPath)
@@ -277,7 +277,7 @@ func (n *notifier) NotifyBookingReminder(
 	tmplData := notifierModels.BookingReminderTmplData{
 		BaseTmplData:     n.getBaseTmplData(params, classStartTimeDetails),
 		CancellationLink: cancellationLink,
-		PassItemsView:    n.getPassItemsView(params.PassItems),
+		PassSlotsView:    n.getPassSlotsView(params.PassSlots),
 	}
 
 	tmpl, err := template.ParseFiles(n.classReminderTmplPath, n.passTmplPath)
@@ -324,7 +324,7 @@ func (n *notifier) buildMsgToRecipient(
 func (n *notifier) buildMsgToOwner(
 	status models.OperationStatus,
 	recipientFirstName, recipientLastName string,
-	passItemsView []notifierModels.PassItemView,
+	passSlotsView []notifierModels.PassSlotView,
 	classTimeDetails timeDetails,
 ) *gomail.Message {
 	subject := fmt.Sprintf("%s %s %s",
@@ -333,17 +333,17 @@ func (n *notifier) buildMsgToOwner(
 		status,
 	)
 
-	if passItemsView != nil {
-		usedPassItemsCount := 0
+	if passSlotsView != nil {
+		usedSlots := 0
 
-		for _, item := range passItemsView {
+		for _, item := range passSlotsView {
 			if item.Status == models.FuturePassStatus || item.Status == models.PastPassStatus {
-				usedPassItemsCount++
+				usedSlots++
 			}
 		}
 
 		subject += fmt.Sprintf(
-			"%s: %d/%d", PassLabel, usedPassItemsCount, len(passItemsView),
+			"%s: %d/%d", PassLabel, usedSlots, len(passSlotsView),
 		)
 	}
 
@@ -404,20 +404,20 @@ func (n *notifier) getBaseTmplData(
 	}
 }
 
-func (n *notifier) getPassItemsView(passItems []models.PassItem) []notifierModels.PassItemView {
-	passItemsView := make([]notifierModels.PassItemView, 0, len(passItems))
+func (n *notifier) getPassSlotsView(passSlots []models.PassSlot) []notifierModels.PassSlotView {
+	passSlotsView := make([]notifierModels.PassSlotView, 0, len(passSlots))
 
-	for _, item := range passItems {
-		viewItem := notifierModels.PassItemView{
-			Status: item.Status,
+	for _, slot := range passSlots {
+		passSlotView := notifierModels.PassSlotView{
+			Status: slot.Status,
 		}
 
-		if item.ClassStartTime != nil {
-			viewItem.ClassStartDate = item.ClassStartTime.Format("02.01")
+		if slot.ClassStartTime != nil {
+			passSlotView.ClassStartDate = slot.ClassStartTime.Format("02.01")
 		}
 
-		passItemsView = append(passItemsView, viewItem)
+		passSlotsView = append(passSlotsView, passSlotView)
 	}
 
-	return passItemsView
+	return passSlotsView
 }

@@ -9,17 +9,17 @@ import (
 )
 
 type ActivatePassRequest struct {
-	Email              string `binding:"required,min=3,max=40" json:"email"`
-	UsedBookingsCount  int    `binding:"min=0" json:"used_bookings_count"`
-	TotalBookingsCount int    `binding:"min=1" json:"total_bookings_count"`
+	Email      string `binding:"required,min=3,max=40" json:"email"`
+	UsedSlots  int    `binding:"min=0" json:"used_slots"`
+	TotalSlots int    `binding:"min=1" json:"total_slots"`
 }
 
 type PassDTO struct {
-	ID            int       `json:"id"`
-	Email         string    `json:"email"`
-	TotalBookings int       `json:"total_bookings"`
-	UpdatedAt     time.Time `json:"updated_at"`
-	CreatedAt     time.Time `json:"created_at"`
+	ID         int       `json:"id"`
+	Email      string    `json:"email"`
+	TotalSlots int       `json:"total_bookings"`
+	UpdatedAt  time.Time `json:"updated_at"`
+	CreatedAt  time.Time `json:"created_at"`
 }
 
 func ToPassDTO(pass models.Pass) (PassDTO, error) {
@@ -34,10 +34,10 @@ func ToPassDTO(pass models.Pass) (PassDTO, error) {
 	}
 
 	return PassDTO{
-		ID:            pass.ID,
-		Email:         pass.Email,
-		TotalBookings: pass.TotalBookings,
-		UpdatedAt:     updatedAtWarsawTime,
-		CreatedAt:     cratedAtWarsawTime,
+		ID:         pass.ID,
+		Email:      pass.Email,
+		TotalSlots: pass.TotalSlots,
+		UpdatedAt:  updatedAtWarsawTime,
+		CreatedAt:  cratedAtWarsawTime,
 	}, nil
 }

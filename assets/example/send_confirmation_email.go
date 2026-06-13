@@ -9,8 +9,6 @@ import (
 	"main/internal/domain/models"
 	"main/internal/infrastructure/configuration"
 	"main/internal/infrastructure/notifier/gmail"
-
-	"github.com/google/uuid"
 )
 
 func main() {
@@ -29,8 +27,6 @@ func main() {
 		cfg.BaseNotifierTmplPath,
 	)
 
-	four := 4
-
 	notifierParams := models.NotifierParams{
 		RecipientEmail:     "orth.quala@gmail.com",
 		RecipientFirstName: "orth",
@@ -39,8 +35,7 @@ func main() {
 		ClassLevel:         "beginner",
 		StartTime:          time.Now(),
 		Location:           "dom",
-		PassUsedBookingIDs: []uuid.UUID{},
-		PassTotalBookings:  &four,
+		PassSlots:          []models.PassSlot{},
 	}
 
 	cancellationLink := "http://testlink.com"
