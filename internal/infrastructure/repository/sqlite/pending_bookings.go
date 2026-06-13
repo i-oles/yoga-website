@@ -9,7 +9,6 @@ import (
 	"main/internal/infrastructure/errs"
 	"main/internal/infrastructure/models/db"
 
-	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -53,21 +52,6 @@ func (r *pendingBookingsRepo) GetByConfirmationToken(
 	}
 
 	return sqlPendingBooking.ToDomain(), nil
-}
-
-func (r *pendingBookingsRepo) Delete(ctx context.Context, id uuid.UUID) error {
-	var sqlPendingBooking db.SQLPendingBooking
-
-	tx := r.db.WithContext(ctx).Where("id = ?", id).Delete(&sqlPendingBooking)
-	if tx.Error != nil {
-		return fmt.Errorf("could not delete pending booking: %w", tx.Error)
-	}
-
-	if tx.RowsAffected == 0 {
-		return errs.ErrNoRowsAffected
-	}
-
-	return nil
 }
 
 func (r *pendingBookingsRepo) List(ctx context.Context) ([]models.PendingBooking, error) {

@@ -121,7 +121,7 @@ func (s *service) remindBooking(ctx context.Context, booking models.Booking) err
 	err := s.unitOfWork.WithTransaction(ctx, func(repos repositories.Repositories) error {
 		update := map[string]any{"reminded_at": time.Now()}
 
-		_, err := repos.Bookings.Update(ctx, booking.ID, update)
+		err := repos.Bookings.Update(ctx, booking.ID, update)
 		if err != nil {
 			return fmt.Errorf("could not update booking %v with %v: %w", booking.ID, update, err)
 		}

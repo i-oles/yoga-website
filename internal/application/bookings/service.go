@@ -17,6 +17,10 @@ import (
 	"github.com/google/uuid"
 )
 
+const (
+	threeLastPasses = 3
+)
+
 type service struct {
 	unitOfWork   repositories.IUnitOfWork
 	bookingsRepo repositories.IBookings
@@ -90,7 +94,8 @@ func (s *service) CreateBooking(ctx context.Context, token string) (models.Class
 			return fmt.Errorf("class unavailable: %w", err)
 		}
 
-		passOpt, err := repos.Passes.GetByEmail(ctx, pendingBooking.Email)
+		// I need to make sure that I will check if previous pass will not have some empty slots. Three is enough.
+		passes, err := repos.Passes.ListByEmail(ctx, pendingBooking.Email, threeLastPasses)
 		if err != nil {
 			return fmt.Errorf("could not get pass: %w", err)
 		}
@@ -105,39 +110,30 @@ func (s *service) CreateBooking(ctx context.Context, token string) (models.Class
 			ConfirmationToken: pendingBooking.ConfirmationToken,
 		}
 
-		if !passOpt.Exists() {
-			bookingID, err = repos.Bookings.Insert(ctx, booking)
+		for _, pass := range passes {
+			usedBookingsCount, err := s.bookingsRepo.CountForPassID(ctx, pass.ID)
 			if err != nil {
-				return fmt.Errorf("could not insert booking: %w", err)
+				return fmt.Errorf("could not count bookings for passID %d: %w", pass.ID, err)
 			}
 
-			return nil
-		}
+			if usedBookingsCount < pass.TotalSlots {
+				booking.PassID = optional.Of(pass.ID)
+				booking.Pass = optional.Of(pass)
 
-		pass := passOpt.Get()
+				bookingID, err = repos.Bookings.Insert(ctx, booking)
+				if err != nil {
+					return fmt.Errorf("could not insert booking: %w", err)
+				}
 
-		usedBookingsCount, err := s.bookingsRepo.CountForPassID(ctx, pass.ID)
-		if err != nil {
-			return fmt.Errorf("could not count bookings for passID %d: %w", pass.ID, err)
-		}
+				usedBookings, err := repos.Bookings.ListByPassID(ctx, pass.ID)
+				if err != nil {
+					return fmt.Errorf("could not list bookings by passID %d: %w", pass.ID, err)
+				}
 
-		if usedBookingsCount < pass.TotalSlots {
-			booking.PassID = optional.Of(pass.ID)
-			booking.Pass = optional.Of(pass)
+				passSlots = s.passManager.BuildPassSlots(usedBookings, pass.TotalSlots)
 
-			bookingID, err = repos.Bookings.Insert(ctx, booking)
-			if err != nil {
-				return fmt.Errorf("could not insert booking: %w", err)
+				return nil
 			}
-
-			usedBookings, err := repos.Bookings.ListByPassID(ctx, pass.ID)
-			if err != nil {
-				return fmt.Errorf("could not list bookings by passID %d: %w", pass.ID, err)
-			}
-
-			passSlots = s.passManager.BuildPassSlots(usedBookings, pass.TotalSlots)
-
-			return nil
 		}
 
 		bookingID, err = repos.Bookings.Insert(ctx, booking)

@@ -6,12 +6,19 @@ import (
 
 	"main/internal/domain/models"
 	"main/pkg/converter"
+
+	"github.com/google/uuid"
 )
 
 type ActivatePassRequest struct {
 	Email      string `binding:"required,min=3,max=40" json:"email"`
 	UsedSlots  int    `binding:"min=0" json:"used_slots"`
 	TotalSlots int    `binding:"min=1" json:"total_slots"`
+}
+
+type ActivatePassResponse struct {
+	Pass            PassDTO     `json:"pass"`
+	BookingIDsAdded []uuid.UUID `json:"booking_ids_added"`
 }
 
 type PassDTO struct {
@@ -39,5 +46,17 @@ func ToPassDTO(pass models.Pass) (PassDTO, error) {
 		TotalSlots: pass.TotalSlots,
 		UpdatedAt:  updatedAtWarsawTime,
 		CreatedAt:  cratedAtWarsawTime,
+	}, nil
+}
+
+func ToPassActivationResp(passActivation models.PassActivation) (ActivatePassResponse, error) {
+	passDTO, err := ToPassDTO(passActivation.Pass)
+	if err != nil {
+		return ActivatePassResponse{}, fmt.Errorf("error PassDTO cration failed: %w", err)
+	}
+
+	return ActivatePassResponse{
+		Pass:            passDTO,
+		BookingIDsAdded: passActivation.BookingIDsAdded,
 	}, nil
 }

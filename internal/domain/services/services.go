@@ -31,7 +31,10 @@ type IPendingBookingsService interface {
 }
 
 type IPassesService interface {
-	ActivatePass(ctx context.Context, params models.PassActivationParams) (models.Pass, error)
+	ActivatePass(
+		ctx context.Context,
+		params models.PassActivationParams,
+	) (models.PassActivation, error)
 }
 
 type IPassManager interface {

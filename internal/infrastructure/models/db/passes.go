@@ -8,7 +8,7 @@ import (
 
 type SQLPass struct {
 	ID         int       `gorm:"primaryKey"`
-	Email      string    `gorm:"unique;not null"`
+	Email      string    `gorm:"not null"`
 	UpdatedAt  time.Time `gorm:"autoUpdateTime"`
 	CreatedAt  time.Time `gorm:"autoCreateTime"`
 	TotalSlots int       `gorm:"not null"`
