@@ -105,8 +105,23 @@ func (s *service) CreateBooking(ctx context.Context, token string) (models.Class
 			ConfirmationToken: pendingBooking.ConfirmationToken,
 		}
 
-		if passOpt.Exists() {
-			pass := passOpt.Get()
+		if !passOpt.Exists() {
+			bookingID, err = repos.Bookings.Insert(ctx, booking)
+			if err != nil {
+				return fmt.Errorf("could not insert booking: %w", err)
+			}
+
+			return nil
+		}
+
+		pass := passOpt.Get()
+
+		usedBookingsCount, err := s.bookingsRepo.CountForPassID(ctx, pass.ID)
+		if err != nil {
+			return fmt.Errorf("could not count bookings for passID %d: %w", pass.ID, err)
+		}
+
+		if usedBookingsCount < pass.TotalSlots {
 			booking.PassID = optional.Of(pass.ID)
 			booking.Pass = optional.Of(pass)
 
@@ -117,7 +132,7 @@ func (s *service) CreateBooking(ctx context.Context, token string) (models.Class
 
 			usedBookings, err := repos.Bookings.ListByPassID(ctx, pass.ID)
 			if err != nil {
-				return fmt.Errorf("could not list bookings by pass id %d: %w", passOpt.Get().ID, err)
+				return fmt.Errorf("could not list bookings by passID %d: %w", pass.ID, err)
 			}
 
 			passSlots = s.passManager.BuildPassSlots(usedBookings, pass.TotalSlots)

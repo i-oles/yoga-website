@@ -17,7 +17,7 @@ type ActivatePassRequest struct {
 type PassDTO struct {
 	ID         int       `json:"id"`
 	Email      string    `json:"email"`
-	TotalSlots int       `json:"total_bookings"`
+	TotalSlots int       `json:"total_slots"`
 	UpdatedAt  time.Time `json:"updated_at"`
 	CreatedAt  time.Time `json:"created_at"`
 }
