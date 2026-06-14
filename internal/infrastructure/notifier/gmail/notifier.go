@@ -333,7 +333,7 @@ func (n *notifier) buildMsgToOwner(
 		status,
 	)
 
-	if passSlotsView != nil {
+	if !isAllPassSlotsBlank(passSlotsView) {
 		usedSlots := 0
 
 		for _, item := range passSlotsView {
@@ -343,7 +343,7 @@ func (n *notifier) buildMsgToOwner(
 		}
 
 		subject += fmt.Sprintf(
-			"%s: %d/%d", PassLabel, usedSlots, len(passSlotsView),
+			" %s: %d/%d", PassLabel, usedSlots, len(passSlotsView),
 		)
 	}
 
@@ -360,6 +360,16 @@ func (n *notifier) buildMsgToOwner(
 	msgToOwner.SetBody("text/html", msg)
 
 	return msgToOwner
+}
+
+func isAllPassSlotsBlank(passSlotsView []notifierModels.PassSlotView) bool {
+	for _, passSlotView := range passSlotsView {
+		if passSlotView.Status != models.BlankPassStatus {
+			return false
+		}
+	}
+
+	return true
 }
 
 type timeDetails struct {
