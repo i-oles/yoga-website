@@ -43,6 +43,7 @@ func (r *pendingBookingsRepo) GetByConfirmationToken(
 
 	if err := r.db.WithContext(ctx).
 		Where("confirmation_token = ?", token).
+		Preload("Class").
 		First(&sqlPendingBooking).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return models.PendingBooking{}, errs.ErrNotFound
@@ -57,7 +58,9 @@ func (r *pendingBookingsRepo) GetByConfirmationToken(
 func (r *pendingBookingsRepo) List(ctx context.Context) ([]models.PendingBooking, error) {
 	var SQLPendingBookings []db.SQLPendingBooking
 
-	if err := r.db.WithContext(ctx).Find(&SQLPendingBookings).Error; err != nil {
+	if err := r.db.WithContext(ctx).
+		Preload("Class").
+		Find(&SQLPendingBookings).Error; err != nil {
 		return nil, fmt.Errorf("could not list all pending bookings: %w", err)
 	}
 
