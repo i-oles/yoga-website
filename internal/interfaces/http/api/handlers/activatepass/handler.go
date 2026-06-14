@@ -37,9 +37,9 @@ func (h *handler) Handle(ginCtx *gin.Context) {
 	}
 
 	params := models.PassActivationParams{
-		Email:      dtoActivatePassRequest.Email,
-		UsedSlots:  dtoActivatePassRequest.UsedSlots,
-		TotalSlots: dtoActivatePassRequest.TotalSlots,
+		Email:                dtoActivatePassRequest.Email,
+		InitialAssignedSlots: dtoActivatePassRequest.UsedSlots,
+		TotalSlots:           dtoActivatePassRequest.TotalSlots,
 	}
 
 	ctx := ginCtx.Request.Context()

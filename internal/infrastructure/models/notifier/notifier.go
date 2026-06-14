@@ -53,6 +53,6 @@ type PassActivationTmplData struct {
 }
 
 type PassSlotView struct {
-	Status         models.PassStatus
+	Status         models.PassSlotStatus
 	ClassStartDate string
 }

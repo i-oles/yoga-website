@@ -15,25 +15,25 @@ type Pass struct {
 }
 
 type PassSlot struct {
-	Status         PassStatus
+	Status         PassSlotStatus
 	ClassStartTime *time.Time
 }
 
-type PassStatus int
+type PassSlotStatus int
 
 const (
-	BlankPassStatus PassStatus = iota
-	PastPassStatus
-	FuturePassStatus
+	Blank PassSlotStatus = iota
+	Past
+	Future
 )
 
 type PassActivationParams struct {
-	Email      string
-	UsedSlots  int
-	TotalSlots int
+	Email                string
+	InitialAssignedSlots int
+	TotalSlots           int
 }
 
 type PassActivation struct {
-	Pass            Pass
-	BookingIDsAdded []uuid.UUID
+	Pass               Pass
+	BookingIDsAssigned []uuid.UUID
 }

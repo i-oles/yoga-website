@@ -22,9 +22,9 @@ func (p *PassManager) BuildPassSlots(
 		}
 
 		if classStartTime.Before(time.Now()) {
-			passSlot.Status = models.PastPassStatus
+			passSlot.Status = models.Past
 		} else {
-			passSlot.Status = models.FuturePassStatus
+			passSlot.Status = models.Future
 		}
 
 		passSlots = append(passSlots, passSlot)
@@ -33,7 +33,7 @@ func (p *PassManager) BuildPassSlots(
 	if len(passSlots) < totalSlots {
 		for i := len(passSlots); i < totalSlots; i++ {
 			passSlots = append(passSlots, models.PassSlot{
-				Status: models.BlankPassStatus,
+				Status: models.Blank,
 			})
 		}
 	}
@@ -42,11 +42,11 @@ func (p *PassManager) BuildPassSlots(
 		a := passSlots[i]
 		b := passSlots[j]
 
-		if a.Status == models.BlankPassStatus && b.Status != models.BlankPassStatus {
+		if a.Status == models.Blank && b.Status != models.Blank {
 			return false
 		}
 
-		if a.Status != models.BlankPassStatus && b.Status == models.BlankPassStatus {
+		if a.Status != models.Blank && b.Status == models.Blank {
 			return true
 		}
 

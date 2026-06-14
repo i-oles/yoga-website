@@ -134,7 +134,7 @@ func (r *bookingsRepo) CountForPassID(ctx context.Context, passID int) (int, err
 		Model(&SQLBooking).
 		Where("pass_id = ?", passID).
 		Count(&count).Error; err != nil {
-		return 0, fmt.Errorf("could count bookings for passID %s: %w", passID, err)
+		return 0, fmt.Errorf("could count bookings for passID %d: %w", passID, err)
 	}
 
 	return int(count), nil

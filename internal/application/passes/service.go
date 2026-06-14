@@ -37,16 +37,16 @@ func NewService(
 func (s *service) ActivatePass(
 	ctx context.Context, params models.PassActivationParams,
 ) (models.PassActivation, error) {
-	if params.UsedSlots > params.TotalSlots {
+	if params.InitialAssignedSlots > params.TotalSlots {
 		return models.PassActivation{},
 			api.ErrValidation(
-				fmt.Errorf("usedSlots: %d is grater than totalSlots: %d",
-					params.UsedSlots,
+				fmt.Errorf("initialAssignedSlots: %d is grater than totalSlots: %d",
+					params.InitialAssignedSlots,
 					params.TotalSlots),
 			)
 	}
 
-	if params.UsedSlots == 0 {
+	if params.InitialAssignedSlots == 0 {
 		pass, err := s.passesRepo.Insert(
 			ctx,
 			params.Email,
@@ -62,15 +62,21 @@ func (s *service) ActivatePass(
 	}
 
 	// when user booked one or more classes in future - system needs to assign those bookings to Pass
-	bookingsToAssignToPass, err := s.bookingsRepo.ListWithoutPassByEmail(ctx, params.Email, params.UsedSlots)
+	bookingsToAssignToPass, err := s.bookingsRepo.ListWithoutPassByEmail(
+		ctx, params.Email, params.InitialAssignedSlots,
+	)
 	if err != nil {
 		return models.PassActivation{},
 			fmt.Errorf("could not list bookings for email %s: %w", params.Email, err)
 	}
 
-	err = s.validateBookingsForUsedSlots(bookingsToAssignToPass, params.UsedSlots)
-	if err != nil {
-		return models.PassActivation{}, api.ErrValidation(err)
+	if params.InitialAssignedSlots != len(bookingsToAssignToPass) {
+		return models.PassActivation{}, api.ErrValidation(
+			fmt.Errorf("number of initialUsedSlots should be exactly equal to number of bookingsToAssignToPass: %d != %d",
+				params.InitialAssignedSlots,
+				len(bookingsToAssignToPass),
+			),
+		)
 	}
 
 	pass, err := s.passesRepo.Insert(
@@ -103,26 +109,7 @@ func (s *service) ActivatePass(
 	}
 
 	return models.PassActivation{
-		Pass:            pass,
-		BookingIDsAdded: bookingIDsAssignedToPass,
+		Pass:               pass,
+		BookingIDsAssigned: bookingIDsAssignedToPass,
 	}, nil
-}
-
-func (s *service) validateBookingsForUsedSlots(
-	bookings []models.Booking,
-	usedSlots int,
-) error {
-	bookingsWithoutPassID := 0
-
-	for _, booking := range bookings {
-		if !booking.PassID.Exists() {
-			bookingsWithoutPassID++
-		}
-	}
-
-	if usedSlots != bookingsWithoutPassID {
-		return fmt.Errorf("usedSlots is not equal to bookingsWithoutPassID: %d != %d", usedSlots, bookingsWithoutPassID)
-	}
-
-	return nil
 }

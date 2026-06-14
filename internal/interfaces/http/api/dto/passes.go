@@ -17,8 +17,8 @@ type ActivatePassRequest struct {
 }
 
 type ActivatePassResponse struct {
-	Pass            PassDTO     `json:"pass"`
-	BookingIDsAdded []uuid.UUID `json:"booking_ids_added"`
+	Pass               PassDTO     `json:"pass"`
+	BookingIDsAssigned []uuid.UUID `json:"booking_ids_assigned"`
 }
 
 type PassDTO struct {
@@ -56,7 +56,7 @@ func ToPassActivationResp(passActivation models.PassActivation) (ActivatePassRes
 	}
 
 	return ActivatePassResponse{
-		Pass:            passDTO,
-		BookingIDsAdded: passActivation.BookingIDsAdded,
+		Pass:               passDTO,
+		BookingIDsAssigned: passActivation.BookingIDsAssigned,
 	}, nil
 }
