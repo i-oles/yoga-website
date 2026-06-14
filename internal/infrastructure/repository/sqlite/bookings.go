@@ -223,12 +223,18 @@ func (r *bookingsRepo) Update(
 ) error {
 	var SQLBooking db.SQLBooking
 
-	if err := r.db.WithContext(ctx).
+	result := r.db.WithContext(ctx).
 		Model(&SQLBooking).
 		Clauses(clause.Returning{}).
 		Where("id = ?", bookingID).
-		Updates(update).Error; err != nil {
-		return fmt.Errorf("could not update booking: %v with data: %v, %w", bookingID, update, err)
+		Updates(update)
+
+	if result.Error != nil {
+		return fmt.Errorf("could not update booking: %w", result.Error)
+	}
+
+	if result.RowsAffected == 0 {
+		return fmt.Errorf("no booking found for id: %s", bookingID)
 	}
 
 	return nil
