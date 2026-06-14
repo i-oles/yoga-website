@@ -84,12 +84,7 @@ func (s *service) CreateBooking(ctx context.Context, token string) (models.Class
 			)
 		}
 
-		class, err = repos.Classes.Get(ctx, pendingBooking.ClassID)
-		if err != nil {
-			return fmt.Errorf("could not get class with id: %s, %w", pendingBooking.ClassID, err)
-		}
-
-		err = s.checkClassAvailability(ctx, repos, class)
+		err = s.checkClassAvailability(ctx, repos, pendingBooking.Class)
 		if err != nil {
 			return fmt.Errorf("class unavailable: %w", err)
 		}
@@ -148,7 +143,7 @@ func (s *service) CreateBooking(ctx context.Context, token string) (models.Class
 	}
 
 	err = s.sendConfirmation(
-		pendingBooking, class, passSlots, token, bookingID,
+		pendingBooking, passSlots, token, bookingID,
 	)
 	if err != nil {
 		return models.Class{},
@@ -181,7 +176,6 @@ func (s *service) checkClassAvailability(
 
 func (s *service) sendConfirmation(
 	pendingBooking models.PendingBooking,
-	class models.Class,
 	passSlots []models.PassSlot,
 	token string,
 	bookingID uuid.UUID,
@@ -190,10 +184,10 @@ func (s *service) sendConfirmation(
 		RecipientEmail:     pendingBooking.Email,
 		RecipientFirstName: pendingBooking.FirstName,
 		RecipientLastName:  pendingBooking.LastName,
-		ClassName:          class.ClassName,
-		ClassLevel:         class.ClassLevel,
-		StartTime:          class.StartTime,
-		Location:           class.Location,
+		ClassName:          pendingBooking.Class.ClassName,
+		ClassLevel:         pendingBooking.Class.ClassLevel,
+		StartTime:          pendingBooking.Class.StartTime,
+		Location:           pendingBooking.Class.Location,
 		PassSlots:          passSlots,
 	}
 
