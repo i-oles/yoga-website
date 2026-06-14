@@ -1,58 +1,51 @@
 package services
 
 import (
-	"context"
-	"errors"
-	"fmt"
 	"sort"
 	"time"
 
-	sharedErrors "main/internal/domain/errs"
 	"main/internal/domain/models"
-	"main/pkg/tools"
-
-	"github.com/google/uuid"
 )
 
 type PassManager struct{}
 
-func (p *PassManager) BuildPassItems(
-	ctx context.Context,
+func (p *PassManager) BuildPassSlots(
 	bookings []models.Booking,
-	totalBookings int,
-) ([]models.PassItem, error) {
-	passItems := make([]models.PassItem, 0, totalBookings)
+	totalSlots int,
+) []models.PassSlot {
+	passSlots := make([]models.PassSlot, 0, totalSlots)
 
 	for _, booking := range bookings {
 		classStartTime := booking.Class.StartTime
-		passItem := models.PassItem{
+		passSlot := models.PassSlot{
 			ClassStartTime: &classStartTime,
 		}
 
 		if classStartTime.Before(time.Now()) {
-			passItem.Status = models.PastPassStatus
+			passSlot.Status = models.PastPassStatus
 		} else {
-			passItem.Status = models.FuturePassStatus
+			passSlot.Status = models.FuturePassStatus
 		}
 
-		passItems = append(passItems, passItem)
+		passSlots = append(passSlots, passSlot)
 	}
 
-	if len(passItems) < totalBookings {
-		for i := len(passItems); i < totalBookings; i++ {
-			passItems = append(passItems, models.PassItem{
+	if len(passSlots) < totalSlots {
+		for i := len(passSlots); i < totalSlots; i++ {
+			passSlots = append(passSlots, models.PassSlot{
 				Status: models.BlankPassStatus,
 			})
 		}
 	}
 
-	sort.Slice(passItems, func(i, j int) bool {
-		a := passItems[i]
-		b := passItems[j]
+	sort.Slice(passSlots, func(i, j int) bool {
+		a := passSlots[i]
+		b := passSlots[j]
 
 		if a.Status == models.BlankPassStatus && b.Status != models.BlankPassStatus {
 			return false
 		}
+
 		if a.Status != models.BlankPassStatus && b.Status == models.BlankPassStatus {
 			return true
 		}
@@ -64,48 +57,5 @@ func (p *PassManager) BuildPassItems(
 		return false
 	})
 
-	return passItems, nil
-}
-
-func (p *PassManager) TryIncrementPass(
-	ctx context.Context,
-	pass models.Pass,
-	bookingID uuid.UUID,
-) (models.Pass, error) {
-	if len(pass.UsedBookingIDs)+1 <= pass.TotalBookings {
-		updatedBookingIDs := pass.UsedBookingIDs
-		updatedBookingIDs = append(updatedBookingIDs, bookingID)
-
-		return models.Pass{
-			ID:             pass.ID,
-			Email:          pass.Email,
-			UsedBookingIDs: updatedBookingIDs,
-			TotalBookings:  pass.TotalBookings,
-		}, nil
-	}
-
-	return models.Pass{}, nil
-}
-
-func (p *PassManager) TryDecrementPass(
-	ctx context.Context,
-	pass models.Pass,
-	bookingID uuid.UUID,
-) (models.Pass, error) {
-	updatedBookingIDs, err := tools.RemoveFromSlice(pass.UsedBookingIDs, bookingID)
-	if errors.Is(err, sharedErrors.ErrBookingIDNotFoundInPass) {
-		return models.Pass{}, nil
-	}
-
-	if err != nil {
-		return models.Pass{},
-			fmt.Errorf("could not remove bookingID %v from usedBookingIDs", bookingID)
-	}
-
-	return models.Pass{
-		ID:             pass.ID,
-		Email:          pass.Email,
-		UsedBookingIDs: updatedBookingIDs,
-		TotalBookings:  pass.TotalBookings,
-	}, nil
+	return passSlots
 }

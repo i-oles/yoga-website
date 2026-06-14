@@ -7,15 +7,14 @@ import (
 )
 
 type Pass struct {
-	ID             int
-	Email          string
-	UsedBookingIDs []uuid.UUID
-	TotalBookings  int
-	UpdatedAt      time.Time
-	CreatedAt      time.Time
+	ID         int
+	Email      string
+	TotalSlots int
+	UpdatedAt  time.Time
+	CreatedAt  time.Time
 }
 
-type PassItem struct {
+type PassSlot struct {
 	Status         PassStatus
 	ClassStartTime *time.Time
 }
@@ -28,13 +27,13 @@ const (
 	FuturePassStatus
 )
 
-type PassUpdate struct {
-	UsedBookingIDs []uuid.UUID
-	TotalBookings  *int
+type PassActivationParams struct {
+	Email      string
+	UsedSlots  int
+	TotalSlots int
 }
 
-type PassActivationParams struct {
-	Email              string
-	UsedBookingsCount  int
-	TotalBookingsCount int
+type PassActivation struct {
+	Pass            Pass
+	BookingIDsAdded []uuid.UUID
 }

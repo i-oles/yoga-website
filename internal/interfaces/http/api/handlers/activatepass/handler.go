@@ -37,26 +37,26 @@ func (h *handler) Handle(ginCtx *gin.Context) {
 	}
 
 	params := models.PassActivationParams{
-		Email:              dtoActivatePassRequest.Email,
-		UsedBookingsCount:  dtoActivatePassRequest.UsedBookingsCount,
-		TotalBookingsCount: dtoActivatePassRequest.TotalBookingsCount,
+		Email:      dtoActivatePassRequest.Email,
+		UsedSlots:  dtoActivatePassRequest.UsedSlots,
+		TotalSlots: dtoActivatePassRequest.TotalSlots,
 	}
 
 	ctx := ginCtx.Request.Context()
 
-	pass, err := h.passesService.ActivatePass(ctx, params)
+	passActivation, err := h.passesService.ActivatePass(ctx, params)
 	if err != nil {
 		h.apiErrorHandler.Handle(ginCtx, err)
 
 		return
 	}
 
-	passResp, err := dto.ToPassDTO(pass)
+	passActivationResp, err := dto.ToPassActivationResp(passActivation)
 	if err != nil {
 		ginCtx.JSON(http.StatusInternalServerError, gin.H{"error": "DTOResponse: " + err.Error()})
 
 		return
 	}
 
-	ginCtx.JSON(http.StatusOK, passResp)
+	ginCtx.JSON(http.StatusOK, passActivationResp)
 }

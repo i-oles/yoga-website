@@ -1,7 +1,6 @@
 package cancelbookingform
 
 import (
-	"errors"
 	"net/http"
 
 	"main/internal/domain/services"
@@ -60,13 +59,7 @@ func (h *handler) Handle(ginCtx *gin.Context) {
 		return
 	}
 
-	if booking.Class == nil {
-		viewErrs.HandleError(ginCtx, errors.New("booking.Class should not be empty"), http.StatusInternalServerError)
-
-		return
-	}
-
-	classView, err := dto.ToClassView(*booking.Class)
+	classView, err := dto.ToClassView(booking.Class)
 	if err != nil {
 		viewErrs.HandleError(ginCtx, err, http.StatusInternalServerError)
 

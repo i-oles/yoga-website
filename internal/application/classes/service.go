@@ -133,37 +133,9 @@ func (s *service) DeleteClass(ctx context.Context, classID uuid.UUID, msg *strin
 		}
 
 		for _, booking := range bookings {
-			if booking.Class == nil {
-				return errors.New("class field should not be empty")
-			}
-
 			err := repos.Bookings.Delete(ctx, booking.ID)
 			if err != nil {
 				return fmt.Errorf("could not delete booking for id %v: %w", booking.ID, err)
-			}
-
-			passOpt, err := repos.Passes.GetByEmail(ctx, booking.Email)
-			if err != nil {
-				return fmt.Errorf("could not get pass: %w", err)
-			}
-
-			var passItems []models.PassItem
-
-			if passOpt.Exists() {
-				actualPass, err := s.passManager.TryDecrementPass(ctx, passOpt.Get(), booking.ID)
-				if err != nil {
-					return fmt.Errorf("could not dectemetnt pass for %s: %w", booking.Email, err)
-				}
-
-				updatedPass, err := repos.Passes.Update(ctx, actualPass.ID, actualPass.UsedBookingIDs, actualPass.TotalBookings)
-				if err != nil {
-					return fmt.Errorf("could not update pass for %s: %w", actualPass.Email, err)
-				}
-
-				passItems, err = s.buildPassItems(ctx, repos, updatedPass)
-				if err != nil {
-					return fmt.Errorf("could not build pass items for %s: %w", booking.Email, err)
-				}
 			}
 
 			notifierParams := models.NotifierParams{
@@ -174,7 +146,17 @@ func (s *service) DeleteClass(ctx context.Context, classID uuid.UUID, msg *strin
 				ClassLevel:         booking.Class.ClassLevel,
 				StartTime:          booking.Class.StartTime,
 				Location:           booking.Class.Location,
-				PassItems:          passItems,
+			}
+
+			if booking.Pass.Exists() {
+				pass := booking.Pass.Get()
+
+				usedBookings, err := repos.Bookings.ListByPassID(ctx, pass.ID)
+				if err != nil {
+					return fmt.Errorf("could not get bookings for pass id %d: %w", pass.ID, err)
+				}
+
+				notifierParams.PassSlots = s.passManager.BuildPassSlots(usedBookings, pass.TotalSlots)
 			}
 
 			notifierParamsList = append(notifierParamsList, notifierParams)
@@ -199,34 +181,6 @@ func (s *service) DeleteClass(ctx context.Context, classID uuid.UUID, msg *strin
 	}
 
 	return nil
-}
-
-func (s *service) buildPassItems(
-	ctx context.Context,
-	repos repositories.Repositories,
-	pass models.Pass,
-) ([]models.PassItem, error) {
-	usedBookings := make([]models.Booking, 0, len(pass.UsedBookingIDs))
-
-	for _, bookingID := range pass.UsedBookingIDs {
-		booking, err := repos.Bookings.GetByID(ctx, bookingID)
-		if err != nil {
-			if errors.Is(err, repositoryError.ErrNotFound) {
-				return nil, fmt.Errorf("booking with id %s not found: %w", bookingID, err)
-			}
-
-			return nil, fmt.Errorf("could not get booking for id %s: %w", bookingID, err)
-		}
-
-		usedBookings = append(usedBookings, booking)
-	}
-
-	passItems, err := s.passManager.BuildPassItems(ctx, usedBookings, pass.TotalBookings)
-	if err != nil {
-		return nil, fmt.Errorf("could not build pass items for %s: %w", pass.Email, err)
-	}
-
-	return passItems, nil
 }
 
 func (s *service) UpdateClass(

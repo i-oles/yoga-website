@@ -21,24 +21,24 @@ type ClassUpdateTmplData struct {
 type ClassCancellationTmplData struct {
 	BaseTmplData  BaseTmplData
 	Message       string
-	PassItemsView []PassItemView
+	PassSlotsView []PassSlotView
 }
 
 type BookingConfirmationTmplData struct {
 	BaseTmplData     BaseTmplData
 	CancellationLink string
-	PassItemsView    []PassItemView
+	PassSlotsView    []PassSlotView
 }
 
 type BookingCancellationTmplData struct {
 	BaseTmplData  BaseTmplData
-	PassItemsView []PassItemView
+	PassSlotsView []PassSlotView
 }
 
 type BookingReminderTmplData struct {
 	BaseTmplData     BaseTmplData
 	CancellationLink string
-	PassItemsView    []PassItemView
+	PassSlotsView    []PassSlotView
 }
 
 type BookingConfirmationRequestTmplData struct {
@@ -48,11 +48,11 @@ type BookingConfirmationRequestTmplData struct {
 }
 
 type PassActivationTmplData struct {
-	PassItemsView []PassItemView
+	PassSlotsView []PassSlotView
 	Signature     string
 }
 
-type PassItemView struct {
+type PassSlotView struct {
 	Status         models.PassStatus
 	ClassStartDate string
 }

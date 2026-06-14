@@ -7,7 +7,7 @@ import (
 )
 
 type INotifier interface {
-	NotifyPassActivation(email string, passItems []models.PassItem) error
+	NotifyPassActivation(email string, passSlots []models.PassSlot) error
 	NotifyConfirmationLink(email, firstName, confirmationLink string, classStartTime time.Time) error
 	NotifyBookingConfirmation(params models.NotifierParams, cancellationLink string) error
 	NotifyBookingCancellation(params models.NotifierParams) error

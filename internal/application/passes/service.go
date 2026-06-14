@@ -36,86 +36,93 @@ func NewService(
 
 func (s *service) ActivatePass(
 	ctx context.Context, params models.PassActivationParams,
-) (models.Pass, error) {
-	if params.UsedBookingsCount > params.TotalBookingsCount {
-		return models.Pass{},
+) (models.PassActivation, error) {
+	if params.UsedSlots > params.TotalSlots {
+		return models.PassActivation{},
 			api.ErrValidation(
-				fmt.Errorf("usedBookings: %d is grater than totalBookings: %d",
-					params.UsedBookingsCount,
-					params.TotalBookingsCount),
+				fmt.Errorf("usedSlots: %d is grater than totalSlots: %d",
+					params.UsedSlots,
+					params.TotalSlots),
 			)
 	}
 
-	passOpt, err := s.passesRepo.GetByEmail(ctx, params.Email)
-	if err != nil {
-		return models.Pass{}, fmt.Errorf("could not get pass by email %s: %w", params.Email, err)
-	}
-
-	// when user booked one or more classes in future - system needs to add this bookings to Pass
-	usedBookings, err := s.getUsedBookingsForPass(ctx, params.Email, params.UsedBookingsCount)
-	if err != nil {
-		return models.Pass{},
-			fmt.Errorf("could not get usedBookingIDs for email %s: %w", params.Email, err)
-	}
-
-	usedBookingIDs := make([]uuid.UUID, 0, len(usedBookings))
-	for _, booking := range usedBookings {
-		usedBookingIDs = append(usedBookingIDs, booking.ID)
-	}
-
-	passItems, err := s.passManager.BuildPassItems(ctx, usedBookings, params.TotalBookingsCount)
-	if err != nil {
-		return models.Pass{},
-			fmt.Errorf("could not build passItems %s: %w", params.Email, err)
-	}
-
-	if !passOpt.Exists() {
+	if params.UsedSlots == 0 {
 		pass, err := s.passesRepo.Insert(
 			ctx,
 			params.Email,
-			usedBookingIDs,
-			params.TotalBookingsCount,
+			params.TotalSlots,
 		)
 		if err != nil {
-			return models.Pass{}, fmt.Errorf("could not insert pass for %s: %w", params.Email, err)
+			return models.PassActivation{}, fmt.Errorf("could not insert pass for %s: %w", params.Email, err)
 		}
 
-		err = s.notifier.NotifyPassActivation(params.Email, passItems)
+		return models.PassActivation{
+			Pass: pass,
+		}, nil
+	}
+
+	// when user booked one or more classes in future - system needs to assign those bookings to Pass
+	bookingsToAssignToPass, err := s.bookingsRepo.ListWithoutPassByEmail(ctx, params.Email, params.UsedSlots)
+	if err != nil {
+		return models.PassActivation{},
+			fmt.Errorf("could not list bookings for email %s: %w", params.Email, err)
+	}
+
+	err = s.validateBookingsForUsedSlots(bookingsToAssignToPass, params.UsedSlots)
+	if err != nil {
+		return models.PassActivation{}, api.ErrValidation(err)
+	}
+
+	pass, err := s.passesRepo.Insert(
+		ctx,
+		params.Email,
+		params.TotalSlots,
+	)
+	if err != nil {
+		return models.PassActivation{}, fmt.Errorf("could not insert pass for %s: %w", params.Email, err)
+	}
+
+	bookingIDsAssignedToPass := make([]uuid.UUID, 0, len(bookingsToAssignToPass))
+	for _, booking := range bookingsToAssignToPass {
+		err = s.bookingsRepo.Update(ctx, booking.ID, map[string]any{
+			"pass_id": pass.ID,
+		})
 		if err != nil {
-			return models.Pass{}, fmt.Errorf("could not send pass %v: %w", pass, err)
+			return models.PassActivation{},
+				fmt.Errorf("could not update booking %s with pass_id %d: %w", booking.ID, pass.ID, err)
 		}
 
-		return pass, nil
+		bookingIDsAssignedToPass = append(bookingIDsAssignedToPass, booking.ID)
 	}
 
-	pass := passOpt.Get()
+	passSlots := s.passManager.BuildPassSlots(bookingsToAssignToPass, params.TotalSlots)
 
-	updatedPass, err := s.passesRepo.Update(ctx, pass.ID, usedBookingIDs, params.TotalBookingsCount)
+	err = s.notifier.NotifyPassActivation(params.Email, passSlots)
 	if err != nil {
-		return models.Pass{}, fmt.Errorf("could not update pass with %+v: %w", usedBookingIDs, err)
+		return models.PassActivation{}, fmt.Errorf("could notify pass activation with %v: %w", pass, err)
 	}
 
-	err = s.notifier.NotifyPassActivation(params.Email, passItems)
-	if err != nil {
-		return models.Pass{}, fmt.Errorf("could notify pass activation with %v: %w", pass, err)
-	}
-
-	return updatedPass, nil
+	return models.PassActivation{
+		Pass:            pass,
+		BookingIDsAdded: bookingIDsAssignedToPass,
+	}, nil
 }
 
-func (s *service) getUsedBookingsForPass(
-	ctx context.Context,
-	email string,
-	usedBookingsCount int,
-) ([]models.Booking, error) {
-	if usedBookingsCount == 0 {
-		return nil, nil
+func (s *service) validateBookingsForUsedSlots(
+	bookings []models.Booking,
+	usedSlots int,
+) error {
+	bookingsWithoutPassID := 0
+
+	for _, booking := range bookings {
+		if !booking.PassID.Exists() {
+			bookingsWithoutPassID++
+		}
 	}
 
-	usedBookings, err := s.bookingsRepo.ListByEmail(ctx, email, usedBookingsCount)
-	if err != nil {
-		return nil, fmt.Errorf("could not list usedBookings for email %s: %w", email, err)
+	if usedSlots != bookingsWithoutPassID {
+		return fmt.Errorf("usedSlots is not equal to bookingsWithoutPassID: %d != %d", usedSlots, bookingsWithoutPassID)
 	}
 
-	return usedBookings, nil
+	return nil
 }
