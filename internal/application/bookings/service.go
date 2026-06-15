@@ -48,7 +48,6 @@ func NewService(
 func (s *service) CreateBooking(ctx context.Context, token string) (models.Class, error) {
 	var (
 		pendingBooking models.PendingBooking
-		class          models.Class
 		bookingID      uuid.UUID
 		passSlots      []models.PassSlot
 	)
@@ -150,7 +149,7 @@ func (s *service) CreateBooking(ctx context.Context, token string) (models.Class
 			fmt.Errorf("could not send confirmation email %s: %w", pendingBooking.Email, err)
 	}
 
-	return class, nil
+	return pendingBooking.Class, nil
 }
 
 func (s *service) checkClassAvailability(
