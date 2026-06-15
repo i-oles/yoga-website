@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"main/internal/domain/repositories"
+	"main/internal/interfaces/http/api/dto"
 	apiErrs "main/internal/interfaces/http/api/errs"
 
 	"github.com/gin-gonic/gin"
@@ -46,5 +47,7 @@ func (h *handler) Handle(ginCtx *gin.Context) {
 		emails = append(emails, email)
 	}
 
-	ginCtx.JSON(http.StatusOK, emails)
+	ginCtx.JSON(http.StatusOK, dto.BookingEmailsResponse{
+		Emails: emails,
+	})
 }
