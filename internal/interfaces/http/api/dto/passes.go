@@ -11,9 +11,9 @@ import (
 )
 
 type ActivatePassRequest struct {
-	Email      string `binding:"required,min=3,max=40" json:"email"`
-	UsedSlots  int    `binding:"min=0" json:"used_slots"`
-	TotalSlots int    `binding:"min=1" json:"total_slots"`
+	Email                string `binding:"required,min=3,max=40" json:"email"`
+	InitialAssignedSlots int    `binding:"min=0" json:"initial_assigned_slots"`
+	TotalSlots           int    `binding:"min=1" json:"total_slots"`
 }
 
 type ActivatePassResponse struct {

@@ -46,39 +46,6 @@ func (s *service) ActivatePass(
 			)
 	}
 
-	if params.InitialAssignedSlots == 0 {
-		pass, err := s.passesRepo.Insert(
-			ctx,
-			params.Email,
-			params.TotalSlots,
-		)
-		if err != nil {
-			return models.PassActivation{}, fmt.Errorf("could not insert pass for %s: %w", params.Email, err)
-		}
-
-		return models.PassActivation{
-			Pass: pass,
-		}, nil
-	}
-
-	// when user booked one or more classes in future - system needs to assign those bookings to Pass
-	bookingsToAssignToPass, err := s.bookingsRepo.ListWithoutPassByEmail(
-		ctx, params.Email, params.InitialAssignedSlots,
-	)
-	if err != nil {
-		return models.PassActivation{},
-			fmt.Errorf("could not list bookings for email %s: %w", params.Email, err)
-	}
-
-	if params.InitialAssignedSlots != len(bookingsToAssignToPass) {
-		return models.PassActivation{}, api.ErrValidation(
-			fmt.Errorf("number of initialUsedSlots should be exactly equal to number of bookingsToAssignToPass: %d != %d",
-				params.InitialAssignedSlots,
-				len(bookingsToAssignToPass),
-			),
-		)
-	}
-
 	pass, err := s.passesRepo.Insert(
 		ctx,
 		params.Email,
@@ -88,17 +55,39 @@ func (s *service) ActivatePass(
 		return models.PassActivation{}, fmt.Errorf("could not insert pass for %s: %w", params.Email, err)
 	}
 
-	bookingIDsAssignedToPass := make([]uuid.UUID, 0, len(bookingsToAssignToPass))
-	for _, booking := range bookingsToAssignToPass {
-		err = s.bookingsRepo.Update(ctx, booking.ID, map[string]any{
-			"pass_id": pass.ID,
-		})
+	bookingsToAssignToPass := make([]models.Booking, 0, params.InitialAssignedSlots)
+	bookingIDsAssignedToPass := make([]uuid.UUID, 0, params.InitialAssignedSlots)
+
+	// user may want to add one or more existing future bookings - system needs to assign those to Pass
+	if params.InitialAssignedSlots > 0 {
+		bookingsToAssignToPass, err = s.bookingsRepo.ListWithoutPassByEmail(
+			ctx, params.Email, params.InitialAssignedSlots,
+		)
 		if err != nil {
 			return models.PassActivation{},
-				fmt.Errorf("could not update booking %s with pass_id %d: %w", booking.ID, pass.ID, err)
+				fmt.Errorf("could not list bookings for email %s: %w", params.Email, err)
 		}
 
-		bookingIDsAssignedToPass = append(bookingIDsAssignedToPass, booking.ID)
+		if params.InitialAssignedSlots != len(bookingsToAssignToPass) {
+			return models.PassActivation{}, api.ErrValidation(
+				fmt.Errorf("number of initialUsedSlots should be exactly equal to number of bookingsToAssignToPass: %d != %d",
+					params.InitialAssignedSlots,
+					len(bookingsToAssignToPass),
+				),
+			)
+		}
+
+		for _, booking := range bookingsToAssignToPass {
+			err = s.bookingsRepo.Update(ctx, booking.ID, map[string]any{
+				"pass_id": pass.ID,
+			})
+			if err != nil {
+				return models.PassActivation{},
+					fmt.Errorf("could not update booking %s with pass_id %d: %w", booking.ID, pass.ID, err)
+			}
+
+			bookingIDsAssignedToPass = append(bookingIDsAssignedToPass, booking.ID)
+		}
 	}
 
 	passSlots := s.passManager.BuildPassSlots(bookingsToAssignToPass, params.TotalSlots)
