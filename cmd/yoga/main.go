@@ -33,6 +33,7 @@ import (
 	"main/internal/interfaces/http/api/handlers/listbookings"
 	"main/internal/interfaces/http/api/handlers/listbookingsbyclass"
 	"main/internal/interfaces/http/api/handlers/listclasses"
+	"main/internal/interfaces/http/api/handlers/listemails"
 	"main/internal/interfaces/http/api/handlers/listpendingbookings"
 	"main/internal/interfaces/http/api/handlers/updateclass"
 	viewErrs "main/internal/interfaces/http/html/errs"
@@ -288,9 +289,11 @@ func setupRouter(
 	deleteBookingHandler := deletebooking.NewHandler(bookingsService, apiErrorHandler)
 	listPendingBookingsHandler := listpendingbookings.NewHandler(pendingBookingsRepo, apiErrorHandler)
 	activatePassHandler := activatepass.NewHandler(passesService, apiErrorHandler)
+	listEmails := listemails.NewHandler(bookingsRepo, apiErrorHandler)
 
 	{
 		api.GET("/api/v1/bookings", authMiddleware, listBookingsHandler.Handle)
+		api.GET("/api/v1/bookings/emails", authMiddleware, listEmails.Handle)
 		api.DELETE("/api/v1/bookings/:booking_id", authMiddleware, deleteBookingHandler.Handle)
 		api.GET("api/v1/pending_bookings", authMiddleware, listPendingBookingsHandler.Handle)
 		api.POST("/api/v1/classes", authMiddleware, createClassHandler.Handle)
