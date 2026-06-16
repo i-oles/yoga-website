@@ -151,6 +151,7 @@ func buildComponents(cfg *configuration.Configuration) (Components, error) {
 		&dbModels.SQLPendingBooking{},
 		&dbModels.SQLBooking{},
 		&dbModels.SQLPass{},
+		&dbModels.SQLContact{},
 	)
 	if err != nil {
 		return Components{}, fmt.Errorf("failed to migrate database: %w", err)
@@ -159,7 +160,7 @@ func buildComponents(cfg *configuration.Configuration) (Components, error) {
 	classesRepo := sqliteRepo.NewClassesRepo(database)
 	bookingsRepo := sqliteRepo.NewBookingsRepo(database)
 	pendingBookingsRepo := sqliteRepo.NewPendingBookingsRepo(database)
-	passesRepo := sqliteRepo.NewPassesRepo(database)
+	passesRepo := sqliteRepo.NewContactsRepo(database)
 
 	tokenGenerator := token.NewGenerator()
 	emailNotifier := gmail.NewNotifier(

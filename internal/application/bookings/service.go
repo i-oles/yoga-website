@@ -135,6 +135,11 @@ func (s *service) CreateBooking(ctx context.Context, token string) (models.Class
 			return fmt.Errorf("could not insert booking: %w", err)
 		}
 
+		_, err = repos.Contacts.Insert(ctx, booking.Email, booking.FirstName, booking.LastName)
+		if err != nil {
+			return fmt.Errorf("could not insert contact: %w", err)
+		}
+
 		return nil
 	})
 	if err != nil {

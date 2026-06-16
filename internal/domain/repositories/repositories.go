@@ -13,6 +13,7 @@ type Repositories struct {
 	Bookings        IBookings
 	Classes         IClasses
 	Passes          IPasses
+	Contacts        IContacts
 }
 
 type IClasses interface {
@@ -32,7 +33,7 @@ type IBookings interface {
 	ListByPassID(ctx context.Context, passID int) ([]models.Booking, error)
 	CountForPassID(ctx context.Context, passID int) (int, error)
 	CountForClassID(ctx context.Context, classID uuid.UUID) (int, error)
-	Insert(ctx context.Context, confirmedBooking models.Booking) (uuid.UUID, error)
+	Insert(ctx context.Context, booking models.Booking) (uuid.UUID, error)
 	Delete(ctx context.Context, id uuid.UUID) error
 	Update(ctx context.Context, id uuid.UUID, update map[string]any) error
 }
@@ -46,4 +47,9 @@ type IPendingBookings interface {
 type IPasses interface {
 	Insert(ctx context.Context, email string, totalSlots int) (models.Pass, error)
 	ListByEmail(ctx context.Context, email string, limit int) ([]models.Pass, error)
+}
+
+type IContacts interface {
+	Insert(ctx context.Context, email, firstName, lastName string) (int, error)
+	List(ctx context.Context) ([]models.Contact, error)
 }
