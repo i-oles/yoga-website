@@ -50,6 +50,6 @@ type IPasses interface {
 }
 
 type IContacts interface {
-	Insert(ctx context.Context, email, firstName, lastName string) (int, error)
+	Insert(ctx context.Context, email, firstName, lastName string) (models.Contact, error)
 	List(ctx context.Context) ([]models.Contact, error)
 }

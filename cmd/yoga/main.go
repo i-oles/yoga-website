@@ -160,7 +160,7 @@ func buildComponents(cfg *configuration.Configuration) (Components, error) {
 	classesRepo := sqliteRepo.NewClassesRepo(database)
 	bookingsRepo := sqliteRepo.NewBookingsRepo(database)
 	pendingBookingsRepo := sqliteRepo.NewPendingBookingsRepo(database)
-	passesRepo := sqliteRepo.NewContactsRepo(database)
+	passesRepo := sqliteRepo.NewPassesRepo(database)
 
 	tokenGenerator := token.NewGenerator()
 	emailNotifier := gmail.NewNotifier(
