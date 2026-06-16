@@ -23,12 +23,3 @@ func (s SQLContact) ToDomain() models.Contact {
 		LastName:  s.LastName,
 	}
 }
-
-func SQLContactFromDomain(domain models.Contact) SQLContact {
-	return SQLContact{
-		ID:        domain.ID,
-		Email:     domain.Email,
-		FirstName: domain.FirstName,
-		LastName:  domain.LastName,
-	}
-}
