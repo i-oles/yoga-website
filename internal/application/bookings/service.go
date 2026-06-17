@@ -104,6 +104,13 @@ func (s *service) CreateBooking(ctx context.Context, token string) (models.Class
 			ConfirmationToken: pendingBooking.ConfirmationToken,
 		}
 
+		_, err = repos.Contacts.Insert(ctx, booking.Email, booking.FirstName, booking.LastName)
+		if err != nil {
+			if !errors.Is(err, errs.ErrAlreadyExist) {
+				return fmt.Errorf("could not insert contact: %w", err)
+			}
+		}
+
 		for _, pass := range passes {
 			bookingsWithPassCount, err := s.bookingsRepo.CountForPassID(ctx, pass.ID)
 			if err != nil {

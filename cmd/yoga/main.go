@@ -28,12 +28,13 @@ import (
 	"main/internal/interfaces/http/api/errs/logging"
 	"main/internal/interfaces/http/api/handlers/activatepass"
 	"main/internal/interfaces/http/api/handlers/createclasses"
+	"main/internal/interfaces/http/api/handlers/createcontacts"
 	"main/internal/interfaces/http/api/handlers/deletebooking"
 	"main/internal/interfaces/http/api/handlers/deleteclass"
 	"main/internal/interfaces/http/api/handlers/listbookings"
 	"main/internal/interfaces/http/api/handlers/listbookingsbyclass"
 	"main/internal/interfaces/http/api/handlers/listclasses"
-	"main/internal/interfaces/http/api/handlers/listemails"
+	"main/internal/interfaces/http/api/handlers/listcontacts"
 	"main/internal/interfaces/http/api/handlers/listpendingbookings"
 	"main/internal/interfaces/http/api/handlers/updateclass"
 	viewErrs "main/internal/interfaces/http/html/errs"
@@ -64,6 +65,7 @@ type Components struct {
 	passesService          services.IPassesService
 	bookingsRepo           repositories.IBookings
 	pendingBookingsRepo    repositories.IPendingBookings
+	contactsRepo           repositories.IContacts
 	reminder               reminder.IReminderService
 	database               *gorm.DB
 }
@@ -88,6 +90,7 @@ func main() {
 		components.passesService,
 		components.bookingsRepo,
 		components.pendingBookingsRepo,
+		components.contactsRepo,
 		cfg,
 	)
 
@@ -151,6 +154,7 @@ func buildComponents(cfg *configuration.Configuration) (Components, error) {
 		&dbModels.SQLPendingBooking{},
 		&dbModels.SQLBooking{},
 		&dbModels.SQLPass{},
+		&dbModels.SQLContact{},
 	)
 	if err != nil {
 		return Components{}, fmt.Errorf("failed to migrate database: %w", err)
@@ -160,6 +164,7 @@ func buildComponents(cfg *configuration.Configuration) (Components, error) {
 	bookingsRepo := sqliteRepo.NewBookingsRepo(database)
 	pendingBookingsRepo := sqliteRepo.NewPendingBookingsRepo(database)
 	passesRepo := sqliteRepo.NewPassesRepo(database)
+	contactsRepo := sqliteRepo.NewContactsRepo(database)
 
 	tokenGenerator := token.NewGenerator()
 	emailNotifier := gmail.NewNotifier(
@@ -215,6 +220,7 @@ func buildComponents(cfg *configuration.Configuration) (Components, error) {
 		passesService:          passesService,
 		bookingsRepo:           bookingsRepo,
 		pendingBookingsRepo:    pendingBookingsRepo,
+		contactsRepo:           contactsRepo,
 		reminder:               reminder,
 		database:               database,
 	}, nil
@@ -227,6 +233,7 @@ func setupRouter(
 	passesService services.IPassesService,
 	bookingsRepo repositories.IBookings,
 	pendingBookingsRepo repositories.IPendingBookings,
+	contactsRepo repositories.IContacts,
 	cfg *configuration.Configuration,
 ) *gin.Engine {
 	router := gin.Default()
@@ -289,11 +296,11 @@ func setupRouter(
 	deleteBookingHandler := deletebooking.NewHandler(bookingsService, apiErrorHandler)
 	listPendingBookingsHandler := listpendingbookings.NewHandler(pendingBookingsRepo, apiErrorHandler)
 	activatePassHandler := activatepass.NewHandler(passesService, apiErrorHandler)
-	listEmails := listemails.NewHandler(bookingsRepo, apiErrorHandler)
+	listContactsHandler := listcontacts.NewHandler(contactsRepo, apiErrorHandler)
+	createContactsHandler := createcontacts.NewHandler(contactsRepo, apiErrorHandler)
 
 	{
 		api.GET("/api/v1/bookings", authMiddleware, listBookingsHandler.Handle)
-		api.GET("/api/v1/bookings/emails", authMiddleware, listEmails.Handle)
 		api.DELETE("/api/v1/bookings/:booking_id", authMiddleware, deleteBookingHandler.Handle)
 		api.GET("api/v1/pending_bookings", authMiddleware, listPendingBookingsHandler.Handle)
 		api.POST("/api/v1/classes", authMiddleware, createClassHandler.Handle)
@@ -302,6 +309,8 @@ func setupRouter(
 		api.DELETE("/api/v1/classes/:class_id", authMiddleware, deleteClassHandler.Handle)
 		api.GET("/api/v1/classes/:class_id/bookings", authMiddleware, listBookingsByClassHandler.Handle)
 		api.PUT("/api/v1/passes", authMiddleware, activatePassHandler.Handle)
+		api.GET("/api/v1/contacts", authMiddleware, listContactsHandler.Handle)
+		api.POST("/api/v1/contacts", authMiddleware, createContactsHandler.Handle)
 	}
 
 	return router
