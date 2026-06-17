@@ -29,18 +29,18 @@ func NewHandler(
 }
 
 func (h *handler) Handle(ginCtx *gin.Context) {
-	var dtoClasses []dto.CreateClassRequest
+	var createClassesRequest []dto.CreateClassRequest
 
-	err := ginCtx.ShouldBindJSON(&dtoClasses)
+	err := ginCtx.ShouldBindJSON(&createClassesRequest)
 	if err != nil {
 		ginCtx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 
 		return
 	}
 
-	classes := make([]models.Class, 0, len(dtoClasses))
+	classes := make([]models.Class, 0, len(createClassesRequest))
 
-	for _, dtoClass := range dtoClasses {
+	for _, dtoClass := range createClassesRequest {
 		class := models.Class{
 			ID:          uuid.New(),
 			StartTime:   dtoClass.StartTime.UTC(),

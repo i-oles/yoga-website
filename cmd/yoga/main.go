@@ -28,6 +28,7 @@ import (
 	"main/internal/interfaces/http/api/errs/logging"
 	"main/internal/interfaces/http/api/handlers/activatepass"
 	"main/internal/interfaces/http/api/handlers/createclasses"
+	"main/internal/interfaces/http/api/handlers/createcontacts"
 	"main/internal/interfaces/http/api/handlers/deletebooking"
 	"main/internal/interfaces/http/api/handlers/deleteclass"
 	"main/internal/interfaces/http/api/handlers/listbookings"
@@ -295,11 +296,11 @@ func setupRouter(
 	deleteBookingHandler := deletebooking.NewHandler(bookingsService, apiErrorHandler)
 	listPendingBookingsHandler := listpendingbookings.NewHandler(pendingBookingsRepo, apiErrorHandler)
 	activatePassHandler := activatepass.NewHandler(passesService, apiErrorHandler)
-	listContacts := listcontacts.NewHandler(contactsRepo, apiErrorHandler)
+	listContactsHandler := listcontacts.NewHandler(contactsRepo, apiErrorHandler)
+	createContactsHandler := createcontacts.NewHandler(contactsRepo, apiErrorHandler)
 
 	{
 		api.GET("/api/v1/bookings", authMiddleware, listBookingsHandler.Handle)
-		api.GET("/api/v1/bookings/contacts", authMiddleware, listContacts.Handle)
 		api.DELETE("/api/v1/bookings/:booking_id", authMiddleware, deleteBookingHandler.Handle)
 		api.GET("api/v1/pending_bookings", authMiddleware, listPendingBookingsHandler.Handle)
 		api.POST("/api/v1/classes", authMiddleware, createClassHandler.Handle)
@@ -308,6 +309,8 @@ func setupRouter(
 		api.DELETE("/api/v1/classes/:class_id", authMiddleware, deleteClassHandler.Handle)
 		api.GET("/api/v1/classes/:class_id/bookings", authMiddleware, listBookingsByClassHandler.Handle)
 		api.PUT("/api/v1/passes", authMiddleware, activatePassHandler.Handle)
+		api.GET("/api/v1/contacts", authMiddleware, listContactsHandler.Handle)
+		api.POST("/api/v1/contacts", authMiddleware, createContactsHandler.Handle)
 	}
 
 	return router

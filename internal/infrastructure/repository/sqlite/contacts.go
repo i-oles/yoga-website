@@ -2,13 +2,15 @@ package sqlite
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"main/internal/domain/models"
+	"main/internal/infrastructure/errs"
 	"main/internal/infrastructure/models/db"
 
+	"github.com/mattn/go-sqlite3"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 type contactsRepo struct {
@@ -31,12 +33,16 @@ func (r *contactsRepo) Insert(
 		LastName:  lastName,
 	}
 
+	var sqliteErr sqlite3.Error
+
 	if err := r.db.WithContext(ctx).
-		Clauses(clause.OnConflict{
-			Columns:   []clause.Column{{Name: "email"}},
-			DoNothing: true,
-		}).
 		Create(&contact).Error; err != nil {
+		if errors.As(err, &sqliteErr) &&
+			sqliteErr.Code == sqlite3.ErrConstraint &&
+			sqliteErr.ExtendedCode == sqlite3.ErrConstraintUnique {
+			return models.Contact{}, errs.ErrAlreadyExist
+		}
+
 		return models.Contact{}, fmt.Errorf("could not insert contact: %w", err)
 	}
 

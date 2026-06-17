@@ -4,6 +4,12 @@ import (
 	"main/internal/domain/models"
 )
 
+type CreateContactRequest struct {
+	Email     string `binding:"required" json:"email"`
+	FirstName string `binding:"required" json:"first_name"`
+	LastName  string `binding:"required" json:"last_name"`
+}
+
 type ContactDTO struct {
 	ID        int    `json:"id"`
 	Email     string `json:"email"`

@@ -106,7 +106,9 @@ func (s *service) CreateBooking(ctx context.Context, token string) (models.Class
 
 		_, err = repos.Contacts.Insert(ctx, booking.Email, booking.FirstName, booking.LastName)
 		if err != nil {
-			return fmt.Errorf("could not insert contact: %w", err)
+			if !errors.Is(err, errs.ErrAlreadyExist) {
+				return fmt.Errorf("could not insert contact: %w", err)
+			}
 		}
 
 		for _, pass := range passes {
