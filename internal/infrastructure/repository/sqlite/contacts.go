@@ -30,6 +30,7 @@ func (r *contactsRepo) Insert(
 		FirstName: firstName,
 		LastName:  lastName,
 	}
+
 	if err := r.db.WithContext(ctx).
 		Clauses(clause.OnConflict{
 			Columns:   []clause.Column{{Name: "email"}},

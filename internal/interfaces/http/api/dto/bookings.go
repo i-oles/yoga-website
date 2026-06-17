@@ -73,7 +73,3 @@ func ToBookingsListResponse(bookings []domainModels.Booking) ([]BookingResponse,
 
 	return bookingsListResponse, nil
 }
-
-type BookingEmailsResponse struct {
-	Emails []string `json:"emails"`
-}
