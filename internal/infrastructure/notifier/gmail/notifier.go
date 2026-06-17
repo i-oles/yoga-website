@@ -215,7 +215,7 @@ func (n *notifier) NotifyClassUpdate(
 		Message:      msg,
 	}
 
-	tmpl, err := template.ParseFiles(n.classUpdateTmplPath, n.passTmplPath, n.classTmplPath)
+	tmpl, err := template.ParseFiles(n.classUpdateTmplPath, n.classTmplPath)
 	if err != nil {
 		return fmt.Errorf("could not parse template: %w", err)
 	}
