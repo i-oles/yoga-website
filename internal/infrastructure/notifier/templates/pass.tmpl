@@ -16,10 +16,17 @@
                     <span style="color:white; font-size:9px; font-weight:bold;">✓</span>
                 </div>
 
-                {{ else }}
-                <!-- FUTURE + BLANK -->
+                {{ else if eq .Status 2 }}
+                <!-- FUTURE -->
                 <div
-                    style="width:16px; height:16px; margin:0 auto; border:2px solid #9e9e9e; border-radius:50%;">
+                    style="width:16px; height:16px; margin:0 auto; border:2px solid #d0d0d0; border-radius:50%; background-color:#d0d0d0; line-height:16px; text-align:center;">
+                    <span style="color:white; font-size:9px; font-weight:bold;">✓</span>
+                </div>
+
+                {{ else }}
+                <!-- BLANK -->
+                <div
+                    style="width:16px; height:16px; margin:0 auto; border:2px solid #d0d0d0; border-radius:50%;">
                 </div>
                 {{ end }}
 
