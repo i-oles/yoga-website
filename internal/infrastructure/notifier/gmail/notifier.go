@@ -28,6 +28,7 @@ type notifier struct {
 	passActivationTmplPath             string
 	classReminderTmplPath              string
 	passTmplPath                       string
+	classTmplPath                      string
 	signature                          string
 }
 
@@ -58,6 +59,7 @@ func NewNotifier(
 		passActivationTmplPath:             baseTmplPath + "pass_activation.tmpl",
 		classReminderTmplPath:              baseTmplPath + "class_reminder.tmpl",
 		passTmplPath:                       baseTmplPath + "pass.tmpl",
+		classTmplPath:                      baseTmplPath + "class.tmpl",
 	}
 }
 
@@ -135,7 +137,7 @@ func (n *notifier) NotifyBookingConfirmation(
 		PassSlotsView:    n.getPassSlotsView(params.PassSlots),
 	}
 
-	tmpl, err := template.ParseFiles(n.bookingConfirmationTmplPath, n.passTmplPath)
+	tmpl, err := template.ParseFiles(n.bookingConfirmationTmplPath, n.passTmplPath, n.classTmplPath)
 	if err != nil {
 		return fmt.Errorf("could not parse template: %w", err)
 	}
@@ -173,7 +175,7 @@ func (n *notifier) NotifyBookingCancellation(params models.NotifierParams) error
 		PassSlotsView: n.getPassSlotsView(params.PassSlots),
 	}
 
-	tmpl, err := template.ParseFiles(n.bookingCancellationTmplPath, n.passTmplPath)
+	tmpl, err := template.ParseFiles(n.bookingCancellationTmplPath, n.passTmplPath, n.classTmplPath)
 	if err != nil {
 		return fmt.Errorf("could not parse template: %w", err)
 	}
@@ -213,7 +215,7 @@ func (n *notifier) NotifyClassUpdate(
 		Message:      msg,
 	}
 
-	tmpl, err := template.ParseFiles(n.classUpdateTmplPath, n.passTmplPath)
+	tmpl, err := template.ParseFiles(n.classUpdateTmplPath, n.classTmplPath)
 	if err != nil {
 		return fmt.Errorf("could not parse template: %w", err)
 	}
@@ -247,7 +249,7 @@ func (n *notifier) NotifyClassCancellation(params models.NotifierParams, msg str
 		PassSlotsView: n.getPassSlotsView(params.PassSlots),
 	}
 
-	tmpl, err := template.ParseFiles(n.classCancellationTmplPath, n.passTmplPath)
+	tmpl, err := template.ParseFiles(n.classCancellationTmplPath, n.passTmplPath, n.classTmplPath)
 	if err != nil {
 		return fmt.Errorf("could not parse template: %w", err)
 	}
@@ -280,7 +282,7 @@ func (n *notifier) NotifyBookingReminder(
 		PassSlotsView:    n.getPassSlotsView(params.PassSlots),
 	}
 
-	tmpl, err := template.ParseFiles(n.classReminderTmplPath, n.passTmplPath)
+	tmpl, err := template.ParseFiles(n.classReminderTmplPath, n.passTmplPath, n.classTmplPath)
 	if err != nil {
 		return fmt.Errorf("could not parse template: %w", err)
 	}
